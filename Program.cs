@@ -1,3 +1,5 @@
+using Apartment.Data;
+using Microsoft.EntityFrameworkCore;
 namespace Apartment
 {
     public class Program
@@ -8,6 +10,11 @@ namespace Apartment
 
             // Add services to the container.
             builder.Services.AddRazorPages();
+
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(connectionString));
 
             var app = builder.Build();
 
