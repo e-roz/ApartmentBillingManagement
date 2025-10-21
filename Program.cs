@@ -54,6 +54,7 @@ namespace Apartment
                .WithStaticAssets();
 
             app.Run();
+
         }
     }
 }
