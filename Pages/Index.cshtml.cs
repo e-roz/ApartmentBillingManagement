@@ -12,9 +12,11 @@ namespace Apartment.Pages
             _logger = logger;
         }
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
-
+            // Redirect to login page by default
+            // This ensures users see the login page when they visit the home page
+            return RedirectToPage("/Login");
         }
     }
 }

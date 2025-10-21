@@ -19,7 +19,10 @@ namespace Apartment.Pages
 
 
         [TempData]
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
+
+        [TempData]
+        public string? Message { get; set; }
 
         public RegisterModel(ApplicationDbContext context)
         {

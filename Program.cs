@@ -47,6 +47,8 @@ namespace Apartment
 
             app.UseRouting();
 
+            // Add authentication middleware BEFORE authorization
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapStaticAssets();

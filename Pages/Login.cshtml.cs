@@ -20,10 +20,10 @@ namespace Apartment.Pages
         public Login Input { get; set; } = new Login();
 
         [TempData]
-        public string Message { get; set; }
+        public string? Message { get; set; }
 
         [TempData]
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
 
         public LoginModel(ApplicationDbContext context)
         {
@@ -35,18 +35,18 @@ namespace Apartment.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return Page();
             }
 
             //find the user in the database by the provided username
-            var  user = await dbData.Users
-                .FirstOrDefaultAsync (u => u.Username == Input.Username);
+            var user = await dbData.Users
+                .FirstOrDefaultAsync(u => u.Username == Input.Username);
 
 
             //c n check yung user existence at v n veriufy yung password gamit secure hasher
-            if(user == null || !PasswordHasher.VerifyPassword(Input.Password, user.HasedPassword))
+            if (user == null || !PasswordHasher.VerifyPassword(Input.Password, user.HasedPassword))
             {
                 ErrorMessage = "Invalid username or password.";
                 return Page();
@@ -82,7 +82,23 @@ namespace Apartment.Pages
                 authProperties
                 );
 
-            return RedirectToPage("/Index");
+
+
+
+            // paghihiwalayain yung admim, user, and manager sa page na mapupuntahan nila
+
+            if (user.Role == UserRoles.Admin)
+            {
+                return RedirectToPage("/AdminDashBoard");
+            }
+            else if (user.Role == UserRoles.Manager)
+            {
+                return RedirectToPage("/DashBoard");
+            }
+            else
+            {
+                return RedirectToPage("/DashBoard");
+            }
         }
     }
 }
