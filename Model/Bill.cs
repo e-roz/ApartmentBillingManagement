@@ -8,22 +8,35 @@ namespace Apartment.Model
         public int Id { get; set; }
 
         // Required Foreign Key to link bill to a specific user
+
+
+
+        // Links this bill to a specific apartment unit
         [Required]
         public int ApartmentId { get; set; }
 
+
+        // Links this bill to the overall billing month
         [Required]
         public int BillingPeriodId { get; set; }
 
-        [ForeignKey("BillingPeriodId")]
-        public Apartment Apartment { get; set; } = null!;
 
-        // The user (tenant) responsible for this bill
-
+        //  Link this bill to the user/tenant responsible for payment
         [Required]
         public int TenantId { get; set; }
 
+
+        // 
+        [ForeignKey("ApartmentId")]
+        public ApartmentModel Apartment { get; set; } = null!;
+
+        [ForeignKey("BillingPeriodId")]
+        public BillingPeriod BillingPeriod { get; set; } = null!;
+
         [ForeignKey("TenantId")]
-        public UserList Tenant { get; set; } = null!;
+        public User Tenant { get; set; } = null!;
+
+
 
         // financial details
 

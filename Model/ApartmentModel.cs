@@ -5,6 +5,7 @@ namespace Apartment.Model
 {
     public class ApartmentModel
     {
+
         public int Id { get; set; }
 
         [Required]
@@ -30,6 +31,5 @@ namespace Apartment.Model
         public User? Tenant { get; set; }
 
         public ICollection<Bill> Bills { get; set; } = new List<Bill>();
-
-        }
+    }
 }
