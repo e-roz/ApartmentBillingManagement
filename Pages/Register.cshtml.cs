@@ -9,8 +9,6 @@ namespace Apartment.Pages
 {
     public class RegisterModel : PageModel
     {
-
-
         private readonly ApplicationDbContext dbData; // Holds the connection object to database
 
         //receives the data submitted from html form
