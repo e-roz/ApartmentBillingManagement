@@ -12,7 +12,7 @@ namespace Apartment.Model
         [Display(Name = "Email")]
         public string Email { get; set; }
 
-        public string Role { get; set; }
+        public UserRoles Role { get; set; }
 
         [Display(Name = "Creation Date")]
         public DateTime CreationDate { get; set; }
