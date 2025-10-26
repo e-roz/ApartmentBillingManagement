@@ -139,5 +139,94 @@ namespace Apartment.Pages
         }
 
         //EDIT APARTMENT LOGIC
+        public async Task<IActionResult> OnPostEditApartmentAsync(int ApartmentId, string UnitNumber, decimal MonthlyRent, int? TenantId)
+        {
+            if (!ModelState.IsValid)
+            {
+                ErrorMessage = "Validation failed. Please check the form.";
+                await OnGetAsync();
+                return Page();
+            }
+
+            var apartmentToUpdate = await dbData.Apartments.FindAsync(ApartmentId);
+
+            if (apartmentToUpdate == null)
+            {
+                ErrorMessage = "Apartment not found.";
+                return RedirectToPage();
+            }
+
+            try
+            {
+                // Check for unique unit number against other apartments
+                if (await dbData.Apartments.AnyAsync(a => a.UnitNumber == UnitNumber && a.Id != ApartmentId))
+                {
+                    ErrorMessage = $"Unit number '{UnitNumber}' already exists.";
+                    await OnGetAsync();
+                    return Page();
+                }
+
+                // Update properties
+                apartmentToUpdate.UnitNumber = UnitNumber;
+                apartmentToUpdate.MonthlyRent = MonthlyRent;
+
+                // IMPORTANT: Handle tenant assignment and occupancy status
+                // If TenantId is 0, it means "Vacant"
+                if (TenantId == 0)
+                {
+                    apartmentToUpdate.TenantId = null;
+                    apartmentToUpdate.IsOccupied = false;
+                }
+                else if (TenantId.HasValue)
+                {
+                    apartmentToUpdate.TenantId = TenantId.Value;
+                    apartmentToUpdate.IsOccupied = true;
+                }
+
+                dbData.Apartments.Update(apartmentToUpdate);
+                await dbData.SaveChangesAsync();
+
+                SuccessMessage = $"Apartment unit '{apartmentToUpdate.UnitNumber}' updated successfully.";
+                return RedirectToPage();
+            }
+            catch (Exception ex)
+            {
+                await OnGetAsync();
+                ErrorMessage = $"Error updating apartment: {ex.Message}";
+                return Page();
+            }
+        }
+        public async Task<IActionResult> OnPostDeleteApartmentAsync(int ApartmentId)
+        {
+            // Include Bills to perform the safety check
+            var apartmentToDelete = await dbData.Apartments
+                 .Include(a => a.Bills)
+                 .FirstOrDefaultAsync(a => a.Id == ApartmentId);
+
+            if (apartmentToDelete == null)
+            {
+                ErrorMessage = "Apartment not found.";
+                return RedirectToPage();
+            }
+            // Safety check: Prevent deletion if there are associated bills
+            if (apartmentToDelete.Bills.Any())
+            {
+                ErrorMessage = $"Cannot delete unit '{apartmentToDelete.UnitNumber}' because {apartmentToDelete.Bills.Count} bill(s) are associated with it. Please resolve or delete the bills first.";
+                return RedirectToPage();
+            }
+            try
+            {
+                dbData.Apartments.Remove(apartmentToDelete);
+                await dbData.SaveChangesAsync();
+
+                SuccessMessage = $"Apartment unit '{apartmentToDelete.UnitNumber}' deleted successfully.";
+                return RedirectToPage();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error deleting apartment: {ex.Message}";
+                return RedirectToPage();
+            }
+        }
     }
 }
