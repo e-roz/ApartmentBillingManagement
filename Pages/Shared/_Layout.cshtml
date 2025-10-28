@@ -239,12 +239,21 @@
     <!-- Main Content -->
     <div class="main-content">
         <!-- Content Header -->
-        <div class="content-header">
+        <div class="content-header d-flex align-items-center justify-content-between">
             <div>
                 <h1 class="h3 mb-0">@ViewData["Title"]</h1>
             </div>
-            <div class="logo-placeholder">
-                <i class="bi bi-building"></i>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Logout button added: uses existing Logout page which signs out on GET -->
+                <a href="/Logout" class="btn btn-outline-danger btn-sm" title="Sign out">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="d-none d-sm-inline">Logout</span>
+                </a>
+
+                <div class="logo-placeholder">
+                    <i class="bi bi-building"></i>
+                </div>
             </div>
         </div>
         
