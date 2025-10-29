@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Apartment.Pages
 {
-    public class vimbi1Model : PageModel
+    public class RecordPaymentsModel : PageModel
     {
         public void OnGet()
         {

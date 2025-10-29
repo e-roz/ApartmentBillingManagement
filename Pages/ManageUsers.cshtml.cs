@@ -29,7 +29,6 @@ namespace Apartment.Pages
         {
             this.dbData = dbData;
         }
-
         //Fetches and filters the list of users 
         public async Task OnGetAsync()
         {
@@ -101,12 +100,11 @@ namespace Apartment.Pages
         }
 
         // POST Method: Deletes a user account
-
         public async Task<IActionResult> OnPostDeleteUserAsync(int userId)
         {
             var userToDelete = await dbData.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
-            if(userToDelete == null)
+            if (userToDelete == null)
             {
                 ErrorMessage = "User not found.";
                 return RedirectToPage();
@@ -114,7 +112,7 @@ namespace Apartment.Pages
 
             // Check security: Prevent the Admin from deleting themselves 
             var currentAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if(userToDelete.Id.ToString() == currentAdminId)
+            if (userToDelete.Id.ToString() == currentAdminId)
             {
                 ErrorMessage = "Error: You cannot delete your own account.";
                 return RedirectToPage();
