@@ -23,10 +23,10 @@ namespace Apartment.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure the UserRole enum to be stored as a string
+            // Configure the UserRole enum to be stored as an integer
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)
-                .HasConversion<string>();
+                .HasConversion<int>();
 
             //Ensure the periodKey is unique in BillingPeriod
             modelBuilder.Entity<BillingPeriod>()

@@ -44,6 +44,7 @@ namespace Apartment
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
             app.UseRouting();
 
@@ -51,9 +52,7 @@ namespace Apartment
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapStaticAssets();
-            app.MapRazorPages()
-               .WithStaticAssets();
+            app.MapRazorPages();
 
             app.Run();
 
