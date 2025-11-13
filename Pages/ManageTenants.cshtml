@@ -312,7 +312,7 @@ else if (isDetails)
                     </div>
                     <div class="card-body p-4">
                         <form method="post" asp-page-handler="Create">
-                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
                             <div class="row">
                                 <!-- Full Name -->
@@ -351,7 +351,7 @@ else if (isDetails)
                                 <!-- Monthly Rent -->
                                 <div class="col-md-6 mb-4">
                                     <div class="form-floating">
-                                        <input asp-for="Tenant.MonthlyRent" type="number" step="0.01" min="0" class="form-control" placeholder="Monthly Rent" readonly required />
+                                        <input asp-for="Tenant.MonthlyRent" type="number" step="0.01" min="0" class="form-control" placeholder="Monthly Rent" id="MonthlyRentInput" required />
                                         <label asp-for="Tenant.MonthlyRent">
                                             <i class="bi bi-currency-dollar me-1"></i>Monthly Rent
                                         </label>
@@ -429,7 +429,7 @@ else if (isDetails)
                 const leaseStartDate = document.querySelector('input[name="Tenant.LeaseStartDate"]');
                 const leaseEndDate = document.querySelector('input[name="Tenant.LeaseEndDate"]');
                 const apartmentSelect = document.querySelector('select[name="SelectedApartmentId"]');
-                const monthlyRentInput = document.querySelector('input[name="Tenant.MonthlyRent"]');
+                const monthlyRentInput = document.getElementById('MonthlyRentInput') || document.querySelector('input[name="Tenant.MonthlyRent"]');
                 
                 // Ensure Lease End Date is always after Lease Start Date
                 if (leaseStartDate && leaseEndDate) {
@@ -454,21 +454,46 @@ else if (isDetails)
                 
                 // Auto-populate Monthly Rent when apartment is selected
                 if (apartmentSelect && monthlyRentInput) {
-                    apartmentSelect.addEventListener('change', function() {
-                        const apartmentId = parseInt(this.value);
+                    function updateMonthlyRent(apartmentId) {
                         if (apartmentId > 0 && apartmentRents[apartmentId] !== undefined) {
-                            monthlyRentInput.value = apartmentRents[apartmentId].toFixed(2);
+                            const rentValue = apartmentRents[apartmentId].toFixed(2);
+                            monthlyRentInput.value = rentValue;
+                            monthlyRentInput.setAttribute('readonly', 'readonly');
                         } else {
                             monthlyRentInput.value = '0.00';
+                            monthlyRentInput.removeAttribute('readonly');
                         }
+                    }
+                    
+                    apartmentSelect.addEventListener('change', function() {
+                        const apartmentId = parseInt(this.value);
+                        updateMonthlyRent(apartmentId);
                     });
                     
                     // Set initial monthly rent if apartment is already selected
                     if (apartmentSelect.value) {
                         const apartmentId = parseInt(apartmentSelect.value);
-                        if (apartmentId > 0 && apartmentRents[apartmentId] !== undefined) {
-                            monthlyRentInput.value = apartmentRents[apartmentId].toFixed(2);
-                        }
+                        updateMonthlyRent(apartmentId);
+                    }
+                    
+                    // Form validation: Ensure apartment is selected before submission
+                    const createForm = document.querySelector('form[method="post"]');
+                    if (createForm) {
+                        createForm.addEventListener('submit', function(e) {
+                            const selectedApartmentId = parseInt(apartmentSelect.value);
+                            if (selectedApartmentId === 0 || isNaN(selectedApartmentId)) {
+                                e.preventDefault();
+                                alert('Please select an apartment unit before submitting.');
+                                apartmentSelect.focus();
+                                return false;
+                            }
+                            // Ensure MonthlyRent is set before submission
+                            if (selectedApartmentId > 0 && apartmentRents[selectedApartmentId] !== undefined) {
+                                const rentValue = apartmentRents[selectedApartmentId].toFixed(2);
+                                monthlyRentInput.value = rentValue;
+                                monthlyRentInput.removeAttribute('readonly'); // Remove readonly before submit to ensure value is sent
+                            }
+                        });
                     }
                 }
             });
@@ -567,7 +592,7 @@ else if (isDetails)
                                 <!-- Monthly Rent -->
                                 <div class="col-md-6 mb-4">
                                     <div class="form-floating">
-                                        <input asp-for="Tenant.MonthlyRent" type="number" step="0.01" min="0" class="form-control" placeholder="Monthly Rent" readonly required />
+                                        <input asp-for="Tenant.MonthlyRent" type="number" step="0.01" min="0" class="form-control" placeholder="Monthly Rent" id="MonthlyRentInput" required />
                                         <label asp-for="Tenant.MonthlyRent">
                                             <i class="bi bi-currency-dollar me-1"></i>Monthly Rent
                                         </label>
@@ -645,7 +670,7 @@ else if (isDetails)
                 const leaseStartDate = document.querySelector('input[name="Tenant.LeaseStartDate"]');
                 const leaseEndDate = document.querySelector('input[name="Tenant.LeaseEndDate"]');
                 const apartmentSelect = document.querySelector('select[name="SelectedApartmentId"]');
-                const monthlyRentInput = document.querySelector('input[name="Tenant.MonthlyRent"]');
+                const monthlyRentInput = document.getElementById('MonthlyRentInput') || document.querySelector('input[name="Tenant.MonthlyRent"]');
                 
                 // Ensure Lease End Date is always after Lease Start Date
                 if (leaseStartDate && leaseEndDate) {
@@ -670,21 +695,46 @@ else if (isDetails)
                 
                 // Auto-populate Monthly Rent when apartment is selected
                 if (apartmentSelect && monthlyRentInput) {
-                    apartmentSelect.addEventListener('change', function() {
-                        const apartmentId = parseInt(this.value);
+                    function updateMonthlyRent(apartmentId) {
                         if (apartmentId > 0 && apartmentRents[apartmentId] !== undefined) {
-                            monthlyRentInput.value = apartmentRents[apartmentId].toFixed(2);
+                            const rentValue = apartmentRents[apartmentId].toFixed(2);
+                            monthlyRentInput.value = rentValue;
+                            monthlyRentInput.setAttribute('readonly', 'readonly');
                         } else {
                             monthlyRentInput.value = '0.00';
+                            monthlyRentInput.removeAttribute('readonly');
                         }
+                    }
+                    
+                    apartmentSelect.addEventListener('change', function() {
+                        const apartmentId = parseInt(this.value);
+                        updateMonthlyRent(apartmentId);
                     });
                     
                     // Set initial monthly rent if apartment is already selected
                     if (apartmentSelect.value) {
                         const apartmentId = parseInt(apartmentSelect.value);
-                        if (apartmentId > 0 && apartmentRents[apartmentId] !== undefined) {
-                            monthlyRentInput.value = apartmentRents[apartmentId].toFixed(2);
-                        }
+                        updateMonthlyRent(apartmentId);
+                    }
+                    
+                    // Form validation: Ensure apartment is selected before submission
+                    const createForm = document.querySelector('form[method="post"]');
+                    if (createForm) {
+                        createForm.addEventListener('submit', function(e) {
+                            const selectedApartmentId = parseInt(apartmentSelect.value);
+                            if (selectedApartmentId === 0 || isNaN(selectedApartmentId)) {
+                                e.preventDefault();
+                                alert('Please select an apartment unit before submitting.');
+                                apartmentSelect.focus();
+                                return false;
+                            }
+                            // Ensure MonthlyRent is set before submission
+                            if (selectedApartmentId > 0 && apartmentRents[selectedApartmentId] !== undefined) {
+                                const rentValue = apartmentRents[selectedApartmentId].toFixed(2);
+                                monthlyRentInput.value = rentValue;
+                                monthlyRentInput.removeAttribute('readonly'); // Remove readonly before submit to ensure value is sent
+                            }
+                        });
                     }
                 }
             });

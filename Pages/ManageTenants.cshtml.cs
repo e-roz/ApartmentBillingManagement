@@ -2,9 +2,12 @@ using Apartment.Data;
 using Apartment.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Globalization;
 using System.Linq;
 
 namespace Apartment.Pages
@@ -95,9 +98,58 @@ namespace Apartment.Pages
         {
             Tenant.ApartmentId = SelectedApartmentId > 0 ? SelectedApartmentId : null;
 
+            // First, validate and set UnitNumber/MonthlyRent from apartment BEFORE ModelState validation
+            if (!Tenant.ApartmentId.HasValue || Tenant.ApartmentId.Value == 0)
+            {
+                ModelState.AddModelError(nameof(SelectedApartmentId), "Please select an apartment unit.");
+                await PopulateApartmentOptionsForCreateAsync(null);
+                return Page();
+            }
+
+            // Get the apartment and set UnitNumber/MonthlyRent BEFORE ModelState validation
+            var assignedApartment = await _context.Apartments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == Tenant.ApartmentId.Value);
+
+            if (assignedApartment == null)
+            {
+                ModelState.AddModelError(nameof(SelectedApartmentId), "The selected apartment no longer exists.");
+                await PopulateApartmentOptionsForCreateAsync(Tenant.ApartmentId);
+                return Page();
+            }
+
+            if (assignedApartment.IsOccupied)
+            {
+                ModelState.AddModelError(nameof(SelectedApartmentId), "The selected apartment is already occupied.");
+                await PopulateApartmentOptionsForCreateAsync(Tenant.ApartmentId);
+                return Page();
+            }
+
+            // Set UnitNumber and MonthlyRent from the apartment
+            Tenant.UnitNumber = assignedApartment.UnitNumber;
+            Tenant.MonthlyRent = assignedApartment.MonthlyRent;
+
+            // Remove navigation properties and programmatically-set fields from ModelState validation
+            // This prevents validation errors for fields we set ourselves
             ModelState.Remove(nameof(Tenant.Apartment));
             ModelState.Remove(nameof(Tenant.Bills));
-            ModelState.Remove(nameof(Tenant.UnitNumber)); // UnitNumber will be set from apartment
+            ModelState.Remove(nameof(Tenant.CreatedAt));
+            
+            // Explicitly remove and clear any errors for UnitNumber and MonthlyRent
+            var unitNumberKey = nameof(Tenant.UnitNumber);
+            var monthlyRentKey = nameof(Tenant.MonthlyRent);
+            
+            if (ModelState.ContainsKey(unitNumberKey))
+            {
+                ModelState[unitNumberKey]!.Errors.Clear();
+                ModelState.Remove(unitNumberKey);
+            }
+            
+            if (ModelState.ContainsKey(monthlyRentKey))
+            {
+                ModelState[monthlyRentKey]!.Errors.Clear();
+                ModelState.Remove(monthlyRentKey);
+            }
 
             if (!ModelState.IsValid)
             {
@@ -109,41 +161,13 @@ namespace Apartment.Pages
 
             try
             {
-                ApartmentModel? assignedApartment = null;
+                // Reload apartment within transaction to update IsOccupied
+                var apartmentToUpdate = await _context.Apartments
+                    .FirstOrDefaultAsync(a => a.Id == Tenant.ApartmentId.Value);
 
-                if (Tenant.ApartmentId.HasValue)
+                if (apartmentToUpdate != null)
                 {
-                    assignedApartment = await _context.Apartments
-                        .FirstOrDefaultAsync(a => a.Id == Tenant.ApartmentId.Value);
-
-                    if (assignedApartment == null)
-                    {
-                        ModelState.AddModelError(nameof(SelectedApartmentId), "The selected apartment no longer exists.");
-                        await transaction.RollbackAsync();
-                        await PopulateApartmentOptionsForCreateAsync(Tenant.ApartmentId);
-                        return Page();
-                    }
-
-                    if (assignedApartment.IsOccupied)
-                    {
-                        ModelState.AddModelError(nameof(SelectedApartmentId), "The selected apartment is already occupied.");
-                        await transaction.RollbackAsync();
-                        await PopulateApartmentOptionsForCreateAsync(Tenant.ApartmentId);
-                        return Page();
-                    }
-
-                    // Set UnitNumber and MonthlyRent from the apartment
-                    Tenant.UnitNumber = assignedApartment.UnitNumber;
-                    Tenant.MonthlyRent = assignedApartment.MonthlyRent;
-                    assignedApartment.IsOccupied = true;
-                }
-                else
-                {
-                    // Require apartment selection
-                    ModelState.AddModelError(nameof(SelectedApartmentId), "Please select an apartment unit.");
-                    await transaction.RollbackAsync();
-                    await PopulateApartmentOptionsForCreateAsync(null);
-                    return Page();
+                    apartmentToUpdate.IsOccupied = true;
                 }
 
                 _context.Tenants.Add(Tenant);
@@ -153,10 +177,10 @@ namespace Apartment.Pages
                 SuccessMessage = "Tenant created successfully.";
                 return RedirectToPage();
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                ErrorMessage = "An error occurred while creating the tenant. Please try again.";
+                ErrorMessage = $"An error occurred while creating the tenant: {ex.Message}";
                 await PopulateApartmentOptionsForCreateAsync(Tenant.ApartmentId);
                 return Page();
             }
@@ -189,9 +213,12 @@ namespace Apartment.Pages
         {
             Tenant.ApartmentId = SelectedApartmentId > 0 ? SelectedApartmentId : null;
 
+            // Remove navigation properties and fields that will be set programmatically
             ModelState.Remove(nameof(Tenant.Apartment));
             ModelState.Remove(nameof(Tenant.Bills));
             ModelState.Remove(nameof(Tenant.UnitNumber)); // UnitNumber will be set from apartment
+            ModelState.Remove(nameof(Tenant.MonthlyRent)); // MonthlyRent will be set from apartment
+            ModelState.Remove(nameof(Tenant.CreatedAt)); // CreatedAt should not be changed
 
             if (!ModelState.IsValid)
             {

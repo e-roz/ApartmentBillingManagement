@@ -40,9 +40,8 @@ namespace Apartment.Model
         [ForeignKey(nameof(ApartmentId))]
         public ApartmentModel? Apartment { get; set; }
 
-        [Required]
         [StringLength(10)]
-        public string UnitNumber { get; set; }
+        public string UnitNumber { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
