@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace Apartment.Model
 {
@@ -34,6 +35,11 @@ namespace Apartment.Model
 
         public LeaseStatus Status { get; set; } = LeaseStatus.Prospective;
 
+        public int? ApartmentId { get; set; }
+
+        [ForeignKey(nameof(ApartmentId))]
+        public ApartmentModel? Apartment { get; set; }
+
         [Required]
         [StringLength(10)]
         public string UnitNumber { get; set; }
@@ -42,6 +48,8 @@ namespace Apartment.Model
 
 
         public User? UserAccount { get; set; }
+
+        public ICollection<Bill> Bills { get; set; } = new List<Bill>();
 
     }
 }

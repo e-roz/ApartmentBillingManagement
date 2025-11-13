@@ -1,4 +1,788 @@
 ﻿@page
 @model Apartment.Pages.ManageTenantsModel
 @{
+    // Determine which view to show based on the handler parameter
+    var handler = Request.Query["handler"].ToString().ToLower();
+    var hasId = !string.IsNullOrEmpty(Request.Query["id"].ToString());
+    
+    // Determine view based on handler
+    var isDetails = handler == "details" || (Model.TenantDetails != null && hasId && Model.Tenant.Id == 0);
+    var isCreate = handler == "create";
+    var isEdit = handler == "edit";
+    var isDelete = handler == "delete" || (Model.TenantDetails != null && hasId && handler == "" && Model.Tenant.Id == 0);
+    
+    // Default to Index if no specific handler
+    if (string.IsNullOrEmpty(handler) && !isDetails && !isDelete)
+    {
+        ViewData["Title"] = "Tenant Management";
+    }
+}
+
+@* INDEX VIEW - Tenant List *@
+@if (!isDetails && !isCreate && !isEdit && !isDelete)
+{
+    <div class="container mt-5">
+        <!-- Modern Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                    <h1 class="display-5 fw-bold text-primary mb-0">
+                        <i class="bi bi-people me-3"></i>Tenant Management
+                    </h1>
+                    <a asp-page="/ManageTenants" asp-page-handler="Create" class="btn btn-success btn-lg shadow-sm">
+                        <i class="bi bi-plus-circle me-2"></i>Add New Tenant
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                @Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Modern Table Card -->
+        <div class="card shadow-lg rounded-4 border-0">
+            <div class="card-header bg-light border-0 py-3">
+                <h5 class="card-title mb-0 text-dark fw-semibold">
+                    <i class="bi bi-list-ul me-2"></i>Tenants (@Model.Tenants.Count)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Tenants.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th class="fw-semibold">Full Name</th>
+                                    <th class="fw-semibold">Email</th>
+                                    <th class="fw-semibold">Phone</th>
+                                    <th class="fw-semibold">Monthly Rent</th>
+                                    <th class="fw-semibold">Status</th>
+                                    <th class="fw-semibold">Assigned Unit</th>
+                                    <th class="fw-semibold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tenant in Model.Tenants)
+                                {
+                                    <tr>
+                                        <td class="fw-medium">@tenant.FullName</td>
+                                        <td>@tenant.PrimaryEmail</td>
+                                        <td>@tenant.PrimaryPhone</td>
+                                        <td class="text-success fw-semibold">$@tenant.MonthlyRent.ToString("N2")</td>
+                                        <td>
+                                            <span class="badge bg-info fs-6">@tenant.LeaseStatus</span>
+                                        </td>
+                                        <td>
+                                            @if (tenant.AssignedUnit == "Unassigned")
+                                            {
+                                                <span class="badge bg-secondary fs-6">@tenant.AssignedUnit</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-primary fs-6">@tenant.AssignedUnit</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group" role="group">
+                                                <a asp-page="/ManageTenants" asp-page-handler="Details" asp-route-id="@tenant.Id" class="btn btn-outline-info btn-sm" title="View Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a asp-page="/ManageTenants" asp-page-handler="Edit" asp-route-id="@tenant.Id" class="btn btn-outline-primary btn-sm" title="Edit">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <a asp-page="/ManageTenants" asp-page-handler="Delete" asp-route-id="@tenant.Id" class="btn btn-outline-danger btn-sm" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-3 mb-0">No tenants found. <a asp-page="/ManageTenants" asp-page-handler="Create">Add your first tenant</a>.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        </script>
+    }
+}
+
+@* DETAILS VIEW - Single Tenant View *@
+@if (isDetails && Model.TenantDetails != null)
+{
+    ViewData["Title"] = "Tenant Details";
+    
+    <div class="container mt-5">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="display-5 fw-bold text-primary mb-0">
+                        <i class="bi bi-person-circle me-3"></i>Tenant Details
+                    </h1>
+                    <div class="d-flex gap-2">
+                        <a asp-page="/ManageTenants" asp-page-handler="Edit" asp-route-id="@Model.TenantDetails.Id" class="btn btn-primary">
+                            <i class="bi bi-pencil-square me-2"></i>Edit
+                        </a>
+                        <a asp-page="/ManageTenants" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Personal Information Card -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-lg border-0 h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person me-2"></i>Personal Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4 fw-semibold">Full Name</dt>
+                            <dd class="col-sm-8">@Model.TenantDetails.FullName</dd>
+
+                            <dt class="col-sm-4 fw-semibold">Email</dt>
+                            <dd class="col-sm-8">@Model.TenantDetails.PrimaryEmail</dd>
+
+                            <dt class="col-sm-4 fw-semibold">Phone</dt>
+                            <dd class="col-sm-8">@Model.TenantDetails.PrimaryPhone</dd>
+
+                            <dt class="col-sm-4 fw-semibold">Status</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-info fs-6">@Model.TenantDetails.Status</span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lease & Unit Information Card -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-lg border-0 h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2"></i>Lease & Unit Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4 fw-semibold">Monthly Rent</dt>
+                            <dd class="col-sm-8 text-success fw-semibold">$@Model.TenantDetails.MonthlyRent.ToString("N2")</dd>
+
+                            <dt class="col-sm-4 fw-semibold">Lease Start</dt>
+                            <dd class="col-sm-8">@Model.TenantDetails.LeaseStartDate.ToString("MMM dd, yyyy")</dd>
+
+                            <dt class="col-sm-4 fw-semibold">Lease End</dt>
+                            <dd class="col-sm-8">@Model.TenantDetails.LeaseEndDate.ToString("MMM dd, yyyy")</dd>
+
+                            <dt class="col-sm-4 fw-semibold">Unit Number</dt>
+                            <dd class="col-sm-8">@Model.TenantDetails.UnitNumber</dd>
+
+                            <dt class="col-sm-4 fw-semibold">Assigned Apartment</dt>
+                            <dd class="col-sm-8">
+                                @if (Model.TenantDetails.Apartment != null)
+                                {
+                                    <span class="badge bg-primary fs-6">@Model.TenantDetails.Apartment.UnitNumber</span>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            Status: 
+                                            @if (Model.TenantDetails.Apartment.IsOccupied)
+                                            {
+                                                <span class="badge bg-success">Occupied</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Vacant</span>
+                                            }
+                                        </small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary fs-6">Unassigned</span>
+                                }
+                            </dd>
+
+                            <dt class="col-sm-4 fw-semibold">Created At</dt>
+                            <dd class="col-sm-8">@Model.TenantDetails.CreatedAt.ToString("MMM dd, yyyy HH:mm")</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (isDetails)
+{
+    <div class="container mt-5">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>Tenant not found.
+        </div>
+    </div>
+}
+
+@* CREATE VIEW - Add New Tenant Form *@
+@if (isCreate)
+{
+    ViewData["Title"] = "Add New Tenant";
+    
+    <div class="container mt-5">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="display-5 fw-bold text-primary mb-0">
+                        <i class="bi bi-person-plus me-3"></i>Add New Tenant
+                    </h1>
+                    <a asp-page="/ManageTenants" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                @Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Form Card -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-plus me-2"></i>Tenant Information
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" asp-page-handler="Create">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                            <div class="row">
+                                <!-- Full Name -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.FullName" class="form-control" placeholder="Full Name" required />
+                                        <label asp-for="Tenant.FullName">
+                                            <i class="bi bi-person me-1"></i>Full Name
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.FullName" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Primary Email -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.PrimaryEmail" type="email" class="form-control" placeholder="Email" required />
+                                        <label asp-for="Tenant.PrimaryEmail">
+                                            <i class="bi bi-envelope me-1"></i>Email
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.PrimaryEmail" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Primary Phone -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.PrimaryPhone" class="form-control" placeholder="Phone" required />
+                                        <label asp-for="Tenant.PrimaryPhone">
+                                            <i class="bi bi-telephone me-1"></i>Phone
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.PrimaryPhone" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Monthly Rent -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.MonthlyRent" type="number" step="0.01" min="0" class="form-control" placeholder="Monthly Rent" readonly required />
+                                        <label asp-for="Tenant.MonthlyRent">
+                                            <i class="bi bi-currency-dollar me-1"></i>Monthly Rent
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Monthly rent will be automatically set when you select an apartment unit.</div>
+                                    <span asp-validation-for="Tenant.MonthlyRent" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Lease Start Date -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.LeaseStartDate" type="date" class="form-control" min="2025-01-01" required />
+                                        <label asp-for="Tenant.LeaseStartDate">
+                                            <i class="bi bi-calendar-event me-1"></i>Lease Start Date
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.LeaseStartDate" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Lease End Date -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.LeaseEndDate" type="date" class="form-control" min="2025-01-01" required />
+                                        <label asp-for="Tenant.LeaseEndDate">
+                                            <i class="bi bi-calendar-x me-1"></i>Lease End Date
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.LeaseEndDate" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="col-md-6 mb-4">
+                                    <label asp-for="Tenant.Status" class="form-label fw-semibold">
+                                        <i class="bi bi-info-circle me-1"></i>Lease Status
+                                    </label>
+                                    <select asp-for="Tenant.Status" class="form-select" asp-items="Html.GetEnumSelectList<Apartment.Model.LeaseStatus>()" required>
+                                    </select>
+                                    <span asp-validation-for="Tenant.Status" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Apartment Assignment -->
+                                <div class="col-md-12 mb-4">
+                                    <label asp-for="SelectedApartmentId" class="form-label fw-semibold">
+                                        <i class="bi bi-building me-1"></i>Assign Apartment Unit <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="SelectedApartmentId" asp-items="Model.ApartmentOptions" class="form-select" required>
+                                    </select>
+                                    <div class="form-text">Select an apartment unit. The monthly rent will be automatically set based on the selected apartment.</div>
+                                    <span asp-validation-for="SelectedApartmentId" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <a asp-page="/ManageTenants" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-2"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-2"></i>Create Tenant
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+        <script>
+            // Apartment rents data from server
+            const apartmentRents = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApartmentRents));
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                const leaseStartDate = document.querySelector('input[name="Tenant.LeaseStartDate"]');
+                const leaseEndDate = document.querySelector('input[name="Tenant.LeaseEndDate"]');
+                const apartmentSelect = document.querySelector('select[name="SelectedApartmentId"]');
+                const monthlyRentInput = document.querySelector('input[name="Tenant.MonthlyRent"]');
+                
+                // Ensure Lease End Date is always after Lease Start Date
+                if (leaseStartDate && leaseEndDate) {
+                    // Update min date for end date when start date changes
+                    leaseStartDate.addEventListener('change', function() {
+                        if (this.value) {
+                            leaseEndDate.min = this.value;
+                            // If end date is before start date, clear it
+                            if (leaseEndDate.value && leaseEndDate.value < this.value) {
+                                leaseEndDate.value = '';
+                            }
+                        } else {
+                            leaseEndDate.min = '2025-01-01';
+                        }
+                    });
+                    
+                    // Set initial min date for end date if start date has a value
+                    if (leaseStartDate.value) {
+                        leaseEndDate.min = leaseStartDate.value;
+                    }
+                }
+                
+                // Auto-populate Monthly Rent when apartment is selected
+                if (apartmentSelect && monthlyRentInput) {
+                    apartmentSelect.addEventListener('change', function() {
+                        const apartmentId = parseInt(this.value);
+                        if (apartmentId > 0 && apartmentRents[apartmentId] !== undefined) {
+                            monthlyRentInput.value = apartmentRents[apartmentId].toFixed(2);
+                        } else {
+                            monthlyRentInput.value = '0.00';
+                        }
+                    });
+                    
+                    // Set initial monthly rent if apartment is already selected
+                    if (apartmentSelect.value) {
+                        const apartmentId = parseInt(apartmentSelect.value);
+                        if (apartmentId > 0 && apartmentRents[apartmentId] !== undefined) {
+                            monthlyRentInput.value = apartmentRents[apartmentId].toFixed(2);
+                        }
+                    }
+                }
+            });
+        </script>
+    }
+}
+
+@* EDIT VIEW - Update Tenant Form *@
+@if (isEdit)
+{
+    ViewData["Title"] = "Edit Tenant";
+    
+    <div class="container mt-5">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="display-5 fw-bold text-primary mb-0">
+                        <i class="bi bi-pencil-square me-3"></i>Edit Tenant
+                    </h1>
+                    <a asp-page="/ManageTenants" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                @Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Form Card -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2"></i>Tenant Information
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" asp-page-handler="Edit">
+                            <input type="hidden" asp-for="Tenant.Id" />
+                            
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                            <div class="row">
+                                <!-- Full Name -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.FullName" class="form-control" placeholder="Full Name" required />
+                                        <label asp-for="Tenant.FullName">
+                                            <i class="bi bi-person me-1"></i>Full Name
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.FullName" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Primary Email -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.PrimaryEmail" type="email" class="form-control" placeholder="Email" required />
+                                        <label asp-for="Tenant.PrimaryEmail">
+                                            <i class="bi bi-envelope me-1"></i>Email
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.PrimaryEmail" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Primary Phone -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.PrimaryPhone" class="form-control" placeholder="Phone" required />
+                                        <label asp-for="Tenant.PrimaryPhone">
+                                            <i class="bi bi-telephone me-1"></i>Phone
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.PrimaryPhone" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Monthly Rent -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.MonthlyRent" type="number" step="0.01" min="0" class="form-control" placeholder="Monthly Rent" readonly required />
+                                        <label asp-for="Tenant.MonthlyRent">
+                                            <i class="bi bi-currency-dollar me-1"></i>Monthly Rent
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Monthly rent will be automatically set when you select an apartment unit.</div>
+                                    <span asp-validation-for="Tenant.MonthlyRent" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Lease Start Date -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.LeaseStartDate" type="date" class="form-control" min="2025-01-01" required />
+                                        <label asp-for="Tenant.LeaseStartDate">
+                                            <i class="bi bi-calendar-event me-1"></i>Lease Start Date
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.LeaseStartDate" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Lease End Date -->
+                                <div class="col-md-6 mb-4">
+                                    <div class="form-floating">
+                                        <input asp-for="Tenant.LeaseEndDate" type="date" class="form-control" min="2025-01-01" required />
+                                        <label asp-for="Tenant.LeaseEndDate">
+                                            <i class="bi bi-calendar-x me-1"></i>Lease End Date
+                                        </label>
+                                    </div>
+                                    <span asp-validation-for="Tenant.LeaseEndDate" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="col-md-6 mb-4">
+                                    <label asp-for="Tenant.Status" class="form-label fw-semibold">
+                                        <i class="bi bi-info-circle me-1"></i>Lease Status
+                                    </label>
+                                    <select asp-for="Tenant.Status" class="form-select" asp-items="Html.GetEnumSelectList<Apartment.Model.LeaseStatus>()" required>
+                                    </select>
+                                    <span asp-validation-for="Tenant.Status" class="text-danger small"></span>
+                                </div>
+
+                                <!-- Apartment Assignment -->
+                                <div class="col-md-12 mb-4">
+                                    <label asp-for="SelectedApartmentId" class="form-label fw-semibold">
+                                        <i class="bi bi-building me-1"></i>Assign Apartment Unit
+                                    </label>
+                                    <select asp-for="SelectedApartmentId" asp-items="Model.ApartmentOptions" class="form-select">
+                                    </select>
+                                    <div class="form-text">Select an apartment unit or choose "Move Out" to unassign the tenant. Monthly rent will update automatically when you select a unit.</div>
+                                    <span asp-validation-for="SelectedApartmentId" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <a asp-page="/ManageTenants" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-2"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-2"></i>Update Tenant
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+        <script>
+            // Apartment rents data from server
+            const apartmentRents = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApartmentRents));
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                const leaseStartDate = document.querySelector('input[name="Tenant.LeaseStartDate"]');
+                const leaseEndDate = document.querySelector('input[name="Tenant.LeaseEndDate"]');
+                const apartmentSelect = document.querySelector('select[name="SelectedApartmentId"]');
+                const monthlyRentInput = document.querySelector('input[name="Tenant.MonthlyRent"]');
+                
+                // Ensure Lease End Date is always after Lease Start Date
+                if (leaseStartDate && leaseEndDate) {
+                    // Update min date for end date when start date changes
+                    leaseStartDate.addEventListener('change', function() {
+                        if (this.value) {
+                            leaseEndDate.min = this.value;
+                            // If end date is before start date, clear it
+                            if (leaseEndDate.value && leaseEndDate.value < this.value) {
+                                leaseEndDate.value = '';
+                            }
+                        } else {
+                            leaseEndDate.min = '2025-01-01';
+                        }
+                    });
+                    
+                    // Set initial min date for end date if start date has a value
+                    if (leaseStartDate.value) {
+                        leaseEndDate.min = leaseStartDate.value;
+                    }
+                }
+                
+                // Auto-populate Monthly Rent when apartment is selected
+                if (apartmentSelect && monthlyRentInput) {
+                    apartmentSelect.addEventListener('change', function() {
+                        const apartmentId = parseInt(this.value);
+                        if (apartmentId > 0 && apartmentRents[apartmentId] !== undefined) {
+                            monthlyRentInput.value = apartmentRents[apartmentId].toFixed(2);
+                        } else {
+                            monthlyRentInput.value = '0.00';
+                        }
+                    });
+                    
+                    // Set initial monthly rent if apartment is already selected
+                    if (apartmentSelect.value) {
+                        const apartmentId = parseInt(apartmentSelect.value);
+                        if (apartmentId > 0 && apartmentRents[apartmentId] !== undefined) {
+                            monthlyRentInput.value = apartmentRents[apartmentId].toFixed(2);
+                        }
+                    }
+                }
+            });
+        </script>
+    }
+}
+
+@* DELETE VIEW - Confirmation & Integrity Feedback *@
+@if (isDelete)
+{
+    ViewData["Title"] = "Delete Tenant";
+    
+    <div class="container mt-5">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="display-5 fw-bold text-danger mb-0">
+                        <i class="bi bi-exclamation-triangle me-3"></i>Delete Tenant
+                    </h1>
+                    <a asp-page="/ManageTenants" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.TenantDetails != null)
+        {
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-trash me-2"></i>Confirm Deletion
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                                <h4 class="mt-3">Are you sure you want to delete this tenant?</h4>
+                                <p class="text-muted">This action cannot be undone. Please ensure all bills are marked as paid before deleting.</p>
+                            </div>
+
+                            <!-- Tenant Information Display -->
+                            <div class="alert alert-warning">
+                                <h6 class="fw-semibold mb-3">
+                                    <i class="bi bi-person me-2"></i>Tenant Information
+                                </h6>
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4 fw-semibold">Full Name</dt>
+                                    <dd class="col-sm-8">@Model.TenantDetails.FullName</dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Email</dt>
+                                    <dd class="col-sm-8">@Model.TenantDetails.PrimaryEmail</dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Assigned Unit</dt>
+                                    <dd class="col-sm-8">
+                                        @if (Model.TenantDetails.Apartment != null)
+                                        {
+                                            <span class="badge bg-primary fs-6">@Model.TenantDetails.Apartment.UnitNumber</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary fs-6">Unassigned</span>
+                                        }
+                                    </dd>
+                                </dl>
+                            </div>
+
+                            <!-- Warning Message -->
+                            <div class="alert alert-danger">
+                                <i class="bi bi-shield-exclamation me-2"></i>
+                                <strong>Warning:</strong> If this tenant has unpaid bills, the deletion will be blocked automatically. 
+                                The apartment unit will be marked as vacant upon successful deletion.
+                            </div>
+
+                            <!-- Delete Form -->
+                            <form method="post" asp-page-handler="Delete" asp-route-id="@Model.TenantDetails.Id">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a asp-page="/ManageTenants" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle me-2"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash me-2"></i>Yes, Delete Tenant
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>Tenant not found.
+            </div>
+        }
+    </div>
 }
