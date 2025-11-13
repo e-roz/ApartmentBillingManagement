@@ -6,4 +6,12 @@
         Manager = 2,
         User = 3
     }
+
+    public enum LeaseStatus
+    {
+        Prospective ,
+        Active,
+        Notice,
+        Former
+    }
 }

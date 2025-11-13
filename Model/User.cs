@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 namespace Apartment.Model
 {
@@ -8,7 +9,7 @@ namespace Apartment.Model
     {
         [Key]
         public int Id { get; set; }
-        
+
         [Required]
         [StringLength(50)]
         public string Username { get; set; }
@@ -23,9 +24,18 @@ namespace Apartment.Model
 
         [Required]
         public string Email { get; set; }
-         
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
         public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
+
+
+
+        public int? TenantID { get; set; }
+
+        [ForeignKey("TenantID")]
+        public Tenant? Tenant { get; set; }
+
     }
+
 }

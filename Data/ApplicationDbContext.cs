@@ -14,6 +14,9 @@ namespace Apartment.Data
         // User Table
         public DbSet<User> Users { get; set; }
 
+        // Tenant Table
+        public DbSet<Tenant> Tenants { get; set; }
+
         // Core Application Tables. (Apartment, Bill, Bill Period)
         public DbSet<ApartmentModel> Apartments { get; set; } = null!;
         public DbSet<Bill> Bills { get; set; } = null!;
