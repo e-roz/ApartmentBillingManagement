@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace Apartment.Pages
 {
@@ -47,10 +48,17 @@ namespace Apartment.Pages
         public class BillingInput
         {
             [BindProperty, Required]
-            public int year { get; set; } = DateTime.Now.Year;
+            public int Year { get; set; } = DateTime.Now.Year;
+
             [BindProperty, Required]
             [Range(1, 12, ErrorMessage = "Month must be between 1 and 12.")]
             public int Month { get; set; } = DateTime.Now.Month;
+
+            public List<int> SelectedApartmentIds { get; set; } = new List<int>();
+
+            [BindProperty, Required]
+            [DataType(DataType.Date)]
+            public DateTime? DueDate { get; set; }
         }
 
         private async Task LoadOccupiedApartmentsAsync()
@@ -71,10 +79,12 @@ namespace Apartment.Pages
         public async Task OnGetAsync()
         {
             DateTime nextMonth = DateTime.Now.AddMonths(1);
-            Input.year = nextMonth.Year;
+            Input.Year = nextMonth.Year;
             Input.Month = nextMonth.Month;
+            Input.DueDate = new DateTime(nextMonth.Year, nextMonth.Month, 5);
 
             await LoadOccupiedApartmentsAsync();
+            Input.SelectedApartmentIds = OccupiedApartments.Select(a => a.Id).ToList();
         }
 
 
@@ -86,7 +96,23 @@ namespace Apartment.Pages
                 return Page();
             }
             // define muna target billing and period brad 
-            DateTime targetDate = new DateTime(Input.year, Input.Month, 1);
+            var selectedApartmentIds = (Input.SelectedApartmentIds ?? new List<int>()).Where(id => id > 0).Distinct().ToList();
+
+            if (!selectedApartmentIds.Any())
+            {
+                ModelState.AddModelError("Input.SelectedApartmentIds", "Please select at least one occupied apartment for billing.");
+                await LoadOccupiedApartmentsAsync();
+                return Page();
+            }
+
+            if (!Input.DueDate.HasValue)
+            {
+                ModelState.AddModelError("Input.DueDate", "Please choose a due date for the generated bills.");
+                await LoadOccupiedApartmentsAsync();
+                return Page();
+            }
+
+            DateTime targetDate = new DateTime(Input.Year, Input.Month, 1);
             string periodKey = targetDate.ToString("yyyy-MM");
             string monthName = targetDate.ToString("MMMM"); // Full month name
 
@@ -111,7 +137,7 @@ namespace Apartment.Pages
                         AlreadyExists = true,
                         TotalAmountBilled = 0
                     };
-                    ModelState.AddModelError(string.Empty, $"Bills for {monthName} {Input.year} have already been generated and exist in the system.");
+                    ModelState.AddModelError(string.Empty, $"Bills for {monthName} {Input.Year} have already been generated and exist in the system.");
                     await LoadOccupiedApartmentsAsync();
                     return Page();
                 }
@@ -125,7 +151,7 @@ namespace Apartment.Pages
                 {
                     PeriodKey = periodKey,
                     MonthName = monthName,
-                    Year = Input.year
+                    Year = Input.Year
                 };
                 dbData.BillingPeriods.Add(billingPeriod);
                 await dbData.SaveChangesAsync();
@@ -138,12 +164,18 @@ namespace Apartment.Pages
             // find all occupied apartments with a valid tenantId
             var occupiedApartments = await dbData.Apartments
                 .Include(a => a.Tenant)
-                .Where(a => a.IsOccupied == true && a.TenantId.HasValue)
+                .Where(a => a.IsOccupied == true && a.TenantId.HasValue && selectedApartmentIds.Contains(a.Id))
                 .ToListAsync();
 
+            if (!occupiedApartments.Any())
+            {
+                ModelState.AddModelError("Input.SelectedApartmentIds", "No occupied apartments matched the selected units. Please review your selection.");
+                await LoadOccupiedApartmentsAsync();
+                return Page();
+            }
 
             var billsCreate = new List<Bill>();
-            var dueDate = new DateTime(Input.year, Input.Month, 5); // due date on the 5th of the month
+            var dueDate = Input.DueDate.Value;
 
             //Generate bills
 
@@ -180,7 +212,7 @@ namespace Apartment.Pages
                 TotalAmountBilled = billsCreate.Sum(b => b.AmountDue)
             };
 
-            SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {Input.year}. Total amount billed: {Summary.TotalAmountBilled:C}.";
+            SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {Input.Year}. Total amount billed: {Summary.TotalAmountBilled:C}.";
 
             await LoadOccupiedApartmentsAsync();
             return Page();
