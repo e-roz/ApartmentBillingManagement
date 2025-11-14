@@ -312,8 +312,6 @@ else if (isDetails)
                     </div>
                     <div class="card-body p-4">
                         <form method="post" asp-page-handler="Create">
-                            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
-
                             <div class="row">
                                 <!-- Full Name -->
                                 <div class="col-md-6 mb-4">
@@ -552,8 +550,6 @@ else if (isDetails)
                     <div class="card-body p-4">
                         <form method="post" asp-page-handler="Edit">
                             <input type="hidden" asp-for="Tenant.Id" />
-                            
-                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                             <div class="row">
                                 <!-- Full Name -->
