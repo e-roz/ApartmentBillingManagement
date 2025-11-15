@@ -23,14 +23,6 @@ namespace Apartment.Model
         [Display(Name = "Is Occupied")]
         public bool IsOccupied { get; set; }
 
-
-
-        // Foreign Key to the User (Tenant) who occupies this apartment
-        public int? TenantId { get; set; }
-
-        [ForeignKey("TenantId")]
-        public User? Tenant { get; set; }
-
         public ICollection<Bill> Bills { get; set; } = new List<Bill>();
     }
 }

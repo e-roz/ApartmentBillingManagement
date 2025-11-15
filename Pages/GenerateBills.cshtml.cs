@@ -63,17 +63,22 @@ namespace Apartment.Pages
 
         private async Task LoadOccupiedApartmentsAsync()
         {
-            OccupiedApartments = await dbData.Apartments
-                .Include(a => a.Tenant)
-                .Where(a => a.IsOccupied == true && a.TenantId.HasValue)
-                .Select(a => new ApartmentList
-                {
-                    Id = a.Id,
-                    UnitNumber = a.UnitNumber,
-                    TenantName = a.Tenant != null ? a.Tenant.Username : "No Tenant",
-                    MonthlyRent = a.MonthlyRent
-                })
+            // Get active tenants with apartments assigned
+            var activeTenants = await dbData.Tenants
+                .Include(t => t.Apartment)
+                .Where(t => t.Status == LeaseStatus.Active && t.ApartmentId.HasValue)
                 .ToListAsync();
+
+            OccupiedApartments = activeTenants
+                .Where(t => t.Apartment != null)
+                .Select(t => new ApartmentList
+                {
+                    Id = t.Apartment!.Id,
+                    UnitNumber = t.Apartment.UnitNumber,
+                    TenantName = t.FullName,
+                    MonthlyRent = t.MonthlyRent
+                })
+                .ToList();
         }
 
         public async Task OnGetAsync()
@@ -161,15 +166,27 @@ namespace Apartment.Pages
                 billingPeriod = existingPeriod;
             }
 
-            // find all occupied apartments with a valid tenantId
-            var occupiedApartments = await dbData.Apartments
-                .Include(a => a.Tenant)
-                .Where(a => a.IsOccupied == true && a.TenantId.HasValue && selectedApartmentIds.Contains(a.Id))
+            // Fetch Active Leases: Query for all Tenant records where Status is Active
+            var activeTenants = await dbData.Tenants
+                .Include(t => t.Apartment)
+                .Where(t => t.Status == LeaseStatus.Active && t.ApartmentId.HasValue)
                 .ToListAsync();
 
-            if (!occupiedApartments.Any())
+            if (!activeTenants.Any())
             {
-                ModelState.AddModelError("Input.SelectedApartmentIds", "No occupied apartments matched the selected units. Please review your selection.");
+                ModelState.AddModelError(string.Empty, "No active tenants found. Bills can only be generated for tenants with Active lease status.");
+                await LoadOccupiedApartmentsAsync();
+                return Page();
+            }
+
+            // Filter by selected apartment IDs if provided
+            var tenantsToBill = activeTenants
+                .Where(t => t.Apartment != null && selectedApartmentIds.Contains(t.Apartment.Id))
+                .ToList();
+
+            if (!tenantsToBill.Any())
+            {
+                ModelState.AddModelError("Input.SelectedApartmentIds", "No active tenants matched the selected units. Please review your selection.");
                 await LoadOccupiedApartmentsAsync();
                 return Page();
             }
@@ -177,19 +194,28 @@ namespace Apartment.Pages
             var billsCreate = new List<Bill>();
             var dueDate = Input.DueDate.Value;
 
-            //Generate bills
-
-            foreach (var apartment in occupiedApartments)
+            // Generate bills for each active tenant
+            foreach (var tenant in tenantsToBill)
             {
-                //safety check: skip if no tenant
-                if (apartment.TenantId.HasValue)
+                // Check if a Bill already exists for this TenantId and the current BillingPeriodId
+                bool billExists = await dbData.Bills
+                    .AnyAsync(b => b.TenantId == tenant.Id && b.BillingPeriodId == billingPeriod.Id);
+
+                if (billExists)
+                {
+                    // Skip this tenant if bill already exists
+                    continue;
+                }
+
+                // Create a new Bill entity
+                if (tenant.Apartment != null)
                 {
                     var newBill = new Bill
                     {
-                        ApartmentId = apartment.Id,
+                        ApartmentId = tenant.Apartment.Id,
+                        TenantId = tenant.Id,
                         BillingPeriodId = billingPeriod.Id,
-                        TenantId = apartment.TenantId.Value,
-                        AmountDue = apartment.MonthlyRent,
+                        AmountDue = tenant.MonthlyRent, // Use Tenant.MonthlyRent
                         AmountPaid = 0.00m,
                         DueDate = dueDate,
                         GeneratedDate = DateTime.Now,
@@ -207,7 +233,7 @@ namespace Apartment.Pages
             {
                 PeriodKey = periodKey,
                 BillsCreated = billsCreate.Count,
-                OccupiedUnits = occupiedApartments.Count,
+                OccupiedUnits = tenantsToBill.Count,
                 AlreadyExists = false,
                 TotalAmountBilled = billsCreate.Sum(b => b.AmountDue)
             };

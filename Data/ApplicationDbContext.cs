@@ -43,13 +43,12 @@ namespace Apartment.Data
                 .HasForeignKey(b => b.ApartmentId)
                 .OnDelete(DeleteBehavior.Cascade); // prevents deleting an apartment if it has associated bills
 
-            // Configure the one to many relationship between apartment and User (Tenant)
-            modelBuilder.Entity<ApartmentModel>()
-                .HasOne(a => a.Tenant)
-                .WithMany()
-                .HasForeignKey(a => a.TenantId)
-                .IsRequired(false) // tenantId is nullable
-                .OnDelete(DeleteBehavior.Restrict); // prevents deleting a user if they are assigned as a tenant to any apartment
+            // Configure the one to many relationship between Tenant and Bill
+            modelBuilder.Entity<Tenant>()
+                .HasMany(t => t.Bills)
+                .WithOne(b => b.Tenant)
+                .HasForeignKey(b => b.TenantId)
+                .OnDelete(DeleteBehavior.Restrict); // prevents deleting a tenant if they have associated bills
 
         }
 

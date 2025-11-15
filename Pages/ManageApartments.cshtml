@@ -161,10 +161,10 @@
 
                     <!-- Tenant Assignment -->
                     <div class="mb-4">
-                        <label asp-for="ApartmentInput.TenantId" class="form-label fw-semibold">
+                        <label asp-for="SelectedTenantId" class="form-label fw-semibold">
                             <i class="bi bi-person me-1"></i>Assign Tenant
                         </label>
-                        <select asp-for="ApartmentInput.TenantId" 
+                        <select asp-for="SelectedTenantId" 
                                 asp-items="Model.AvailableTenants" 
                                 class="form-select">
                         </select>
