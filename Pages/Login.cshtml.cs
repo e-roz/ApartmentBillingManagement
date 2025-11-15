@@ -85,7 +85,7 @@ namespace Apartment.Pages
 
 
 
-            // paghihiwalayain yung admim, user, and manager sa page na mapupuntahan nila
+            // Redirect users to their role-specific dashboards
 
             if (user.Role == UserRoles.Admin)
             {
@@ -93,11 +93,11 @@ namespace Apartment.Pages
             }
             else if (user.Role == UserRoles.Manager)
             {
-                return RedirectToPage("/DashBoard");
+                return RedirectToPage("/ManagerDashboard");
             }
             else
             {
-                return RedirectToPage("/DashBoard");
+                return RedirectToPage("/TenantDashboard");
             }
         }
     }

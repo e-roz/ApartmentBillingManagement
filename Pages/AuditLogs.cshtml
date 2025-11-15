@@ -1,4 +1,22 @@
 ﻿@page
 @model Apartment.Pages.AuditLogsModel
 @{
+    ViewData["Title"] = "Audit Logs";
+    Layout = "_Layout";
 }
+
+<div class="d-flex">
+    @await Html.PartialAsync("_AdminSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">Audit Logs</h1>
+        <p class="text-muted">View system activity and user actions.</p>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <p class="text-muted">Audit log functionality coming soon...</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,150 @@
+@page
+@model Apartment.Pages.ManagerDashboardModel
+@{
+    ViewData["Title"] = "Manager Dashboard";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-2">Manager Dashboard</h1>
+            <p class="text-muted">Welcome back, <strong>@Model.Username</strong>. Manage your apartment operations.</p>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small mb-2">Active Tenants</h6>
+                    <h2 class="mb-0">@Model.ActiveTenants</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small mb-2">Occupied Units</h6>
+                    <h2 class="mb-0">@Model.OccupiedUnits</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small mb-2">Pending Bills</h6>
+                    <h2 class="mb-0">@Model.PendingBills</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small mb-2">Total Revenue</h6>
+                    <h2 class="mb-0">@Model.TotalRevenue.ToString("C")</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Actions -->
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-person-lines-fill text-info" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Tenant Management</h3>
+                    <p class="card-text text-muted mb-4">
+                        Add, view, and update all tenant contact and status records.
+                    </p>
+                    <a asp-page="/ManageTenants" class="btn btn-info w-100 mt-3 rounded-pill">
+                        <i class="bi bi-person-lines-fill me-2"></i>Manage Tenants
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-house-door-fill text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Apartment Unit Management</h3>
+                    <p class="card-text text-muted mb-4">
+                        Set unit details, monthly rent, and assign tenants to units.
+                    </p>
+                    <a asp-page="/ManageApartments" class="btn btn-primary w-100 mt-3 rounded-pill">
+                        <i class="bi bi-house-door-fill me-2"></i>Manage Units
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-receipt text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Billing Cycle & Generation</h3>
+                    <p class="card-text text-muted mb-4">
+                        Start new billing periods and generate monthly invoices for all occupied units.
+                    </p>
+                    <a asp-page="/GenerateBills" class="btn btn-success w-100 mt-3 rounded-pill">
+                        <i class="bi bi-receipt me-2"></i>Generate Bills
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-cash-stack text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Payment Processing</h3>
+                    <p class="card-text text-muted mb-4">
+                        View outstanding balances and record payments made by tenants.
+                    </p>
+                    <a asp-page="/RecordPayments" class="btn btn-warning text-dark w-100 mt-3 rounded-pill">
+                        <i class="bi bi-cash-stack me-2"></i>Record Payments
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-graph-up text-secondary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Reporting & Summary</h3>
+                    <p class="card-text text-muted mb-4">
+                        Financial overview, tracking paid vs. outstanding amounts.
+                    </p>
+                    <a asp-page="/BillingSummary" class="btn btn-secondary w-100 mt-3 rounded-pill">
+                        <i class="bi bi-graph-up me-2"></i>View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
