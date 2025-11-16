@@ -16,12 +16,19 @@
     {
         ViewData["Title"] = "Tenant Management";
     }
+    Layout = "_Layout";
 }
+
+<div class="d-flex">
+    @await Html.PartialAsync("_ManagerSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
 
 @* INDEX VIEW - Tenant List *@
 @if (!isDetails && !isCreate && !isEdit && !isDelete)
 {
-    <div class="container mt-5">
+    <div class="container-fluid">
         <!-- Modern Header Section -->
         <div class="row mb-4">
             <div class="col-12">
@@ -148,7 +155,7 @@
 {
     ViewData["Title"] = "Tenant Details";
     
-    <div class="container mt-5">
+    <div class="container-fluid">
         <!-- Header Section -->
         <div class="row mb-4">
             <div class="col-12">
@@ -255,7 +262,7 @@
 }
 else if (isDetails)
 {
-    <div class="container mt-5">
+    <div class="container-fluid">
         <div class="alert alert-warning">
             <i class="bi bi-exclamation-triangle me-2"></i>Tenant not found.
         </div>
@@ -267,7 +274,7 @@ else if (isDetails)
 {
     ViewData["Title"] = "Add New Tenant";
     
-    <div class="container mt-5">
+    <div class="container-fluid">
         <!-- Header Section -->
         <div class="row mb-4">
             <div class="col-12">
@@ -504,7 +511,7 @@ else if (isDetails)
 {
     ViewData["Title"] = "Edit Tenant";
     
-    <div class="container mt-5">
+    <div class="container-fluid">
         <!-- Header Section -->
         <div class="row mb-4">
             <div class="col-12">
@@ -743,7 +750,7 @@ else if (isDetails)
 {
     ViewData["Title"] = "Delete Tenant";
     
-    <div class="container mt-5">
+    <div class="container-fluid">
         <!-- Header Section -->
         <div class="row mb-4">
             <div class="col-12">
@@ -832,3 +839,12 @@ else if (isDetails)
         }
     </div>
 }
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>

@@ -2,9 +2,15 @@
 @model Apartment.Pages.GenerateBillsModel
 @{
     ViewData["Title"] = "Generate Monthly Bills";
+    Layout = "_Layout";
 }
 
-<div class="container mt-5">
+<div class="d-flex">
+    @await Html.PartialAsync("_ManagerSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-12 text-center">
             <h1 class="display-4 fw-bold">Monthly Bill Generation</h1>
@@ -297,3 +303,13 @@
     </div>
     
 </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>

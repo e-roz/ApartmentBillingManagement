@@ -4,6 +4,7 @@ using Apartment.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Apartment.Pages
 {
@@ -32,14 +33,25 @@ namespace Apartment.Pages
         {
             if (!ModelState.IsValid)
             {
-                return Page();
+                // Collect validation errors and redirect to Login with register form shown
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value.Errors.Select(e => e.ErrorMessage))
+                    .ToList();
+                
+                if (errors.Any())
+                {
+                    ErrorMessage = string.Join(" ", errors);
+                }
+                
+                return RedirectToPage("/Login", new { show = "register" });
             }
 
             //Check if the username already exist
             if(await dbData.Users.AnyAsync(u => u.Username == Input.Username))
             {
-                ModelState.AddModelError("Input.Username", "This username is already taken");
-                return Page();
+                ErrorMessage = "This username is already taken";
+                return RedirectToPage("/Login", new { show = "register" });
             }
 
             //check if this is the very first user in users table
@@ -66,15 +78,17 @@ namespace Apartment.Pages
 
 
             TempData["Message"] = $"Registration successful! You can now log in. Your role is: {assignedRole}.";
-            return RedirectToPage();
+            return RedirectToPage("/Login", new { show = "register" });
 
 
 
         }
 
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
+            // Redirect to Login page with register form shown
+            return RedirectToPage("/Login", new { show = "register" });
         }
 
 

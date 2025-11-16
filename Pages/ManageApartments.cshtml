@@ -2,9 +2,15 @@
 @model Apartment.Pages.ManageApartmentsModel
 @{
     ViewData["Title"] = "Apartment Unit Management";
+    Layout = "_Layout";
 }
 
-<div class="container mt-5">
+<div class="d-flex">
+    @await Html.PartialAsync("_ManagerSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <div class="container-fluid">
     <!-- Modern Header Section -->
     <div class="row mb-4">
         <div class="col-12">
@@ -338,3 +344,13 @@
         }, 5000);
     </script>
 }
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>

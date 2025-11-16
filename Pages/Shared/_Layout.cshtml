@@ -39,26 +39,8 @@
         </div>
     </footer>
 
-    <!-- Logout Confirmation Modal -->
-    <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="logoutConfirmModalLabel">Confirm Sign Out</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-warning mb-0">
-                        Are you sure you want to log out? Any unsaved changes may be lost.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stay Logged In</button>
-                    <a href="/Logout" class="btn btn-danger text-white">Yes, Log Me Out</a>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Logout Confirmation Modal - Reusable Component -->
+    @await Html.PartialAsync("_LogoutConfirmationModal")
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
