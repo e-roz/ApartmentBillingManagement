@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Apartment.Model
 {
     // This model maps directly to the Users table in the database
-    [Index(nameof(Username), IsUnique = true)] // Ensure usernames are unique at the DB level
+    // Note: Username is NOT unique - it's for display purposes only
+    [Index(nameof(Email), IsUnique = true)] // Ensure emails are unique at the DB level (used for login)
     public class User
     {
         [Key]
@@ -17,13 +18,13 @@ namespace Apartment.Model
         // Stores the securely HASHED password (never plain text)
         [Required]
         [StringLength(255)]
-        public string HasedPassword { get; set; }
+        public string HasedPassword { get; set; } = string.Empty;
 
         // Uses the UserRole enum. Defaults to the lowest level (User)
         public UserRoles Role { get; set; } = UserRoles.User;
 
         [Required]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -33,7 +34,7 @@ namespace Apartment.Model
 
         public int? TenantID { get; set; }
 
-        [ForeignKey("TenantID")]
+        [ForeignKey(nameof(TenantID))]
         public Tenant? Tenant { get; set; }
 
     }

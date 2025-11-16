@@ -1,0 +1,93 @@
+@page
+@model Apartment.Pages.Tenant.TrackRequestsModel
+@{
+    ViewData["Title"] = "Track Requests";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_TenantSidebar")
+
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">Track Requests</h1>
+        <p class="text-muted mb-4">View the status of all your submitted maintenance requests.</p>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (Model.Requests.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Request ID</th>
+                                    <th>Date Submitted</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Date Completed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var request in Model.Requests)
+                                {
+                                    <tr>
+                                        <td>#@request.RequestId</td>
+                                        <td>@request.DateSubmitted.ToString("MM/dd/yyyy")</td>
+                                        <td>
+                                            <strong>@request.Title</strong><br />
+                                            <small class="text-muted">@(request.DescriptionSnippet.Length > 50 ? request.DescriptionSnippet.Substring(0, 50) + "..." : request.DescriptionSnippet)</small>
+                                        </td>
+                                        <td>
+                                            @if (request.Status == "Complete")
+                                            {
+                                                <span class="badge bg-success">Complete</span>
+                                            }
+                                            else if (request.Status == "In Progress")
+                                            {
+                                                <span class="badge bg-info">In Progress</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">New</span>
+                                            }
+                                        </td>
+                                        <td>@(request.DateCompleted?.ToString("MM/dd/yyyy") ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No maintenance requests found. <a asp-page="/Tenant/SubmitRequest" class="alert-link">Submit a new request</a> to get started.
+            </div>
+        }
+
+        <div class="mt-3">
+            <a asp-page="/Tenant/SubmitRequest" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Submit New Request
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>
+

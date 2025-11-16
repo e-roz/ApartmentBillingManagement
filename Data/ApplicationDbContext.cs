@@ -22,6 +22,9 @@ namespace Apartment.Data
         public DbSet<Bill> Bills { get; set; } = null!;
         public DbSet<BillingPeriod> BillingPeriods { get; set; } = null!;
 
+        // Tenant Link Table
+        public DbSet<TenantLink> TenantLinks { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -49,6 +52,11 @@ namespace Apartment.Data
                 .WithOne(b => b.Tenant)
                 .HasForeignKey(b => b.TenantId)
                 .OnDelete(DeleteBehavior.Restrict); // prevents deleting a tenant if they have associated bills
+
+            // Configure TenantLink Id as auto-incrementing identity column
+            modelBuilder.Entity<TenantLink>()
+                .Property(tl => tl.Id)
+                .ValueGeneratedOnAdd();
 
         }
 

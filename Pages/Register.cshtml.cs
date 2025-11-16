@@ -47,10 +47,10 @@ namespace Apartment.Pages
                 return RedirectToPage("/Login", new { show = "register" });
             }
 
-            //Check if the username already exist
-            if(await dbData.Users.AnyAsync(u => u.Username == Input.Username))
+            //Check if the email already exists
+            if(await dbData.Users.AnyAsync(u => u.Email == Input.Email))
             {
-                ErrorMessage = "This username is already taken";
+                ErrorMessage = "This email address is already registered";
                 return RedirectToPage("/Login", new { show = "register" });
             }
 
@@ -60,11 +60,11 @@ namespace Apartment.Pages
             UserRoles assignedRole = isFirstUser ? UserRoles.Admin : UserRoles.User;
 
 
-            //create user obj
+            //create user obj - Username is for display only, Email is the unique login identifier
             var newUser = new User
             {
-                Username = Input.Username,
-                Email = Input.Email,
+                Username = Input.Username, // Non-unique display name
+                Email = Input.Email, // Unique login identifier
                 // Hash muna password NO NO NO NO, before i store sa database. Tangina lagi nakakalimutan
                 HasedPassword = PasswordHasher.HashPassword(Input.Password),
                 Role = assignedRole,
@@ -77,7 +77,33 @@ namespace Apartment.Pages
             await dbData.SaveChangesAsync(); // -> saved in the database
 
 
-            TempData["Message"] = $"Registration successful! You can now log in. Your role is: {assignedRole}.";
+            // Find a pre-existing Tenant created by the manager using the registration email
+            var existingTenant = await dbData.Tenants
+                .FirstOrDefaultAsync(t => t.PrimaryEmail == Input.Email);
+
+            if(existingTenant != null)
+            {
+                // create tenantLink to synchronize the records
+                var tenantLink = new TenantLink
+                {
+                    // Id is NOT set - let the database auto-generate it
+                    UserId = newUser.Id.ToString(),
+                    ApartmentId = existingTenant.ApartmentId?.ToString() ?? string.Empty,
+                    LinkedDate = DateTime.UtcNow
+                };
+
+                dbData.TenantLinks.Add(tenantLink);
+                await dbData.SaveChangesAsync();
+
+                TempData["Message"] = $"Registration successful! You've been linked to tenant: {existingTenant.FullName}. Your role is: {assignedRole}.";
+
+
+            }
+            else
+            {
+                TempData["Message"] = $"Registration successful! You can now log in. Your role is: {assignedRole}.";
+            }
+
             return RedirectToPage("/Login", new { show = "register" });
 
 

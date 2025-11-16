@@ -1,0 +1,112 @@
+@using System.Security.Claims
+@{
+    var username = User.Identity?.Name ?? "Unknown User";
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+}
+
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <h4 class="text-white mb-0">TENANT PORTAL</h4>
+    </div>
+    
+    <div class="px-3 py-3 border-bottom border-white border-opacity-10">
+        <p class="text-white mb-1 small">Welcome, <strong>@username</strong></p>
+        <span class="badge bg-light text-dark">Resident</span>
+    </div>
+
+    <nav class="sidebar-nav px-2 py-3">
+        <a asp-page="/TenantDashboard" class="nav-link @(currentPage.Contains("TenantDashboard") ? "active" : "")">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+        </a>
+        
+        <div class="nav-section-header mt-3 mb-2 px-2">
+            <small class="text-uppercase text-white-50">Financials</small>
+        </div>
+        <a asp-page="/Tenant/ViewInvoices" class="nav-link @(currentPage.Contains("ViewInvoices") ? "active" : "")">
+            <i class="bi bi-receipt me-2"></i>View Invoices
+        </a>
+        <a asp-page="/Tenant/PaymentHistory" class="nav-link @(currentPage.Contains("PaymentHistory") ? "active" : "")">
+            <i class="bi bi-clock-history me-2"></i>Payment History
+        </a>
+        <a asp-page="/Tenant/MakePayment" class="nav-link @(currentPage.Contains("MakePayment") ? "active" : "")">
+            <i class="bi bi-credit-card me-2"></i>Make a Payment
+        </a>
+        
+        <div class="nav-section-header mt-3 mb-2 px-2">
+            <small class="text-uppercase text-white-50">Maintenance</small>
+        </div>
+        <a asp-page="/Tenant/SubmitRequest" class="nav-link @(currentPage.Contains("SubmitRequest") ? "active" : "")">
+            <i class="bi bi-plus-circle me-2"></i>Submit New Request
+        </a>
+        <a asp-page="/Tenant/TrackRequests" class="nav-link @(currentPage.Contains("TrackRequests") ? "active" : "")">
+            <i class="bi bi-list-check me-2"></i>Track Requests
+        </a>
+        
+        <div class="nav-section-header mt-3 mb-2 px-2">
+            <small class="text-uppercase text-white-50">Resources</small>
+        </div>
+        <a asp-page="/Tenant/Documents" class="nav-link @(currentPage.Contains("Documents") ? "active" : "")">
+            <i class="bi bi-file-earmark-text me-2"></i>Documents
+        </a>
+        <a asp-page="/Tenant/Messages" class="nav-link @(currentPage.Contains("Messages") ? "active" : "")">
+            <i class="bi bi-envelope me-2"></i>Messages
+        </a>
+        
+        <div class="nav-section-header mt-3 mb-2 px-2">
+            <small class="text-uppercase text-white-50">Account</small>
+        </div>
+        <a asp-page="/Tenant/Profile" class="nav-link @(currentPage.Contains("Profile") ? "active" : "")">
+            <i class="bi bi-person-gear me-2"></i>Profile & Settings
+        </a>
+        
+        <a href="#" class="nav-link mt-4" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
+            <i class="bi bi-box-arrow-right me-2"></i>Logout
+        </a>
+    </nav>
+</div>
+
+<style>
+    .sidebar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        min-height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        z-index: 1000;
+    }
+
+    .sidebar-brand {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-nav {
+        padding: 1rem 0;
+    }
+
+    .sidebar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        padding: 0.75rem 1rem;
+        margin: 0.25rem 0;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .sidebar-nav .nav-link:hover,
+    .sidebar-nav .nav-link.active {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .nav-section-header {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+</style>
+

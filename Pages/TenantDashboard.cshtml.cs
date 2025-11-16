@@ -19,7 +19,7 @@ namespace Apartment.Pages
         }
 
         public string Username { get; set; } = string.Empty;
-        public Tenant? TenantInfo { get; set; }
+        public Model.Tenant? TenantInfo { get; set; }
         public decimal OutstandingBalance { get; set; }
         public int PendingBills { get; set; }
         public decimal TotalPaid { get; set; }

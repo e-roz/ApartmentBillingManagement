@@ -26,11 +26,11 @@ namespace Apartment.Pages
         public IList<TenantListViewModel> Tenants { get; private set; } = new List<TenantListViewModel>();
 
         // Properties for Details
-        public Tenant? TenantDetails { get; private set; }
+        public Model.Tenant? TenantDetails { get; private set; }
 
         // Properties for Create/Edit
         [BindProperty]
-        public Tenant Tenant { get; set; } = new Tenant();
+        public Model.Tenant Tenant { get; set; } = new Model.Tenant();
 
         [BindProperty]
         public int SelectedApartmentId { get; set; }

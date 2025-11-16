@@ -1,0 +1,85 @@
+@page
+@model Apartment.Pages.Tenant.DocumentsModel
+@{
+    ViewData["Title"] = "Documents";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_TenantSidebar")
+
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">Documents</h1>
+        <p class="text-muted mb-4">Access your lease agreement and building policies.</p>
+
+        <div class="row g-4">
+            <!-- Lease Agreement -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="me-3" style="font-size: 2.5rem; color: #007bff;">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-0">Lease Agreement</h5>
+                                <small class="text-muted">Your personalized lease document</small>
+                            </div>
+                        </div>
+                        @if (Model.TenantInfo != null)
+                        {
+                            <p class="text-muted">
+                                <strong>Unit:</strong> @(Model.TenantInfo.UnitNumber ?? "Not Assigned")<br />
+                                <strong>Lease Period:</strong> @Model.TenantInfo.LeaseStartDate.ToString("MM/dd/yyyy") - @Model.TenantInfo.LeaseEndDate.ToString("MM/dd/yyyy")<br />
+                                <strong>Monthly Rent:</strong> @Model.TenantInfo.MonthlyRent.ToString("C")
+                            </p>
+                        }
+                        <button class="btn btn-primary" onclick="alert('In production, this would open or download your lease agreement PDF.')">
+                            <i class="bi bi-download me-2"></i>View Lease Agreement
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Building Policies -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="me-3" style="font-size: 2.5rem; color: #28a745;">
+                                <i class="bi bi-file-earmark-ruled"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-0">Building Policies</h5>
+                                <small class="text-muted">Rules, quiet hours, and guidelines</small>
+                            </div>
+                        </div>
+                        <p class="text-muted">
+                            Access general building rules, quiet hours, parking policies, pet policies, and community guidelines.
+                        </p>
+                        <button class="btn btn-primary" onclick="alert('In production, this would open the building policies document.')">
+                            <i class="bi bi-file-earmark-text me-2"></i>View Building Policies
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
+

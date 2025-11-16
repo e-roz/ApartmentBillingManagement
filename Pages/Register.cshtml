@@ -112,6 +112,7 @@
                                 <div class="row">
                                     <!-- Username Field -->
                                     <!-- Uses Input.Username property from your RegisterUser model -->
+                                    <!-- Note: Username is NOT unique - only for display purposes -->
                                     <div class="col-md-6 mb-3">
                                         <label for="Input_Username" class="form-label fw-semibold text-dark">
                                             <i class="bi bi-person me-1"></i>Username
@@ -126,11 +127,13 @@
 
                                     <!-- Email Field -->
                                     <!-- Uses Input.Email property from your RegisterUser model -->
+                                    <!-- Email is the unique identifier used for login -->
                                     <div class="col-md-6 mb-3">
                                         <label for="Input_Email" class="form-label fw-semibold text-dark">
                                             <i class="bi bi-envelope me-1"></i>Email Address
                                         </label>
                                         <input asp-for="Input.Email" 
+                                               type="email"
                                                class="form-control @(ViewData.ModelState["Input.Email"]?.Errors.Count > 0 ? "is-invalid" : "")" 
                                                placeholder="Enter your email"
                                                autocomplete="email" />

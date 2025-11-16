@@ -1,0 +1,132 @@
+@page
+@model Apartment.Pages.Tenant.MakePaymentModel
+@{
+    ViewData["Title"] = "Make a Payment";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_TenantSidebar")
+
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">Make a Payment</h1>
+        <p class="text-muted mb-4">Submit a payment for your outstanding balance.</p>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (Model.TenantInfo != null)
+        {
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Outstanding Balance</h5>
+                            <h2 class="text-danger mb-0">@Model.OutstandingBalance.ToString("C")</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.PendingBills.Any())
+            {
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Pending Bills</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Billing Period</th>
+                                        <th>Due Date</th>
+                                        <th>Amount Due</th>
+                                        <th>Amount Paid</th>
+                                        <th>Remaining</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var bill in Model.PendingBills)
+                                    {
+                                        <tr>
+                                            <td>@(bill.BillingPeriod != null ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}" : "N/A")</td>
+                                            <td>@bill.DueDate.ToString("MM/dd/yyyy")</td>
+                                            <td>@bill.AmountDue.ToString("C")</td>
+                                            <td>@bill.AmountPaid.ToString("C")</td>
+                                            <td class="text-danger"><strong>@((bill.AmountDue - bill.AmountPaid).ToString("C"))</strong></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Payment Form</h5>
+                    <form method="post">
+                        <div class="mb-3">
+                            <label asp-for="Input.BillId" class="form-label">Select Bill (Optional)</label>
+                            <select asp-for="Input.BillId" class="form-select">
+                                <option value="">Pay Total Outstanding Balance</option>
+                                @foreach (var bill in Model.PendingBills)
+                                {
+                                    <option value="@bill.Id">
+                                        @(bill.BillingPeriod != null ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}" : "N/A") - 
+                                        @((bill.AmountDue - bill.AmountPaid).ToString("C")) remaining
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Amount" class="form-label">Payment Amount</label>
+                            <input asp-for="Input.Amount" class="form-control" type="number" step="0.01" min="0.01" required />
+                            <span asp-validation-for="Input.Amount" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.PaymentMethod" class="form-label">Payment Method</label>
+                            <select asp-for="Input.PaymentMethod" class="form-select">
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Debit Card">Debit Card</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Note:</strong> This is a simulation. In a production environment, this would integrate with a payment gateway.
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-credit-card me-2"></i>Submit Payment
+                        </button>
+                        <a asp-page="/TenantDashboard" class="btn btn-secondary btn-lg ms-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No tenant profile found. Please contact the administrator.
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>
+

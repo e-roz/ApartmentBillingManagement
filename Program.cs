@@ -1,4 +1,5 @@
 using Apartment.Data;
+using Apartment.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 namespace Apartment
@@ -18,6 +19,8 @@ namespace Apartment
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
+            // Register TenantLinkingService
+            builder.Services.AddScoped<ITenantLinkingService, TenantLinkingService>();
 
             // Add Cookie Authentication Service
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

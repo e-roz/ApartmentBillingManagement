@@ -2,123 +2,128 @@
 @model Apartment.Pages.TenantDashboardModel
 @{
     ViewData["Title"] = "Tenant Dashboard";
+    Layout = "_Layout";
 }
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="h3 mb-2">Tenant Dashboard</h1>
-            <p class="text-muted">Welcome back, <strong>@Model.Username</strong>. View your account information and bills.</p>
-        </div>
-    </div>
+<div class="d-flex">
+    @await Html.PartialAsync("_TenantSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">Dashboard Overview</h1>
+        <p class="text-muted mb-4">Welcome back, <strong>@Model.Username</strong>. Here's your account summary.</p>
 
     @if (Model.TenantInfo != null)
     {
-        <!-- Tenant Information Card -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Your Information</h5>
-                        <p class="mb-1"><strong>Name:</strong> @Model.TenantInfo.FullName</p>
-                        <p class="mb-1"><strong>Email:</strong> @Model.TenantInfo.PrimaryEmail</p>
-                        <p class="mb-1"><strong>Phone:</strong> @Model.TenantInfo.PrimaryPhone</p>
-                        <p class="mb-0"><strong>Unit:</strong> @(Model.TenantInfo.UnitNumber ?? "Not Assigned")</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Lease Information</h5>
-                        <p class="mb-1"><strong>Status:</strong> <span class="badge bg-info">@Model.TenantInfo.Status</span></p>
-                        <p class="mb-1"><strong>Monthly Rent:</strong> @Model.TenantInfo.MonthlyRent.ToString("C")</p>
-                        <p class="mb-1"><strong>Lease Start:</strong> @Model.TenantInfo.LeaseStartDate.ToString("MM/dd/yyyy")</p>
-                        <p class="mb-0"><strong>Lease End:</strong> @Model.TenantInfo.LeaseEndDate.ToString("MM/dd/yyyy")</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Stats -->
+        <!-- Metric Cards -->
         <div class="row g-4 mb-5">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
+            <!-- Current Balance Due - Most Prominent -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #dc3545 !important;">
                     <div class="card-body">
-                        <h6 class="text-muted text-uppercase small mb-2">Outstanding Balance</h6>
-                        <h2 class="mb-0 text-danger">@Model.OutstandingBalance.ToString("C")</h2>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase small mb-2">Current Balance Due</h6>
+                                <h2 class="mb-0 @(Model.OutstandingBalance > 0 && Model.RecentBills != null && Model.RecentBills.Any(b => b.DueDate < DateTime.Now && !b.IsPaid) ? "text-danger" : "text-dark")" style="font-size: 2rem; font-weight: 700;">
+                                    @Model.OutstandingBalance.ToString("C")
+                                </h2>
+                                @if (Model.OutstandingBalance > 0 && Model.RecentBills != null && Model.RecentBills.Any(b => b.DueDate < DateTime.Now && !b.IsPaid))
+                                {
+                                    <small class="text-danger">Overdue</small>
+                                }
+                                else if (Model.OutstandingBalance > 0)
+                                {
+                                    <small class="text-warning">Pending Payment</small>
+                                }
+                                else
+                                {
+                                    <small class="text-success">All Paid</small>
+                                }
+                            </div>
+                            <div class="text-danger" style="font-size: 2.5rem;">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
+
+            <!-- Unit Information -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
-                        <h6 class="text-muted text-uppercase small mb-2">Pending Bills</h6>
-                        <h2 class="mb-0">@Model.PendingBills</h2>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase small mb-2">Unit Information</h6>
+                                <h4 class="mb-1">@(Model.TenantInfo.UnitNumber ?? "Not Assigned")</h4>
+                                <p class="mb-1 small text-muted">Property Address</p>
+                                <p class="mb-0 small">
+                                    <strong>Lease Expires:</strong> @Model.TenantInfo.LeaseEndDate.ToString("MM/dd/yyyy")
+                                </p>
+                            </div>
+                            <div class="text-primary" style="font-size: 2.5rem;">
+                                <i class="bi bi-house-door-fill"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
+
+            <!-- Quick Stats Summary -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
-                        <h6 class="text-muted text-uppercase small mb-2">Total Paid</h6>
-                        <h2 class="mb-0 text-success">@Model.TotalPaid.ToString("C")</h2>
+                        <h6 class="text-muted text-uppercase small mb-3">Account Summary</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Pending Bills:</span>
+                            <strong>@Model.PendingBills</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Total Paid:</span>
+                            <strong class="text-success">@Model.TotalPaid.ToString("C")</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Monthly Rent:</span>
+                            <strong>@Model.TenantInfo.MonthlyRent.ToString("C")</strong>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Bills -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title mb-4">Recent Bills</h5>
-                        @if (Model.RecentBills.Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Billing Period</th>
-                                            <th>Amount Due</th>
-                                            <th>Amount Paid</th>
-                                            <th>Due Date</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var bill in Model.RecentBills)
-                                        {
-                                            <tr>
-                                                <td>@bill.BillingPeriod</td>
-                                                <td>@bill.AmountDue.ToString("C")</td>
-                                                <td>@bill.AmountPaid.ToString("C")</td>
-                                                <td>@bill.DueDate.ToString("MM/dd/yyyy")</td>
-                                                <td>
-                                                    @if (bill.IsPaid)
-                                                    {
-                                                        <span class="badge bg-success">Paid</span>
-                                                    }
-                                                    else if (bill.DueDate < DateTime.Now)
-                                                    {
-                                                        <span class="badge bg-danger">Overdue</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-warning">Pending</span>
-                                                    }
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <p class="text-muted">No bills found.</p>
-                        }
+        <!-- Quick Action Cards -->
+        <h2 class="h4 mb-4">Quick Actions</h2>
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3" style="font-size: 3rem; color: #28a745;">
+                            <i class="bi bi-credit-card"></i>
+                        </div>
+                        <h5 class="card-title">Make a Payment</h5>
+                        <p class="card-text text-muted">
+                            Submit a payment for your outstanding balance or upcoming bills.
+                        </p>
+                        <a asp-page="/Tenant/MakePayment" class="btn btn-primary btn-lg">
+                            <i class="bi bi-credit-card me-2"></i>Pay Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3" style="font-size: 3rem; color: #007bff;">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <h5 class="card-title">Submit Request</h5>
+                        <p class="card-text text-muted">
+                            Report maintenance issues or submit service requests to property management.
+                        </p>
+                        <a asp-page="/Tenant/SubmitRequest" class="btn btn-primary btn-lg">
+                            <i class="bi bi-plus-circle me-2"></i>Submit Request
+                        </a>
                     </div>
                 </div>
             </div>
@@ -131,5 +136,22 @@
             No tenant profile found. Please contact the administrator.
         </div>
     }
+    </div>
 </div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
 

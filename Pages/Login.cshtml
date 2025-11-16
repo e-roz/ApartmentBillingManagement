@@ -448,12 +448,13 @@
 
                 <form method="post" novalidate id="loginForm">
                     <div class="mb-3">
-                        <label for="Input_Username" class="form-label">E-mail</label>
-                        <input asp-for="Input.Username" 
-                               class="form-control @(ViewData.ModelState["Input.Username"]?.Errors.Count > 0 ? "is-invalid" : "")" 
+                        <label for="Input_Email" class="form-label">E-mail</label>
+                        <input asp-for="Input.Email" 
+                               type="email"
+                               class="form-control @(ViewData.ModelState["Input.Email"]?.Errors.Count > 0 ? "is-invalid" : "")" 
                                placeholder="example@gmail.com"
-                               autocomplete="username" />
-                        <span asp-validation-for="Input.Username" class="invalid-feedback"></span>
+                               autocomplete="email" />
+                        <span asp-validation-for="Input.Email" class="invalid-feedback"></span>
                     </div>
 
                     <div class="mb-3">
@@ -489,7 +490,7 @@
         <div class="promo-container" id="promoContainer">
             <div class="promo-content">
                 <div class="promo-card">
-                    <h2>Reach financial goals faster</h2>
+                    <h2>SUBO MO TITI KO</h2>
                     <p>Managing your apartment shouldn't be stressful. Our system makes every payment and room update simpler and smarter.</p>
                     <button class="btn">Learn more</button>
                     <div class="promo-image-wrapper">

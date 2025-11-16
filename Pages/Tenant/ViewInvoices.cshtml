@@ -1,0 +1,80 @@
+@page
+@model Apartment.Pages.Tenant.ViewInvoicesModel
+@{
+    ViewData["Title"] = "View Invoices";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_TenantSidebar")
+
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">View Invoices</h1>
+        <p class="text-muted mb-4">All past and current invoices for your account.</p>
+
+        @if (Model.Invoices.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Invoice ID</th>
+                                    <th>Billing Period</th>
+                                    <th>Date Generated</th>
+                                    <th>Due Date</th>
+                                    <th>Total Amount</th>
+                                    <th>Amount Paid</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var invoice in Model.Invoices)
+                                {
+                                    <tr>
+                                        <td>#@invoice.InvoiceId</td>
+                                        <td>@invoice.BillingPeriod</td>
+                                        <td>@invoice.DateGenerated.ToString("MM/dd/yyyy")</td>
+                                        <td>@invoice.DueDate.ToString("MM/dd/yyyy")</td>
+                                        <td>@invoice.TotalAmount.ToString("C")</td>
+                                        <td>@invoice.AmountPaid.ToString("C")</td>
+                                        <td>
+                                            @if (invoice.Status == "Paid")
+                                            {
+                                                <span class="badge bg-success">Paid</span>
+                                            }
+                                            else if (invoice.Status == "Overdue")
+                                            {
+                                                <span class="badge bg-danger">Overdue</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">Pending</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No invoices found for your account.
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>
+
