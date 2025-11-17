@@ -9,12 +9,14 @@
     @await Html.PartialAsync("_TenantSidebar")
 
     <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">Make a Payment</h1>
-        <p class="text-muted mb-4">Submit a payment for your outstanding balance.</p>
+        <div class="mb-4">
+            <h1 class="h3 mb-2">Make a Payment</h1>
+            <p class="text-muted mb-0">Submit a payment for your outstanding balance.</p>
+        </div>
 
         @if (TempData["SuccessMessage"] != null)
         {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
                 <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -22,58 +24,22 @@
 
         @if (Model.TenantInfo != null)
         {
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title mb-3">Outstanding Balance</h5>
-                            <h2 class="text-danger mb-0">@Model.OutstandingBalance.ToString("C")</h2>
-                        </div>
-                    </div>
+            <!-- Outstanding Balance Section -->
+            <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white p-4">
+                    <h5 class="card-title mb-2" style="opacity: 0.9;">Outstanding Balance</h5>
+                    <h2 class="mb-0 fw-bold">@Model.OutstandingBalance.ToString("C")</h2>
                 </div>
             </div>
 
-            @if (Model.PendingBills.Any())
-            {
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Pending Bills</h5>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Billing Period</th>
-                                        <th>Due Date</th>
-                                        <th>Amount Due</th>
-                                        <th>Amount Paid</th>
-                                        <th>Remaining</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var bill in Model.PendingBills)
-                                    {
-                                        <tr>
-                                            <td>@(bill.BillingPeriod != null ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}" : "N/A")</td>
-                                            <td>@bill.DueDate.ToString("MM/dd/yyyy")</td>
-                                            <td>@bill.AmountDue.ToString("C")</td>
-                                            <td>@bill.AmountPaid.ToString("C")</td>
-                                            <td class="text-danger"><strong>@((bill.AmountDue - bill.AmountPaid).ToString("C"))</strong></td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            }
-
+            <!-- Payment Form Section -->
             <div class="card border-0 shadow-sm">
-                <div class="card-body">
+                <div class="card-body p-4">
                     <h5 class="card-title mb-4">Payment Form</h5>
                     <form method="post">
-                        <div class="mb-3">
-                            <label asp-for="Input.BillId" class="form-label">Select Bill (Optional)</label>
-                            <select asp-for="Input.BillId" class="form-select">
+                        <div class="mb-4">
+                            <label asp-for="Input.BillId" class="form-label fw-semibold">Select Bill (Optional)</label>
+                            <select asp-for="Input.BillId" class="form-select form-select-lg">
                                 <option value="">Pay Total Outstanding Balance</option>
                                 @foreach (var bill in Model.PendingBills)
                                 {
@@ -85,30 +51,36 @@
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="Input.Amount" class="form-label">Payment Amount</label>
-                            <input asp-for="Input.Amount" class="form-control" type="number" step="0.01" min="0.01" required />
+                        <div class="mb-4">
+                            <label asp-for="Input.Amount" class="form-label fw-semibold">Payment Amount</label>
+                            <input asp-for="Input.Amount" class="form-control form-control-lg" type="number" step="0.01" min="0.01" placeholder="0.00" required />
                             <span asp-validation-for="Input.Amount" class="text-danger"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="Input.PaymentMethod" class="form-label">Payment Method</label>
-                            <select asp-for="Input.PaymentMethod" class="form-select">
+                        <div class="mb-4">
+                            <label asp-for="Input.PaymentMethod" class="form-label fw-semibold">Payment Method</label>
+                            <select asp-for="Input.PaymentMethod" class="form-select form-select-lg">
                                 <option value="Credit Card">Credit Card</option>
-                                <option value="Debit Card">Debit Card</option>
+                                <option value="GCash">GCash</option>
+                                <option value="Maya">Maya</option>
                                 <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="GrabPay">GrabPay</option>
+                                <option value="ShopeePay">ShopeePay</option>
+                                <option value="Cash">Cash</option>
                             </select>
                         </div>
 
-                        <div class="alert alert-info">
+                        <div class="alert alert-info mb-4">
                             <i class="bi bi-info-circle me-2"></i>
                             <strong>Note:</strong> This is a simulation. In a production environment, this would integrate with a payment gateway.
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-credit-card me-2"></i>Submit Payment
-                        </button>
-                        <a asp-page="/TenantDashboard" class="btn btn-secondary btn-lg ms-2">Cancel</a>
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="bi bi-credit-card me-2"></i>Submit Payment
+                            </button>
+                            <a asp-page="/TenantDashboard" class="btn btn-secondary btn-lg px-4">Cancel</a>
+                        </div>
                     </form>
                 </div>
             </div>
