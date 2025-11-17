@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace Apartment.Pages
+namespace Apartment.Pages.Admin
 {
 
     [Authorize(Roles = "Admin")]
@@ -11,3 +11,4 @@ namespace Apartment.Pages
       
     }
 }
+

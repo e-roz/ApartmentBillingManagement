@@ -1,5 +1,5 @@
-﻿@page
-@model Apartment.Pages.ManageTenantsModel
+﻿@page "/Manager/ManageTenants"
+@model Apartment.Pages.Manager.ManageTenantsModel
 @{
     // Determine which view to show based on the handler parameter
     var handler = Request.Query["handler"].ToString().ToLower();
@@ -36,7 +36,7 @@
                     <h1 class="display-5 fw-bold text-primary mb-0">
                         <i class="bi bi-people me-3"></i>Tenant Management
                     </h1>
-                    <a asp-page="/ManageTenants" asp-page-handler="Create" class="btn btn-success btn-lg shadow-sm">
+                    <a asp-page="/Manager/ManageTenants" asp-page-handler="Create" class="btn btn-success btn-lg shadow-sm">
                         <i class="bi bi-plus-circle me-2"></i>Add New Tenant
                     </a>
                 </div>
@@ -108,13 +108,13 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group" role="group">
-                                                <a asp-page="/ManageTenants" asp-page-handler="Details" asp-route-id="@tenant.Id" class="btn btn-outline-info btn-sm" title="View Details">
+                                                <a asp-page="/Manager/ManageTenants" asp-page-handler="Details" asp-route-id="@tenant.Id" class="btn btn-outline-info btn-sm" title="View Details">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
-                                                <a asp-page="/ManageTenants" asp-page-handler="Edit" asp-route-id="@tenant.Id" class="btn btn-outline-primary btn-sm" title="Edit">
+                                                <a asp-page="/Manager/ManageTenants" asp-page-handler="Edit" asp-route-id="@tenant.Id" class="btn btn-outline-primary btn-sm" title="Edit">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </a>
-                                                <a asp-page="/ManageTenants" asp-page-handler="Delete" asp-route-id="@tenant.Id" class="btn btn-outline-danger btn-sm" title="Delete">
+                                                <a asp-page="/Manager/ManageTenants" asp-page-handler="Delete" asp-route-id="@tenant.Id" class="btn btn-outline-danger btn-sm" title="Delete">
                                                     <i class="bi bi-trash"></i>
                                                 </a>
                                             </div>
@@ -129,7 +129,7 @@
                 {
                     <div class="text-center py-5">
                         <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-3 mb-0">No tenants found. <a asp-page="/ManageTenants" asp-page-handler="Create">Add your first tenant</a>.</p>
+                        <p class="text-muted mt-3 mb-0">No tenants found. <a asp-page="/Manager/ManageTenants" asp-page-handler="Create">Add your first tenant</a>.</p>
                     </div>
                 }
             </div>
@@ -164,10 +164,10 @@
                         <i class="bi bi-person-circle me-3"></i>Tenant Details
                     </h1>
                     <div class="d-flex gap-2">
-                        <a asp-page="/ManageTenants" asp-page-handler="Edit" asp-route-id="@Model.TenantDetails.Id" class="btn btn-primary">
+                        <a asp-page="/Manager/ManageTenants" asp-page-handler="Edit" asp-route-id="@Model.TenantDetails.Id" class="btn btn-primary">
                             <i class="bi bi-pencil-square me-2"></i>Edit
                         </a>
-                        <a asp-page="/ManageTenants" class="btn btn-outline-secondary">
+                        <a asp-page="/Manager/ManageTenants" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-2"></i>Back to List
                         </a>
                     </div>
@@ -282,7 +282,7 @@ else if (isDetails)
                     <h1 class="display-5 fw-bold text-primary mb-0">
                         <i class="bi bi-person-plus me-3"></i>Add New Tenant
                     </h1>
-                    <a asp-page="/ManageTenants" class="btn btn-outline-secondary">
+                    <a asp-page="/Manager/ManageTenants" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Back to List
                     </a>
                 </div>
@@ -410,7 +410,7 @@ else if (isDetails)
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 mt-4">
-                                <a asp-page="/ManageTenants" class="btn btn-secondary">
+                                <a asp-page="/Manager/ManageTenants" class="btn btn-secondary">
                                     <i class="bi bi-x-circle me-2"></i>Cancel
                                 </a>
                                 <button type="submit" class="btn btn-success">
@@ -519,7 +519,7 @@ else if (isDetails)
                     <h1 class="display-5 fw-bold text-primary mb-0">
                         <i class="bi bi-pencil-square me-3"></i>Edit Tenant
                     </h1>
-                    <a asp-page="/ManageTenants" class="btn btn-outline-secondary">
+                    <a asp-page="/Manager/ManageTenants" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Back to List
                     </a>
                 </div>
@@ -649,7 +649,7 @@ else if (isDetails)
                             </div>
 
                             <div class="d-flex justify-content-end gap-2 mt-4">
-                                <a asp-page="/ManageTenants" class="btn btn-secondary">
+                                <a asp-page="/Manager/ManageTenants" class="btn btn-secondary">
                                     <i class="bi bi-x-circle me-2"></i>Cancel
                                 </a>
                                 <button type="submit" class="btn btn-primary">
@@ -758,7 +758,7 @@ else if (isDetails)
                     <h1 class="display-5 fw-bold text-danger mb-0">
                         <i class="bi bi-exclamation-triangle me-3"></i>Delete Tenant
                     </h1>
-                    <a asp-page="/ManageTenants" class="btn btn-outline-secondary">
+                    <a asp-page="/Manager/ManageTenants" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Back to List
                     </a>
                 </div>
@@ -818,7 +818,7 @@ else if (isDetails)
                             <!-- Delete Form -->
                             <form method="post" asp-page-handler="Delete" asp-route-id="@Model.TenantDetails.Id">
                                 <div class="d-flex justify-content-end gap-2">
-                                    <a asp-page="/ManageTenants" class="btn btn-secondary">
+                                    <a asp-page="/Manager/ManageTenants" class="btn btn-secondary">
                                         <i class="bi bi-x-circle me-2"></i>Cancel
                                     </a>
                                     <button type="submit" class="btn btn-danger">

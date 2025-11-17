@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace Apartment.Pages
+namespace Apartment.Pages.Admin
 {
     [Authorize(Roles = "Admin")]
     public class ManageUsersModel : PageModel
@@ -131,3 +131,4 @@ namespace Apartment.Pages
 
     }
 }
+

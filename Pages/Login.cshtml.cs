@@ -95,7 +95,7 @@ namespace Apartment.Pages
             }
             else if (user.Role == UserRoles.Manager)
             {
-                return RedirectToPage("/ManagerDashboard");
+                return RedirectToPage("/Manager/ManagerDashboard");
             }
             else
             {

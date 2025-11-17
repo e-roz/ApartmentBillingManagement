@@ -1,7 +1,7 @@
-﻿@page
+@page "/Admin/ManageUsers"
 @using Apartment.ViewModels
 @using Apartment.Enums
-@model Apartment.Pages.ManageUsersModel
+@model Apartment.Pages.Admin.ManageUsersModel
 @{
     ViewData["Title"] = "User Management";
     Layout = "_Layout";
@@ -72,7 +72,7 @@
                                 </button>
                                 @if (!string.IsNullOrEmpty(Model.SearchTerm))
                                 {
-                                    <a href="/ManageUsers" class="btn btn-outline-secondary">
+                                    <a href="/Admin/ManageUsers" class="btn btn-outline-secondary">
                                         <i class="bi bi-x-circle me-1"></i>Clear
                                     </a>
                                 }
@@ -315,3 +315,4 @@
         transform: translateY(-2px);
     }
 </style>
+

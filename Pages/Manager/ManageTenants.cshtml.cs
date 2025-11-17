@@ -12,7 +12,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 
-namespace Apartment.Pages
+namespace Apartment.Pages.Manager
 {
     [Authorize(Roles = "Manager")]
     public class ManageTenantsModel : PageModel
@@ -482,3 +482,4 @@ namespace Apartment.Pages
         }
     }
 }
+

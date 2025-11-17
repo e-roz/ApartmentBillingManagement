@@ -1,5 +1,5 @@
-@page
-@model Apartment.Pages.ManagerDashboardModel
+@page "/Manager/ManagerDashboard"
+@model Apartment.Pages.Manager.ManagerDashboardModel
 @{
     ViewData["Title"] = "Manager Portal";
     Layout = "_Layout";
@@ -94,7 +94,7 @@
                         <p class="card-text text-muted">
                             Add, view, and update all tenant contact and status records.
                         </p>
-                        <a asp-page="/ManageTenants" class="btn btn-primary">
+                        <a asp-page="/Manager/ManageTenants" class="btn btn-primary">
                             <i class="bi bi-person-lines-fill me-2"></i>Manage Tenants
                         </a>
                     </div>
@@ -108,7 +108,7 @@
                         <p class="card-text text-muted">
                             Set unit details, monthly rent, and assign tenants to units.
                         </p>
-                        <a asp-page="/ManageApartments" class="btn btn-primary">
+                        <a asp-page="/Manager/ManageApartments" class="btn btn-primary">
                             <i class="bi bi-house-door-fill me-2"></i>Manage Units
                         </a>
                     </div>
@@ -122,7 +122,7 @@
                         <p class="card-text text-muted">
                             Start new billing periods and generate monthly invoices for all occupied units.
                         </p>
-                        <a asp-page="/GenerateBills" class="btn btn-primary">
+                        <a asp-page="/Manager/GenerateBills" class="btn btn-primary">
                             <i class="bi bi-receipt me-2"></i>Generate Bills
                         </a>
                     </div>
@@ -136,7 +136,7 @@
                         <p class="card-text text-muted">
                             View outstanding balances and record payments made by tenants.
                         </p>
-                        <a asp-page="/RecordPayments" class="btn btn-primary">
+                        <a asp-page="/Manager/RecordPayments" class="btn btn-primary">
                             <i class="bi bi-cash-stack me-2"></i>Record Payments
                         </a>
                     </div>
@@ -150,7 +150,7 @@
                         <p class="card-text text-muted">
                             Financial overview, tracking paid vs. outstanding amounts.
                         </p>
-                        <a asp-page="/BillingSummary" class="btn btn-primary">
+                        <a asp-page="/Manager/BillingSummary" class="btn btn-primary">
                             <i class="bi bi-graph-up me-2"></i>View Reports
                         </a>
                     </div>

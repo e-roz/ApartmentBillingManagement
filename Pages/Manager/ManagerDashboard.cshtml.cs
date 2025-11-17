@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace Apartment.Pages
+namespace Apartment.Pages.Manager
 {
     [Authorize(Roles = "Manager")]
     public class ManagerDashboardModel : PageModel

@@ -15,22 +15,22 @@
     </div>
 
     <nav class="sidebar-nav px-2 py-3">
-        <a asp-page="/ManagerDashboard" class="nav-link @(currentPage.Contains("ManagerDashboard") ? "active" : "")">
+        <a asp-page="/Manager/ManagerDashboard" class="nav-link @(currentPage.Contains("ManagerDashboard") ? "active" : "")">
             <i class="bi bi-speedometer2 me-2"></i>System Overview
         </a>
-        <a asp-page="/ManageTenants" class="nav-link @(currentPage.Contains("ManageTenants") ? "active" : "")">
+        <a asp-page="/Manager/ManageTenants" class="nav-link @(currentPage.Contains("ManageTenants") ? "active" : "")">
             <i class="bi bi-person-lines-fill me-2"></i>Tenant Management
         </a>
-        <a asp-page="/ManageApartments" class="nav-link @(currentPage.Contains("ManageApartments") ? "active" : "")">
+        <a asp-page="/Manager/ManageApartments" class="nav-link @(currentPage.Contains("ManageApartments") ? "active" : "")">
             <i class="bi bi-house-door-fill me-2"></i>Unit Management
         </a>
-        <a asp-page="/GenerateBills" class="nav-link @(currentPage.Contains("GenerateBills") ? "active" : "")">
+        <a asp-page="/Manager/GenerateBills" class="nav-link @(currentPage.Contains("GenerateBills") ? "active" : "")">
             <i class="bi bi-receipt me-2"></i>Billing & Generation
         </a>
-        <a asp-page="/RecordPayments" class="nav-link @(currentPage.Contains("RecordPayments") ? "active" : "")">
+        <a asp-page="/Manager/RecordPayments" class="nav-link @(currentPage.Contains("RecordPayments") ? "active" : "")">
             <i class="bi bi-cash-stack me-2"></i>Payment Processing
         </a>
-        <a asp-page="/BillingSummary" class="nav-link @(currentPage.Contains("BillingSummary") ? "active" : "")">
+        <a asp-page="/Manager/BillingSummary" class="nav-link @(currentPage.Contains("BillingSummary") ? "active" : "")">
             <i class="bi bi-graph-up me-2"></i>Reporting & Summary
         </a>
         <a href="#" class="nav-link mt-4" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">

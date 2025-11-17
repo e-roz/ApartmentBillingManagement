@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
-namespace Apartment.Pages
+namespace Apartment.Pages.Manager
 {
 
     [Authorize(Roles = "Manager")]

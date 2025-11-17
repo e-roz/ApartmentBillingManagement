@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
-namespace Apartment.Pages
+namespace Apartment.Pages.Manager
 {
 
     [Authorize(Roles = "Admin,Manager")]
