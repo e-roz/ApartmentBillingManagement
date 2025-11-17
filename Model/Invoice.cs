@@ -1,16 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Apartment.Enums;
 
 namespace Apartment.Model
 {
-
-    public enum InvoiceStatus
-    {
-        Pending,
-        Paid,
-        Overdue,
-        Cancelled
-    }
     public class Invoice
     {
         [Key]

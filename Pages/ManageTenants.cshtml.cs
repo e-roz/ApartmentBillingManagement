@@ -1,5 +1,7 @@
 using Apartment.Data;
 using Apartment.Model;
+using Apartment.ViewModels;
+using Apartment.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;

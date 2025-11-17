@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace Apartment.Model
+namespace Apartment.ViewModels
 {
     public class Login
     {
@@ -15,3 +15,4 @@ namespace Apartment.Model
         public string Password { get; set; }
     }
 }
+

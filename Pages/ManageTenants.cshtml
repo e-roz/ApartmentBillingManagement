@@ -392,7 +392,7 @@ else if (isDetails)
                                     <label asp-for="Tenant.Status" class="form-label fw-semibold">
                                         <i class="bi bi-info-circle me-1"></i>Lease Status
                                     </label>
-                                    <select asp-for="Tenant.Status" class="form-select" asp-items="Html.GetEnumSelectList<Apartment.Model.LeaseStatus>()" required>
+                                    <select asp-for="Tenant.Status" class="form-select" asp-items="Html.GetEnumSelectList<Apartment.Enums.LeaseStatus>()" required>
                                     </select>
                                     <span asp-validation-for="Tenant.Status" class="text-danger small"></span>
                                 </div>
@@ -631,7 +631,7 @@ else if (isDetails)
                                     <label asp-for="Tenant.Status" class="form-label fw-semibold">
                                         <i class="bi bi-info-circle me-1"></i>Lease Status
                                     </label>
-                                    <select asp-for="Tenant.Status" class="form-select" asp-items="Html.GetEnumSelectList<Apartment.Model.LeaseStatus>()" required>
+                                    <select asp-for="Tenant.Status" class="form-select" asp-items="Html.GetEnumSelectList<Apartment.Enums.LeaseStatus>()" required>
                                     </select>
                                     <span asp-validation-for="Tenant.Status" class="text-danger small"></span>
                                 </div>

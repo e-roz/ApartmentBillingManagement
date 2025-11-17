@@ -1,4 +1,4 @@
-﻿namespace Apartment.Model
+namespace Apartment.Enums
 {
     public enum UserRoles
     {
@@ -7,3 +7,4 @@
         User = 3
     }
 }
+

@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Apartment.Enums;
 namespace Apartment.Model
 {
     // This model maps directly to the Users table in the database

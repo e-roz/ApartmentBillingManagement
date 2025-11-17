@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace Apartment.Model
+namespace Apartment.ViewModels
 {
     public class ApartmentList
     {
@@ -21,3 +21,4 @@ namespace Apartment.Model
         public int? TenantId { get; set; }
     }
 }
+

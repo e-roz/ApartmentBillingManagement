@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace Apartment.Model
+namespace Apartment.ViewModels
 {
     public class RegisterUser
     {
@@ -26,3 +26,4 @@ namespace Apartment.Model
         public string ConfirmPassword { get; set; }
     }
 }
+

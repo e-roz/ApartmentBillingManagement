@@ -1,6 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Apartment.Enums;
 
-namespace Apartment.Model
+namespace Apartment.ViewModels
 {
     public class UserList
     {
@@ -18,3 +19,4 @@ namespace Apartment.Model
         public DateTime CreationDate { get; set; }
     }
 }
+

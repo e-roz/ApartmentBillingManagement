@@ -1,5 +1,7 @@
 using Apartment.Data;
 using Apartment.Model;
+using Apartment.ViewModels;
+using Apartment.Enums;
 using Apartment.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -89,7 +91,7 @@ namespace Apartment.Pages
 
             if (user.Role == UserRoles.Admin)
             {
-                return RedirectToPage("/AdminDashBoard");
+                return RedirectToPage("/Admin/AdminDashboard");
             }
             else if (user.Role == UserRoles.Manager)
             {

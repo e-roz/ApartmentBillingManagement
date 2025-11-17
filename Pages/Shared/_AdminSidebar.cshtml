@@ -15,13 +15,13 @@
     </div>
 
     <nav class="sidebar-nav px-2 py-3">
-        <a asp-page="/AdminDashBoard" class="nav-link @(currentPage.Contains("AdminDashBoard") ? "active" : "")">
+        <a asp-page="/Admin/AdminDashboard" class="nav-link @(currentPage.Contains("AdminDashboard") ? "active" : "")">
             <i class="bi bi-speedometer2 me-2"></i>System Overview
         </a>
-        <a asp-page="/ManageUsers" class="nav-link @(currentPage.Contains("ManageUsers") ? "active" : "")">
+        <a asp-page="/Admin/ManageUsers" class="nav-link @(currentPage.Contains("ManageUsers") ? "active" : "")">
             <i class="bi bi-people-fill me-2"></i>User & Role Control
         </a>
-        <a asp-page="/AuditLogs" class="nav-link @(currentPage.Contains("AuditLogs") ? "active" : "")">
+        <a asp-page="/Admin/AuditLogs" class="nav-link @(currentPage.Contains("AuditLogs") ? "active" : "")">
             <i class="bi bi-clipboard-data me-2"></i>Audit Logs
         </a>
         <a href="#" class="nav-link mt-4" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">

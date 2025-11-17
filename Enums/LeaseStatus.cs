@@ -1,4 +1,4 @@
-﻿namespace Apartment.Model
+namespace Apartment.Enums
 {
     public enum LeaseStatus
     {
@@ -15,3 +15,4 @@
         Evicted = 3
     }
 }
+

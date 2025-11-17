@@ -1,4 +1,4 @@
-namespace Apartment.Model
+namespace Apartment.ViewModels
 {
     public class TenantListViewModel
     {
