@@ -89,6 +89,8 @@ namespace Apartment.Pages
             Input.DueDate = new DateTime(nextMonth.Year, nextMonth.Month, 5);
 
             await LoadOccupiedApartmentsAsync();
+
+            //default select all occupied apartments for billing
             Input.SelectedApartmentIds = OccupiedApartments.Select(a => a.Id).ToList();
         }
 
@@ -103,16 +105,10 @@ namespace Apartment.Pages
             // define muna target billing and period brad 
             var selectedApartmentIds = (Input.SelectedApartmentIds ?? new List<int>()).Where(id => id > 0).Distinct().ToList();
 
-            if (!selectedApartmentIds.Any())
+            if (!selectedApartmentIds.Any() || !Input.DueDate.HasValue)
             {
-                ModelState.AddModelError("Input.SelectedApartmentIds", "Please select at least one occupied apartment for billing.");
-                await LoadOccupiedApartmentsAsync();
-                return Page();
-            }
-
-            if (!Input.DueDate.HasValue)
-            {
-                ModelState.AddModelError("Input.DueDate", "Please choose a due date for the generated bills.");
+                if (!selectedApartmentIds.Any()) ModelState.AddModelError("Input.SelectedApartmentIds", "Please select at least one occupied apartment for billing.");
+                if (!Input.DueDate.HasValue) ModelState.AddModelError("Input.DueDate", "Please choose a due date for the generated bills.");
                 await LoadOccupiedApartmentsAsync();
                 return Page();
             }
@@ -172,12 +168,6 @@ namespace Apartment.Pages
                 .Where(t => t.Status == LeaseStatus.Active && t.ApartmentId.HasValue)
                 .ToListAsync();
 
-            if (!activeTenants.Any())
-            {
-                ModelState.AddModelError(string.Empty, "No active tenants found. Bills can only be generated for tenants with Active lease status.");
-                await LoadOccupiedApartmentsAsync();
-                return Page();
-            }
 
             // Filter by selected apartment IDs if provided
             var tenantsToBill = activeTenants
@@ -191,6 +181,13 @@ namespace Apartment.Pages
                 return Page();
             }
 
+            var existingTenantIdsWithBills = await dbData.Bills
+                .Where(b => b.BillingPeriodId == billingPeriod.Id)
+                .Select(b => b.TenantId)
+                .ToListAsync();
+
+            var billedTenantsIds = new HashSet<int>(existingTenantIdsWithBills);
+
             var billsCreate = new List<Bill>();
             var dueDate = Input.DueDate.Value;
 
@@ -198,10 +195,8 @@ namespace Apartment.Pages
             foreach (var tenant in tenantsToBill)
             {
                 // Check if a Bill already exists for this TenantId and the current BillingPeriodId
-                bool billExists = await dbData.Bills
-                    .AnyAsync(b => b.TenantId == tenant.Id && b.BillingPeriodId == billingPeriod.Id);
 
-                if (billExists)
+                if (billedTenantsIds.Contains(tenant.Id))
                 {
                     // Skip this tenant if bill already exists
                     continue;
@@ -218,21 +213,85 @@ namespace Apartment.Pages
                         AmountDue = tenant.MonthlyRent, // Use Tenant.MonthlyRent
                         AmountPaid = 0.00m,
                         DueDate = dueDate,
-                        GeneratedDate = DateTime.Now,
+                        GeneratedDate = DateTime.UtcNow,
                         PaymentDate = null
                     };
                     billsCreate.Add(newBill);
                 }
             }
-            // Save all generated bills to the database
-            dbData.Bills.AddRange(billsCreate);
-            await dbData.SaveChangesAsync();
 
-            // Prepare summary
+            // Save all generated bills to the database
+            if (billsCreate.Any())
+            {
+                try
+                {
+                    dbData.Bills.AddRange(billsCreate);
+                    int savedCount = await dbData.SaveChangesAsync();
+
+                    // Verify bills were actually saved
+                    var savedBillsCount = await dbData.Bills
+                        .Where(b => b.BillingPeriodId == billingPeriod.Id && 
+                                    billsCreate.Select(bc => bc.TenantId).Contains(b.TenantId))
+                        .CountAsync();
+
+                    if (savedBillsCount == 0)
+                    {
+                        ModelState.AddModelError(string.Empty, "Warning: Bills were created but may not have been saved to the database. Please verify the database connection.");
+                        await LoadOccupiedApartmentsAsync();
+                        return Page();
+                    }
+
+                    // Create corresponding Invoice records for each Bill
+                    // Note: After SaveChangesAsync, EF Core assigns IDs to the bills in billsCreate
+                    var invoicesCreate = new List<Invoice>();
+                    foreach (var bill in billsCreate)
+                    {
+                        // Generate invoice title from billing period
+                        var invoiceTitle = $"{billingPeriod.MonthName} {billingPeriod.Year} - Rent Invoice";
+
+                        var newInvoice = new Invoice
+                        {
+                            BillId = bill.Id, // Link invoice to bill (Id is assigned after SaveChangesAsync)
+                            TenantId = bill.TenantId,
+                            ApartmentId = bill.ApartmentId,
+                            Title = invoiceTitle,
+                            AmountDue = bill.AmountDue,
+                            DueDate = bill.DueDate,
+                            IssueDate = DateTime.UtcNow,
+                            Status = InvoiceStatus.Pending
+                        };
+                        invoicesCreate.Add(newInvoice);
+                    }
+
+                    // Save all generated invoices to the database
+                    if (invoicesCreate.Any())
+                    {
+                        dbData.Invoices.AddRange(invoicesCreate);
+                        await dbData.SaveChangesAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError(string.Empty, $"Error saving bills/invoices to database: {ex.Message}");
+                    await LoadOccupiedApartmentsAsync();
+                    return Page();
+                }
+            }
+
+            // Prepare summary - verify actual saved count
+            int actualSavedCount = 0;
+            if (billsCreate.Any())
+            {
+                actualSavedCount = await dbData.Bills
+                    .Where(b => b.BillingPeriodId == billingPeriod.Id && 
+                                billsCreate.Select(bc => bc.TenantId).Contains(b.TenantId))
+                    .CountAsync();
+            }
+
             Summary = new GenerationSummary
             {
                 PeriodKey = periodKey,
-                BillsCreated = billsCreate.Count,
+                BillsCreated = actualSavedCount > 0 ? actualSavedCount : billsCreate.Count,
                 OccupiedUnits = tenantsToBill.Count,
                 AlreadyExists = false,
                 TotalAmountBilled = billsCreate.Sum(b => b.AmountDue)

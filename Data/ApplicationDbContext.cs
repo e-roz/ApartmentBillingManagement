@@ -21,6 +21,7 @@ namespace Apartment.Data
         public DbSet<ApartmentModel> Apartments { get; set; } = null!;
         public DbSet<Bill> Bills { get; set; } = null!;
         public DbSet<BillingPeriod> BillingPeriods { get; set; } = null!;
+        public DbSet<Invoice> Invoices { get; set; } = null!;
 
         // Tenant Link Table
         public DbSet<TenantLink> TenantLinks { get; set; }

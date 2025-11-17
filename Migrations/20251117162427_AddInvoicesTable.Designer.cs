@@ -4,6 +4,7 @@ using Apartment.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apartment.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251117162427_AddInvoicesTable")]
+    partial class AddInvoicesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -135,9 +138,6 @@ namespace Apartment.Migrations
                     b.Property<int>("ApartmentId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("BillId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
 
@@ -161,8 +161,6 @@ namespace Apartment.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApartmentId");
-
-                    b.HasIndex("BillId");
 
                     b.HasIndex("TenantId");
 
@@ -327,10 +325,6 @@ namespace Apartment.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Apartment.Model.Bill", "Bill")
-                        .WithMany()
-                        .HasForeignKey("BillId");
-
                     b.HasOne("Apartment.Model.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
@@ -338,8 +332,6 @@ namespace Apartment.Migrations
                         .IsRequired();
 
                     b.Navigation("Apartment");
-
-                    b.Navigation("Bill");
 
                     b.Navigation("Tenant");
                 });

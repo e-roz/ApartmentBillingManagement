@@ -17,19 +17,8 @@ namespace Apartment.Pages.Tenant
             _context = context;
         }
 
-        public List<InvoiceViewModel> Invoices { get; set; } = new();
+        public IList<Bill> Invoices { get; set; } = new List<Bill>();
         public Model.Tenant? TenantInfo { get; set; }
-
-        public class InvoiceViewModel
-        {
-            public int InvoiceId { get; set; }
-            public DateTime DateGenerated { get; set; }
-            public DateTime DueDate { get; set; }
-            public decimal TotalAmount { get; set; }
-            public decimal AmountPaid { get; set; }
-            public string Status { get; set; } = string.Empty;
-            public string BillingPeriod { get; set; } = string.Empty;
-        }
 
         public async Task OnGetAsync()
         {
@@ -40,29 +29,60 @@ namespace Apartment.Pages.Tenant
                     .Include(u => u.Tenant)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
-                if (user?.Tenant != null)
+                if (user != null)
                 {
-                    TenantInfo = user.Tenant;
-
-                    var bills = await _context.Bills
-                        .Include(b => b.BillingPeriod)
-                        .Where(b => b.TenantId == TenantInfo.Id)
-                        .OrderByDescending(b => b.GeneratedDate)
-                        .ToListAsync();
-
-                    Invoices = bills.Select(b => new InvoiceViewModel
+                    // First try to get tenant from User.TenantID (direct relationship)
+                    if (user.Tenant != null)
                     {
-                        InvoiceId = b.Id,
-                        DateGenerated = b.GeneratedDate,
-                        DueDate = b.DueDate,
-                        TotalAmount = b.AmountDue,
-                        AmountPaid = b.AmountPaid,
-                        BillingPeriod = b.BillingPeriod != null 
-                            ? $"{b.BillingPeriod.MonthName} {b.BillingPeriod.Year}" 
-                            : "N/A",
-                        Status = b.IsPaid ? "Paid" 
-                            : (b.DueDate < DateTime.Now ? "Overdue" : "Pending")
-                    }).ToList();
+                        TenantInfo = user.Tenant;
+                    }
+                    else
+                    {
+                        // Fallback: Try to find tenant via TenantLink using email
+                        var tenantLink = await _context.TenantLinks
+                            .FirstOrDefaultAsync(tl => tl.UserId == userId.ToString());
+
+                        if (tenantLink != null && int.TryParse(tenantLink.ApartmentId, out int apartmentId))
+                        {
+                            // Find tenant by apartment
+                            var tenant = await _context.Tenants
+                                .FirstOrDefaultAsync(t => t.ApartmentId == apartmentId && t.PrimaryEmail == user.Email);
+                            
+                            if (tenant != null)
+                            {
+                                TenantInfo = tenant;
+                                // Update User.TenantID for future use
+                                user.TenantID = tenant.Id;
+                                _context.Users.Update(user);
+                                await _context.SaveChangesAsync();
+                            }
+                        }
+                        else
+                        {
+                            // Last resort: Find tenant by email match
+                            var tenantByEmail = await _context.Tenants
+                                .FirstOrDefaultAsync(t => t.PrimaryEmail == user.Email);
+                            
+                            if (tenantByEmail != null)
+                            {
+                                TenantInfo = tenantByEmail;
+                                // Update User.TenantID for future use
+                                user.TenantID = tenantByEmail.Id;
+                                _context.Users.Update(user);
+                                await _context.SaveChangesAsync();
+                            }
+                        }
+                    }
+
+                    // Fetch all Bill entities where TenantId matches the logged-in tenant's ID
+                    if (TenantInfo != null)
+                    {
+                        Invoices = await _context.Bills
+                            .Include(b => b.BillingPeriod)
+                            .Where(b => b.TenantId == TenantInfo.Id)
+                            .OrderByDescending(b => b.GeneratedDate)
+                            .ToListAsync();
+                    }
                 }
             }
         }

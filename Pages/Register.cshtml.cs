@@ -73,17 +73,22 @@ namespace Apartment.Pages
 
             };
 
-            dbData.Users.Add(newUser);
-            await dbData.SaveChangesAsync(); // -> saved in the database
-
-
             // Find a pre-existing Tenant created by the manager using the registration email
             var existingTenant = await dbData.Tenants
                 .FirstOrDefaultAsync(t => t.PrimaryEmail == Input.Email);
 
             if(existingTenant != null)
             {
-                // create tenantLink to synchronize the records
+                // Link the user to the tenant by setting TenantID BEFORE saving
+                newUser.TenantID = existingTenant.Id;
+            }
+
+            dbData.Users.Add(newUser);
+            await dbData.SaveChangesAsync(); // -> saved in the database with TenantID if tenant was found
+
+            if(existingTenant != null)
+            {
+                // Also create tenantLink to synchronize the records (for the linking table)
                 var tenantLink = new TenantLink
                 {
                     // Id is NOT set - let the database auto-generate it
@@ -96,8 +101,6 @@ namespace Apartment.Pages
                 await dbData.SaveChangesAsync();
 
                 TempData["Message"] = $"Registration successful! You've been linked to tenant: {existingTenant.FullName}. Your role is: {assignedRole}.";
-
-
             }
             else
             {

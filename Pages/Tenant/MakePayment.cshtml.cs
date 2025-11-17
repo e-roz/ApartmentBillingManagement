@@ -32,8 +32,12 @@ namespace Apartment.Pages.Tenant
             public string PaymentMethod { get; set; } = "Credit Card";
         }
 
-        public async Task OnGetAsync()
+        public async Task OnGetAsync(int? billId = null)
         {
+            if (billId.HasValue)
+            {
+                Input.BillId = billId.Value;
+            }
             await LoadDataAsync();
         }
 
@@ -61,8 +65,34 @@ namespace Apartment.Pages.Tenant
 
                         if (bill != null)
                         {
+                            // Update Bill
                             bill.AmountPaid += Input.Amount;
                             bill.PaymentDate = DateTime.UtcNow;
+
+                            // Find and update the corresponding Invoice
+                            var invoice = await _context.Invoices
+                                .FirstOrDefaultAsync(i => i.BillId == bill.Id);
+
+                            if (invoice != null)
+                            {
+                                // Update Invoice PaymentDate
+                                invoice.PaymentDate = DateTime.UtcNow;
+
+                                // Update Invoice Status based on payment
+                                if (bill.IsPaid)
+                                {
+                                    invoice.Status = InvoiceStatus.Paid;
+                                }
+                                else if (bill.DueDate < DateTime.UtcNow)
+                                {
+                                    invoice.Status = InvoiceStatus.Overdue;
+                                }
+                                else
+                                {
+                                    invoice.Status = InvoiceStatus.Pending;
+                                }
+                            }
+
                             await _context.SaveChangesAsync();
 
                             TempData["SuccessMessage"] = $"Payment of {Input.Amount:C} has been successfully recorded.";

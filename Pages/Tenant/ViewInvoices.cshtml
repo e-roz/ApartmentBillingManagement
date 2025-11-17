@@ -12,7 +12,7 @@
         <h1 class="h3 mb-4">View Invoices</h1>
         <p class="text-muted mb-4">All past and current invoices for your account.</p>
 
-        @if (Model.Invoices.Any())
+        @if (Model.Invoices != null && Model.Invoices.Any())
         {
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
@@ -20,37 +20,51 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Invoice ID</th>
-                                    <th>Billing Period</th>
-                                    <th>Date Generated</th>
+                                    <th>Billing Period/Month</th>
+                                    <th>Amount Due</th>
                                     <th>Due Date</th>
-                                    <th>Total Amount</th>
-                                    <th>Amount Paid</th>
                                     <th>Status</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var invoice in Model.Invoices)
                                 {
+                                    var billingPeriod = invoice.BillingPeriod != null 
+                                        ? $"{invoice.BillingPeriod.MonthName} {invoice.BillingPeriod.Year}" 
+                                        : "N/A";
+                                    var isUnpaid = !invoice.IsPaid;
+                                    var status = invoice.IsPaid ? "Paid" 
+                                        : (invoice.DueDate < DateTime.Now ? "Overdue" : "Unpaid");
+                                    
                                     <tr>
-                                        <td>#@invoice.InvoiceId</td>
-                                        <td>@invoice.BillingPeriod</td>
-                                        <td>@invoice.DateGenerated.ToString("MM/dd/yyyy")</td>
+                                        <td>@billingPeriod</td>
+                                        <td>@invoice.AmountDue.ToString("C")</td>
                                         <td>@invoice.DueDate.ToString("MM/dd/yyyy")</td>
-                                        <td>@invoice.TotalAmount.ToString("C")</td>
-                                        <td>@invoice.AmountPaid.ToString("C")</td>
                                         <td>
-                                            @if (invoice.Status == "Paid")
+                                            @if (status == "Paid")
                                             {
                                                 <span class="badge bg-success">Paid</span>
                                             }
-                                            else if (invoice.Status == "Overdue")
+                                            else if (status == "Overdue")
                                             {
                                                 <span class="badge bg-danger">Overdue</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-warning">Pending</span>
+                                                <span class="badge bg-warning">Unpaid</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (isUnpaid)
+                                            {
+                                                <a asp-page="/Tenant/MakePayment" asp-route-billId="@invoice.Id" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-credit-card me-1"></i>Pay
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
                                             }
                                         </td>
                                     </tr>
