@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Tenant Dashboard";
     Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
 <div class="d-flex">
@@ -25,7 +26,7 @@
                             <div>
                                 <h6 class="text-muted text-uppercase small mb-2">Current Balance Due</h6>
                                 <h2 class="mb-0 @(Model.OutstandingBalance > 0 && Model.RecentBills != null && Model.RecentBills.Any(b => b.DueDate < DateTime.Now && !b.IsPaid) ? "text-danger" : "text-dark")" style="font-size: 2rem; font-weight: 700;">
-                                    @Model.OutstandingBalance.ToString("C")
+                                    @Model.OutstandingBalance.ToString("C", pesoCulture)
                                 </h2>
                                 @if (Model.OutstandingBalance > 0 && Model.RecentBills != null && Model.RecentBills.Any(b => b.DueDate < DateTime.Now && !b.IsPaid))
                                 {
@@ -80,11 +81,11 @@
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Total Paid:</span>
-                            <strong class="text-success">@Model.TotalPaid.ToString("C")</strong>
+                            <strong class="text-success">@Model.TotalPaid.ToString("C", pesoCulture)</strong>
                         </div>
                         <div class="d-flex justify-content-between">
                             <span class="text-muted">Monthly Rent:</span>
-                            <strong>@Model.TenantInfo.MonthlyRent.ToString("C")</strong>
+                            <strong>@Model.TenantInfo.MonthlyRent.ToString("C", pesoCulture)</strong>
                         </div>
                     </div>
                 </div>

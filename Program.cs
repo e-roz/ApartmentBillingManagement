@@ -21,6 +21,7 @@ namespace Apartment
 
             // Register TenantLinkingService
             builder.Services.AddScoped<ITenantLinkingService, TenantLinkingService>();
+            builder.Services.AddScoped<InvoicePdfService>();
 
             // Add Cookie Authentication Service
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

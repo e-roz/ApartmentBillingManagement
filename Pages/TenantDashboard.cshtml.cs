@@ -30,6 +30,7 @@ namespace Apartment.Pages
             public string BillingPeriod { get; set; } = string.Empty;
             public decimal AmountDue { get; set; }
             public decimal AmountPaid { get; set; }
+            public decimal RemainingBalance { get; set; }
             public DateTime DueDate { get; set; }
             public bool IsPaid { get; set; }
         }
@@ -59,22 +60,44 @@ namespace Apartment.Pages
                         .Take(10)
                         .ToListAsync();
 
-                    OutstandingBalance = bills
-                        .Where(b => b.AmountPaid < b.AmountDue)
-                        .Sum(b => b.AmountDue - b.AmountPaid);
+                    var billIds = bills.Select(b => b.Id).ToList();
+                    var invoiceSums = await _context.Invoices
+                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                        .GroupBy(i => i.BillId!.Value)
+                        .Select(group => new
+                        {
+                            BillId = group.Key,
+                            TotalPaid = group.Sum(i => i.AmountDue)
+                        })
+                        .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
 
-                    PendingBills = bills.Count(b => b.AmountPaid < b.AmountDue);
+                    decimal GetPaidAmount(int billId) =>
+                        invoiceSums.TryGetValue(billId, out var totalPaid) ? totalPaid : 0m;
 
-                    TotalPaid = bills.Sum(b => b.AmountPaid);
-
-                    RecentBills = bills.Select(b => new BillSummary
+                    var billSummaries = bills.Select(b =>
                     {
-                        BillingPeriod = b.BillingPeriod?.MonthName + " " + b.BillingPeriod?.Year ?? "N/A",
-                        AmountDue = b.AmountDue,
-                        AmountPaid = b.AmountPaid,
-                        DueDate = b.DueDate,
-                        IsPaid = b.IsPaid
+                        var paid = GetPaidAmount(b.Id);
+                        var remaining = Math.Max(0m, b.AmountDue - paid);
+                        return new BillSummary
+                        {
+                            BillingPeriod = b.BillingPeriod?.MonthName + " " + b.BillingPeriod?.Year ?? "N/A",
+                            AmountDue = b.AmountDue,
+                            AmountPaid = paid,
+                            RemainingBalance = remaining,
+                            DueDate = b.DueDate,
+                            IsPaid = remaining == 0m
+                        };
                     }).ToList();
+
+                    OutstandingBalance = billSummaries
+                        .Where(b => b.RemainingBalance > 0)
+                        .Sum(b => b.RemainingBalance);
+
+                    PendingBills = billSummaries.Count(b => b.RemainingBalance > 0);
+
+                    TotalPaid = billSummaries.Sum(b => b.AmountPaid);
+
+                    RecentBills = billSummaries;
                 }
             }
         }

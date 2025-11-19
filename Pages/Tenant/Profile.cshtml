@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Profile & Settings";
     Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
 <div class="d-flex">
@@ -95,7 +96,7 @@
                         <div class="col-md-6">
                             <p><strong>Lease Start:</strong> @Model.TenantInfo.LeaseStartDate.ToString("MM/dd/yyyy")</p>
                             <p><strong>Lease End:</strong> @Model.TenantInfo.LeaseEndDate.ToString("MM/dd/yyyy")</p>
-                            <p><strong>Monthly Rent:</strong> @Model.TenantInfo.MonthlyRent.ToString("C")</p>
+                            <p><strong>Monthly Rent:</strong> @Model.TenantInfo.MonthlyRent.ToString("C", pesoCulture)</p>
                         </div>
                     </div>
                 </div>

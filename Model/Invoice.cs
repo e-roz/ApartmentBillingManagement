@@ -31,6 +31,7 @@ namespace Apartment.Model
 
         public DateTime IssueDate { get; set; }
 
+        [Column(TypeName = "nvarchar(20)")]
         public InvoiceStatus Status { get; set; } = InvoiceStatus.Pending;
 
 

@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Documents";
     Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
 <div class="d-flex">
@@ -31,7 +32,7 @@
                             <p class="text-muted">
                                 <strong>Unit:</strong> @(Model.TenantInfo.UnitNumber ?? "Not Assigned")<br />
                                 <strong>Lease Period:</strong> @Model.TenantInfo.LeaseStartDate.ToString("MM/dd/yyyy") - @Model.TenantInfo.LeaseEndDate.ToString("MM/dd/yyyy")<br />
-                                <strong>Monthly Rent:</strong> @Model.TenantInfo.MonthlyRent.ToString("C")
+                                <strong>Monthly Rent:</strong> @Model.TenantInfo.MonthlyRent.ToString("C", pesoCulture)
                             </p>
                         }
                         <button class="btn btn-primary" onclick="alert('In production, this would open or download your lease agreement PDF.')">

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq;
 
 namespace Apartment.Pages.Manager
@@ -16,6 +17,7 @@ namespace Apartment.Pages.Manager
     public class GenerateBillsModel : PageModel
     {
         private readonly ApplicationDbContext dbData;
+        private static readonly CultureInfo PhpCulture = CultureInfo.CreateSpecificCulture("en-PH");
         public GenerateBillsModel(ApplicationDbContext context)
         {
             dbData = context;
@@ -243,38 +245,10 @@ namespace Apartment.Pages.Manager
                         return Page();
                     }
 
-                    // Create corresponding Invoice records for each Bill
-                    // Note: After SaveChangesAsync, EF Core assigns IDs to the bills in billsCreate
-                    var invoicesCreate = new List<Invoice>();
-                    foreach (var bill in billsCreate)
-                    {
-                        // Generate invoice title from billing period
-                        var invoiceTitle = $"{billingPeriod.MonthName} {billingPeriod.Year} - Rent Invoice";
-
-                        var newInvoice = new Invoice
-                        {
-                            BillId = bill.Id, // Link invoice to bill (Id is assigned after SaveChangesAsync)
-                            TenantId = bill.TenantId,
-                            ApartmentId = bill.ApartmentId,
-                            Title = invoiceTitle,
-                            AmountDue = bill.AmountDue,
-                            DueDate = bill.DueDate,
-                            IssueDate = DateTime.UtcNow,
-                            Status = InvoiceStatus.Pending
-                        };
-                        invoicesCreate.Add(newInvoice);
-                    }
-
-                    // Save all generated invoices to the database
-                    if (invoicesCreate.Any())
-                    {
-                        dbData.Invoices.AddRange(invoicesCreate);
-                        await dbData.SaveChangesAsync();
-                    }
                 }
                 catch (Exception ex)
                 {
-                    ModelState.AddModelError(string.Empty, $"Error saving bills/invoices to database: {ex.Message}");
+                    ModelState.AddModelError(string.Empty, $"Error saving bills to database: {ex.Message}");
                     await LoadOccupiedApartmentsAsync();
                     return Page();
                 }
@@ -299,7 +273,7 @@ namespace Apartment.Pages.Manager
                 TotalAmountBilled = billsCreate.Sum(b => b.AmountDue)
             };
 
-            SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {Input.Year}. Total amount billed: {Summary.TotalAmountBilled:C}.";
+            SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {Input.Year}. Total amount billed: {Summary.TotalAmountBilled.ToString("C", PhpCulture)}.";
 
             await LoadOccupiedApartmentsAsync();
             return Page();

@@ -17,7 +17,7 @@ namespace Apartment.Pages.Tenant
             _context = context;
         }
 
-        public IList<Bill> Invoices { get; set; } = new List<Bill>();
+        public IList<Invoice> Invoices { get; set; } = new List<Invoice>();
         public Model.Tenant? TenantInfo { get; set; }
 
         public async Task OnGetAsync()
@@ -74,13 +74,16 @@ namespace Apartment.Pages.Tenant
                         }
                     }
 
-                    // Fetch all Bill entities where TenantId matches the logged-in tenant's ID
+                    // Fetch all Invoice entities where TenantId matches the logged-in tenant's ID
                     if (TenantInfo != null)
                     {
-                        Invoices = await _context.Bills
-                            .Include(b => b.BillingPeriod)
-                            .Where(b => b.TenantId == TenantInfo.Id)
-                            .OrderByDescending(b => b.GeneratedDate)
+                        var tenantId = TenantInfo.Id;
+                        Invoices = await _context.Invoices
+                            .Include(i => i.Bill)
+                                .ThenInclude(b => b.BillingPeriod)
+                            .Include(i => i.Apartment)
+                            .Where(i => i.TenantId == tenantId)
+                            .OrderByDescending(i => i.IssueDate)
                             .ToListAsync();
                     }
                 }

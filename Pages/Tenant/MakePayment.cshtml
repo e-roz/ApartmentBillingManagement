@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Make a Payment";
     Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
 <div class="d-flex">
@@ -28,7 +29,7 @@
             <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <div class="card-body text-white p-4">
                     <h5 class="card-title mb-2" style="opacity: 0.9;">Outstanding Balance</h5>
-                    <h2 class="mb-0 fw-bold">@Model.OutstandingBalance.ToString("C")</h2>
+                    <h2 class="mb-0 fw-bold">@Model.OutstandingBalance.ToString("C", pesoCulture)</h2>
                 </div>
             </div>
 
@@ -45,7 +46,7 @@
                                 {
                                     <option value="@bill.Id">
                                         @(bill.BillingPeriod != null ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}" : "N/A") - 
-                                        @((bill.AmountDue - bill.AmountPaid).ToString("C")) remaining
+                                        @((bill.AmountDue - bill.AmountPaid).ToString("C", pesoCulture)) remaining
                                     </option>
                                 }
                             </select>

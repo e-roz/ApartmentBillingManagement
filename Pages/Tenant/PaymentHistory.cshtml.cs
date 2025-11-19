@@ -42,19 +42,20 @@ namespace Apartment.Pages.Tenant
                 {
                     TenantInfo = user.Tenant;
 
-                    var bills = await _context.Bills
-                        .Include(b => b.BillingPeriod)
-                        .Where(b => b.TenantId == TenantInfo.Id && b.AmountPaid > 0)
-                        .OrderByDescending(b => b.PaymentDate ?? b.GeneratedDate)
+                    var invoices = await _context.Invoices
+                        .Where(i => i.TenantId == TenantInfo.Id && i.PaymentDate != null)
+                        .OrderByDescending(i => i.PaymentDate)
                         .ToListAsync();
 
-                    Payments = bills.Select(b => new PaymentViewModel
+                    Payments = invoices.Select(i => new PaymentViewModel
                     {
-                        TransactionId = b.Id,
-                        PaymentDate = b.PaymentDate ?? b.GeneratedDate,
-                        AmountPaid = b.AmountPaid,
+                        TransactionId = i.Id,
+                        PaymentDate = i.PaymentDate ?? i.IssueDate,
+                        AmountPaid = i.AmountDue,
                         PaymentMethod = "Online Payment",
-                        InvoiceReference = $"Invoice #{b.Id}"
+                        InvoiceReference = !string.IsNullOrWhiteSpace(i.Title)
+                            ? i.Title
+                            : $"Bill #{i.BillId}"
                     }).ToList();
                 }
             }

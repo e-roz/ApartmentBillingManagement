@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Payment History";
     Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
 <div class="d-flex">
@@ -33,7 +34,7 @@
                                     <tr>
                                         <td>#@payment.TransactionId</td>
                                         <td>@payment.PaymentDate.ToString("MM/dd/yyyy")</td>
-                                        <td class="text-success"><strong>@payment.AmountPaid.ToString("C")</strong></td>
+                                        <td class="text-success"><strong>@payment.AmountPaid.ToString("C", pesoCulture)</strong></td>
                                         <td>@payment.PaymentMethod</td>
                                         <td>@payment.InvoiceReference</td>
                                     </tr>

@@ -5,7 +5,8 @@ namespace Apartment.Enums
         Pending,
         Paid,
         Overdue,
-        Cancelled
+        Cancelled,
+        Partial
     }
 }
 

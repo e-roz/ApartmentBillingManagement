@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "View Invoices";
     Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
 <div class="d-flex">
@@ -20,8 +21,10 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Billing Period/Month</th>
-                                    <th>Amount Due</th>
+                                    <th>Invoice</th>
+                                    <th>Bill Amount</th>
+                                    <th>Payment Amount</th>
+                                    <th>Issue Date</th>
                                     <th>Due Date</th>
                                     <th>Status</th>
                                     <th>Action</th>
@@ -30,42 +33,41 @@
                             <tbody>
                                 @foreach (var invoice in Model.Invoices)
                                 {
-                                    var billingPeriod = invoice.BillingPeriod != null 
-                                        ? $"{invoice.BillingPeriod.MonthName} {invoice.BillingPeriod.Year}" 
+                                    var billingPeriod = invoice.Bill?.BillingPeriod != null
+                                        ? $"{invoice.Bill.BillingPeriod.MonthName} {invoice.Bill.BillingPeriod.Year}"
                                         : "N/A";
-                                    var isUnpaid = !invoice.IsPaid;
-                                    var status = invoice.IsPaid ? "Paid" 
-                                        : (invoice.DueDate < DateTime.Now ? "Overdue" : "Unpaid");
+                                    var billAmount = invoice.Bill?.AmountDue ?? invoice.AmountDue;
+                                    var remaining = invoice.Bill != null
+                                        ? Math.Max(0m, invoice.Bill.AmountDue - invoice.Bill.AmountPaid)
+                                        : 0m;
+                                    var showPayButton = invoice.BillId.HasValue && remaining > 0m;
                                     
                                     <tr>
-                                        <td>@billingPeriod</td>
-                                        <td>@invoice.AmountDue.ToString("C")</td>
+                                        <td>
+                                            <div class="fw-semibold">@invoice.Title</div>
+                                            <small class="text-muted d-block">@billingPeriod</small>
+                                        </td>
+                                        <td>@billAmount.ToString("C", pesoCulture)</td>
+                                        <td>@invoice.AmountDue.ToString("C", pesoCulture)</td>
+                                        <td>@invoice.IssueDate.ToString("MM/dd/yyyy")</td>
                                         <td>@invoice.DueDate.ToString("MM/dd/yyyy")</td>
                                         <td>
-                                            @if (status == "Paid")
-                                            {
-                                                <span class="badge bg-success">Paid</span>
-                                            }
-                                            else if (status == "Overdue")
-                                            {
-                                                <span class="badge bg-danger">Overdue</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-warning">Unpaid</span>
-                                            }
+                                            <span class="badge @(invoice.Status == Apartment.Enums.InvoiceStatus.Paid ? "bg-success" : invoice.Status == Apartment.Enums.InvoiceStatus.Overdue ? "bg-danger" : invoice.Status == Apartment.Enums.InvoiceStatus.Partial ? "bg-warning text-dark" : "bg-secondary")">
+                                                @invoice.Status
+                                            </span>
                                         </td>
                                         <td>
-                                            @if (isUnpaid)
-                                            {
-                                                <a asp-page="/Tenant/MakePayment" asp-route-billId="@invoice.Id" class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-credit-card me-1"></i>Pay
+                                            <div class="d-flex gap-2">
+                                                <a asp-page="/Tenant/InvoiceDownload" asp-route-invoiceId="@invoice.Id" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="bi bi-download me-1"></i>PDF
                                                 </a>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">—</span>
-                                            }
+                                                @if (showPayButton)
+                                                {
+                                                    <a asp-page="/Tenant/MakePayment" asp-route-billId="@invoice.BillId" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-credit-card me-1"></i>Pay
+                                                    </a>
+                                                }
+                                            </div>
                                         </td>
                                     </tr>
                                 }

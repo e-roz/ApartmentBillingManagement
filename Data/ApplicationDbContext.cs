@@ -54,6 +54,11 @@ namespace Apartment.Data
                 .HasForeignKey(b => b.TenantId)
                 .OnDelete(DeleteBehavior.Restrict); // prevents deleting a tenant if they have associated bills
 
+            modelBuilder.Entity<Invoice>()
+                .Property(i => i.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
             // Configure TenantLink Id as auto-incrementing identity column
             modelBuilder.Entity<TenantLink>()
                 .Property(tl => tl.Id)

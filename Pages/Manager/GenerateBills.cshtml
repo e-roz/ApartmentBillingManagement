@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Generate Monthly Bills";
     Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
 <div class="d-flex">
@@ -120,7 +121,7 @@
                                                     </div>
                                                 </td>
                                                 <td>@unit.UnitNumber</td>
-                                                <td class="text-end">@String.Format("{0:C}", unit.MonthlyRent)</td>
+                                                <td class="text-end">@String.Format(pesoCulture, "{0:C}", unit.MonthlyRent)</td>
                                                 <td>@(string.IsNullOrEmpty(unit.TenantName) ? "N/A" : unit.TenantName)</td>
                                             </tr>
                                         }
@@ -163,7 +164,7 @@
                             <dd class="col-6 col-sm-7">@Model.Summary.BillsCreated</dd>
 
                             <dt class="col-6 col-sm-5">Total Amount Billed</dt>
-                            <dd class="col-6 col-sm-7">@String.Format("{0:C}", Model.Summary.TotalAmountBilled)</dd>
+                            <dd class="col-6 col-sm-7">@String.Format(pesoCulture, "{0:C}", Model.Summary.TotalAmountBilled)</dd>
                         </dl>
                     </div>
                 </div>
