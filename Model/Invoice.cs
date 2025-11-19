@@ -41,6 +41,12 @@ namespace Apartment.Model
         //payment tracking
         public DateTime? PaymentDate { get; set; }
 
+        [StringLength(500)]
+        public string? ReceiptImagePath { get; set; }
+
+        [StringLength(100)]
+        public string? ReferenceNumber { get; set; }
+
         [ForeignKey("TenantId")]
         public Tenant? Tenant { get; set; }
 
