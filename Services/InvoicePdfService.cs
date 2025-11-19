@@ -113,9 +113,12 @@ namespace Apartment.Services
                 }
 
                 var logo = Image.GetInstance(logoPath);
-                logo.ScaleToFit(140f, 60f);
-                logo.Alignment = Image.ALIGN_RIGHT;
+
+                logo.ScaleToFit(200f, 120f);
+
+                logo.Alignment = Image.ALIGN_LEFT;
                 logo.SpacingAfter = 10f;
+
                 document.Add(logo);
             }
             catch (Exception ex)
