@@ -52,7 +52,9 @@ namespace Apartment.Pages.Tenant
                         TransactionId = i.Id,
                         PaymentDate = i.PaymentDate ?? i.IssueDate,
                         AmountPaid = i.AmountDue,
-                        PaymentMethod = "Online Payment",
+                        PaymentMethod = string.IsNullOrWhiteSpace(i.PaymentMethod)
+                            ? "Online Payment"
+                            : i.PaymentMethod,
                         InvoiceReference = !string.IsNullOrWhiteSpace(i.Title)
                             ? i.Title
                             : $"Bill #{i.BillId}"

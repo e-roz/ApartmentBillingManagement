@@ -46,11 +46,14 @@ namespace Apartment.Pages.Tenant
 
         public async Task<IActionResult> OnPostAsync()
         {
+            if (string.IsNullOrWhiteSpace(Input.PaymentMethod))
+            {
+                ModelState.AddModelError(nameof(Input.PaymentMethod), "Please select a payment method.");
+            }
+
             if (Input.Amount <= 0)
             {
                 ModelState.AddModelError(nameof(Input.Amount), "Payment amount must be greater than zero.");
-                await LoadDataAsync();
-                return Page();
             }
 
             if (!ModelState.IsValid)
@@ -131,6 +134,7 @@ namespace Apartment.Pages.Tenant
                                 DueDate = bill.DueDate,
                                 IssueDate = now,
                                 PaymentDate = now,
+                                PaymentMethod = Input.PaymentMethod,
                                 Status = invoiceStatus
                             };
 

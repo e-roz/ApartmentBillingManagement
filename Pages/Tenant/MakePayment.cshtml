@@ -9,86 +9,194 @@
 <div class="d-flex">
     @await Html.PartialAsync("_TenantSidebar")
 
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <div class="mb-4">
-            <h1 class="h3 mb-2">Make a Payment</h1>
-            <p class="text-muted mb-0">Submit a payment for your outstanding balance.</p>
-        </div>
-
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="main-content">
+        <div class="page-heading">
+            <div>
+                <h1 class="page-title">Make a Payment</h1>
+                <p class="page-subtitle">Complete your payment in a few guided steps.</p>
             </div>
-        }
+            <div class="status-chip">
+                <span class="dot"></span>
+                Secure Simulation
+            </div>
+        </div>
 
         @if (Model.TenantInfo != null)
         {
-            <!-- Outstanding Balance Section -->
-            <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body text-white p-4">
-                    <h5 class="card-title mb-2" style="opacity: 0.9;">Outstanding Balance</h5>
-                    <h2 class="mb-0 fw-bold">@Model.OutstandingBalance.ToString("C", pesoCulture)</h2>
-                </div>
-            </div>
+            <div class="payment-layout">
+                <section class="balance-card">
+                    <div class="balance-header">
+                        <p class="label">Outstanding Balance</p>
+                        <span class="pill">Updated just now</span>
+                    </div>
+                    <h2 class="balance-amount">@Model.OutstandingBalance.ToString("C", pesoCulture)</h2>
+                    <p class="balance-note">Settle the full amount or choose a specific bill below.</p>
 
-            <!-- Payment Form Section -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <h5 class="card-title mb-4">Payment Form</h5>
-                    <form method="post">
-                        <div class="mb-4">
-                            <label asp-for="Input.BillId" class="form-label fw-semibold">Select Bill (Optional)</label>
-                            <select asp-for="Input.BillId" class="form-select form-select-lg">
-                                <option value="">Pay Total Outstanding Balance</option>
-                                @foreach (var bill in Model.PendingBills)
-                                {
-                                    <option value="@bill.Id">
-                                        @(bill.BillingPeriod != null ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}" : "N/A") - 
-                                        @((bill.AmountDue - bill.AmountPaid).ToString("C", pesoCulture)) remaining
-                                    </option>
+                    <div class="upcoming-list">
+                        <div class="upcoming-item">
+                            <div>
+                                <p class="upcoming-title">Next Billing Cycle</p>
+                                <p class="upcoming-desc">
+                                    @((Model.PendingBills?.FirstOrDefault()?.BillingPeriod?.MonthName) ?? "Pending")
+                                    @((Model.PendingBills?.FirstOrDefault()?.BillingPeriod?.Year.ToString()) ?? string.Empty)
+                                </p>
+                            </div>
+                            <span class="upcoming-amount">
+                                @{
+                                    var nextBalance = Model.PendingBills?.FirstOrDefault();
+                                    var nextAmount = nextBalance != null ? (nextBalance.AmountDue - nextBalance.AmountPaid) : 0;
                                 }
-                            </select>
+                                @nextAmount.ToString("C", pesoCulture)
+                            </span>
+                        </div>
+                        <div class="upcoming-item">
+                            <div>
+                                <p class="upcoming-title">Total Pending Bills</p>
+                                <p class="upcoming-desc">@((Model.PendingBills?.Count) ?? 0) open invoices</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="payment-card">
+                    <form id="paymentForm" method="post" novalidate>
+                        <input type="hidden" asp-for="Input.PaymentMethod" id="selectedPaymentMethod" />
+
+                        <div class="input-grid">
+                            <div class="field-block">
+                                <label asp-for="Input.BillId">Select Bill</label>
+                                <div class="field-hint">Choose which invoice to pay or cover everything.</div>
+                                @{
+                                    var pendingBills = Model.PendingBills ?? new List<Apartment.Model.Bill>();
+                                }
+                                <select asp-for="Input.BillId" class="fancy-select">
+                                    <option value="">Pay Total Outstanding Balance</option>
+                                    @foreach (var bill in pendingBills)
+                                    {
+                                        var remaining = bill.AmountDue - bill.AmountPaid;
+                                        <option value="@bill.Id">
+                                            @(bill.BillingPeriod != null ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}" : "N/A") — @remaining.ToString("C", pesoCulture) due
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="field-block">
+                                <label asp-for="Input.Amount">Payment Amount</label>
+                                <div class="field-hint">Enter an amount greater than ₱0.00</div>
+                                <div class="amount-input">
+                                    <span>₱</span>
+                                    <input asp-for="Input.Amount" type="number" min="0.01" step="0.01" placeholder="0.00" required />
+                                </div>
+                                <span asp-validation-for="Input.Amount" class="text-danger"></span>
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label asp-for="Input.Amount" class="form-label fw-semibold">Payment Amount</label>
-                            <input asp-for="Input.Amount" class="form-control form-control-lg" type="number" step="0.01" min="0.01" placeholder="0.00" required />
-                            <span asp-validation-for="Input.Amount" class="text-danger"></span>
+                        <div class="payment-methods-wrapper">
+                            <div class="method-header">
+                                <div>
+                                    <p class="label">Payment Method</p>
+                                    <p class="method-hint">Tap a card to reveal the required fields.</p>
+                                </div>
+                                <div class="selected-method" id="selectedMethodLabel">No method selected</div>
+                            </div>
+                            <span asp-validation-for="Input.PaymentMethod" class="text-danger d-block mt-2"></span>
+
+                            <div class="payment-methods" role="list">
+                                <button type="button" class="payment-method-card" data-method="gcash" data-label="GCash" data-type="wallet" data-destination="GCASH • 0917 555 0000">
+                                    <img src="~/images/gcash-logo.png" alt="GCash icon" />
+                                    <div>
+                                        <span>GCash</span>
+                                        <small>Instant wallet payment</small>
+                                    </div>
+                                </button>
+                                <button type="button" class="payment-method-card" data-method="maya" data-label="Maya" data-type="wallet" data-destination="MAYA • 0999 888 0000">
+                                    <img src="~/images/paymaya-logo.png" alt="Maya icon" />
+                                    <div>
+                                        <span>Maya</span>
+                                        <small>Wallet & QR payments</small>
+                                    </div>
+                                </button>
+                                <button type="button" class="payment-method-card" data-method="bdo" data-label="BDO" data-type="bank" data-destination="BDO • 0044 1234 9876">
+                                    <img src="~/images/bdo-logo.jpg" alt="BDO icon" />
+                                    <div>
+                                        <span>BDO</span>
+                                        <small>Online / OTC</small>
+                                    </div>
+                                </button>
+                                <button type="button" class="payment-method-card" data-method="metrobank" data-label="Metrobank" data-type="bank" data-destination="Metrobank • 0099 2234 1122">
+                                    <img src="~/images/metrobank-image.png" alt="Metrobank icon" />
+                                    <div>
+                                        <span>Metrobank</span>
+                                        <small>Bank transfer</small>
+                                    </div>
+                                </button>
+                                <button type="button" class="payment-method-card" data-method="landbank" data-label="Landbank" data-type="bank" data-destination="Landbank • 0123 4567 1212">
+                                    <img src="~/images/landbank-logo.jpg" alt="Landbank icon" />
+                                    <div>
+                                        <span>Landbank</span>
+                                        <small>Gov partner bank</small>
+                                    </div>
+                                </button>
+                                <button type="button" class="payment-method-card" data-method="bpi" data-label="BPI" data-type="bank" data-destination="BPI • 0333 6677 8899">
+                                    <img src="~/images/bpi-logo.png" alt="BPI icon" />
+                                    <div>
+                                        <span>BPI</span>
+                                        <small>Digital banking</small>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label asp-for="Input.PaymentMethod" class="form-label fw-semibold">Payment Method</label>
-                            <select asp-for="Input.PaymentMethod" class="form-select form-select-lg">
-                                <option value="Credit Card">Credit Card</option>
-                                <option value="GCash">GCash</option>
-                                <option value="Maya">Maya</option>
-                                <option value="Bank Transfer">Bank Transfer</option>
-                                <option value="GrabPay">GrabPay</option>
-                                <option value="ShopeePay">ShopeePay</option>
-                                <option value="Cash">Cash</option>
-                            </select>
+                        <div class="dynamic-fields">
+                            <div class="method-fields" data-field-type="wallet">
+                                <h6>Wallet Details</h6>
+                                <div class="field-grid">
+                                    <label class="input-label">Phone Number linked to wallet</label>
+                                    <input type="tel" id="walletPhone" name="walletPhone" placeholder="09XX XXX XXXX" />
+                                </div>
+                            </div>
+
+                            <div class="method-fields" data-field-type="bank">
+                                <h6>Bank Transfer Details</h6>
+                                <div class="field-grid">
+                                    <div class="field-block slim">
+                                        <label class="input-label">Account Name</label>
+                                        <input type="text" id="bankAccountName" name="bankAccountName" placeholder="e.g. Juan Dela Cruz" />
+                                    </div>
+                                    <div class="field-block slim">
+                                        <label class="input-label">Account Number</label>
+                                        <input type="text" id="bankAccountNumber" name="bankAccountNumber" placeholder="XXXX XXXX XXXX" />
+                                    </div>
+                                </div>
+                                <div class="copy-card">
+                                    <div>
+                                        <p class="label">Copy Account Number</p>
+                                        <p class="copy-hint" id="bankAccountLabel">Select a bank to view details.</p>
+                                    </div>
+                                    <div class="copy-box">
+                                        <input type="text" id="accountNumberDisplay" readonly value="" />
+                                        <button type="button" id="copyAccountBtn">Copy</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="alert alert-info mb-4">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <strong>Note:</strong> This is a simulation. In a production environment, this would integrate with a payment gateway.
+                        <div class="note-banner">
+                            <span class="dot"></span>
+                            Simulation only — no actual payment will be processed.
                         </div>
 
-                        <div class="d-flex gap-3">
-                            <button type="submit" class="btn btn-primary btn-lg px-5">
-                                <i class="bi bi-credit-card me-2"></i>Submit Payment
-                            </button>
-                            <a asp-page="/TenantDashboard" class="btn btn-secondary btn-lg px-4">Cancel</a>
+                        <div class="action-row">
+                            <button type="submit" class="btn primary">Submit Payment</button>
+                            <a asp-page="/TenantDashboard" class="btn ghost">Cancel</a>
                         </div>
                     </form>
-                </div>
+                </section>
             </div>
         }
         else
         {
-            <div class="alert alert-info">
+            <div class="alert alert-info modern-alert">
                 <i class="bi bi-info-circle me-2"></i>
                 No tenant profile found. Please contact the administrator.
             </div>
@@ -96,10 +204,608 @@
     </div>
 </div>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <style>
+    :root {
+        --surface: #ffffff;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --blue: #2563eb;
+        --blue-soft: #e0edff;
+        --bg: #f4f6fb;
+        --shadow: 0 30px 60px rgba(15, 23, 42, 0.12);
+        --transition: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     .main-content {
+        margin-left: 280px;
+        width: calc(100% - 280px);
         min-height: 100vh;
+        padding: 2.5rem 3rem;
         background: #f8f9fa;
     }
+
+    .page-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        color: #101828;
+    }
+
+    .page-subtitle {
+        margin: 0.25rem 0 0;
+        color: var(--muted);
+    }
+
+    .status-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(37, 99, 235, 0.08);
+        color: var(--blue);
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .status-chip .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--blue);
+        box-shadow: 0 0 8px rgba(37, 99, 235, 0.4);
+    }
+
+    .payment-layout {
+        display: flex;
+        gap: 2rem;
+        align-items: stretch;
+    }
+
+    .balance-card {
+        flex: 0 0 340px;
+        background: var(--surface);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    .balance-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .label {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 0;
+    }
+
+    .pill {
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.6);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #2563eb;
+    }
+
+    .balance-amount {
+        font-size: 3rem;
+        font-weight: 700;
+        margin: 0;
+        color: #0f172a;
+    }
+
+    .balance-note {
+        margin: 0.75rem 0 1.5rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+    }
+
+    .upcoming-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .upcoming-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .upcoming-title {
+        margin: 0;
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .upcoming-desc {
+        margin: 0.2rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+    }
+
+    .upcoming-amount {
+        font-weight: 700;
+        color: var(--blue);
+    }
+
+    .badge-soft {
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--blue);
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .payment-card {
+        flex: 1;
+        background: var(--surface);
+        border-radius: 24px;
+        padding: 2.25rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .input-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .field-block label {
+        display: block;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 0.25rem;
+    }
+
+    .field-hint {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 0.65rem;
+    }
+
+    .fancy-select, .amount-input input {
+        width: 100%;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        padding: 0.9rem 1rem;
+        background: #f9fafb;
+        font-size: 1rem;
+        transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .fancy-select:focus, .amount-input input:focus {
+        border-color: var(--blue);
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+        background: #fff;
+    }
+
+    .amount-input {
+        position: relative;
+    }
+
+    .amount-input span {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-weight: 600;
+    }
+
+    .amount-input input {
+        padding-left: 2.5rem;
+    }
+
+    .payment-methods-wrapper {
+        border-top: 1px solid #f1f5f9;
+        padding-top: 1.5rem;
+    }
+
+    .method-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .method-hint {
+        margin: 0.15rem 0 0;
+        color: var(--muted);
+    }
+
+    .selected-method {
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        background: var(--blue-soft);
+        color: var(--blue);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .payment-methods {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-top: 1.25rem;
+    }
+
+    .payment-method-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        padding: 1rem 1.25rem;
+        background: #fff;
+        cursor: pointer;
+        transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .payment-method-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        border: 2px solid transparent;
+        transition: border-color var(--transition);
+    }
+
+    .payment-method-card img {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        object-fit: contain;
+        background: #fff;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    .payment-method-card span {
+        display: block;
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .payment-method-card small {
+        color: var(--muted);
+    }
+
+    .payment-method-card:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 20px 30px rgba(15, 23, 42, 0.12);
+    }
+
+    .payment-method-card.active {
+        border-color: rgba(37, 99, 235, 0.4);
+        box-shadow: 0 25px 45px rgba(37, 99, 235, 0.25);
+    }
+
+    .payment-method-card.active::after {
+        border-color: rgba(37, 99, 235, 0.7);
+    }
+
+    .dynamic-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .method-fields {
+        border-radius: 24px;
+        border: 1px dashed rgba(148, 163, 184, 0.7);
+        padding: 1.5rem;
+        background: rgba(248, 250, 255, 0.8);
+        transition: max-height var(--transition), opacity var(--transition), margin var(--transition);
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+    }
+
+    .method-fields.active {
+        max-height: 320px;
+        opacity: 1;
+        margin-top: 0.5rem;
+    }
+
+    .method-fields h6 {
+        margin: 0 0 1rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .field-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .field-block.slim input,
+    .method-fields input {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        padding: 0.85rem 1rem;
+        background: #fff;
+        transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .method-fields input:focus {
+        border-color: var(--blue);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+
+    .copy-card {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 18px;
+        background: #fff;
+        border: 1px solid rgba(37, 99, 235, 0.15);
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .copy-box {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .copy-box input {
+        border: 1px dashed rgba(37, 99, 235, 0.6);
+        background: rgba(224, 237, 255, 0.4);
+        font-weight: 600;
+    }
+
+    .copy-box button {
+        border: none;
+        background: var(--blue);
+        color: #fff;
+        padding: 0.65rem 1rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity var(--transition);
+    }
+
+    .copy-box button:hover {
+        opacity: 0.9;
+    }
+
+    .note-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 1rem 1.25rem;
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.04);
+        color: #475467;
+        font-weight: 500;
+    }
+
+    .note-banner .dot {
+        width: 8px;
+        height: 8px;
+        background: var(--blue);
+        border-radius: 50%;
+        box-shadow: 0 0 6px rgba(37, 99, 235, 0.6);
+    }
+
+    .action-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .btn {
+        border: none;
+        padding: 0.95rem 2rem;
+        border-radius: 16px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform var(--transition), box-shadow var(--transition);
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .btn.primary {
+        background: linear-gradient(90deg, #2563eb, #3b82f6);
+        color: #fff;
+        box-shadow: 0 20px 35px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn.primary:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn.ghost {
+        background: rgba(148, 163, 184, 0.1);
+        color: #475467;
+    }
+
+    .modern-alert {
+        margin-left: 280px;
+        width: calc(100% - 280px);
+        border-radius: 24px;
+        border: none;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow);
+    }
+
+    @@media (max-width: 1200px) {
+        .payment-layout {
+            flex-direction: column;
+        }
+
+        .balance-card {
+            flex: 1;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+            padding: 1.5rem;
+        }
+
+        .page-heading {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .payment-card {
+            padding: 1.5rem;
+        }
+
+        .action-row {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
 </style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const methodCards = document.querySelectorAll(".payment-method-card");
+        const methodLabel = document.getElementById("selectedMethodLabel");
+        const hiddenMethodInput = document.getElementById("selectedPaymentMethod");
+        const methodFields = document.querySelectorAll(".method-fields");
+        const walletFields = document.querySelector('.method-fields[data-field-type="wallet"]');
+        const bankFields = document.querySelector('.method-fields[data-field-type="bank"]');
+        const accountDisplay = document.getElementById("accountNumberDisplay");
+        const bankAccountLabel = document.getElementById("bankAccountLabel");
+        const copyBtn = document.getElementById("copyAccountBtn");
+        const form = document.getElementById("paymentForm");
+
+        let activeMethod = null;
+        let allowSubmit = false;
+        const methodConfig = {
+            gcash: { label: "GCash", type: "wallet" },
+            maya: { label: "Maya", type: "wallet" },
+            bdo: { label: "BDO", type: "bank" },
+            metrobank: { label: "Metrobank", type: "bank" },
+            landbank: { label: "Landbank", type: "bank" },
+            bpi: { label: "BPI", type: "bank" }
+        };
+
+        const activateCard = (card) => {
+            methodCards.forEach(c => c.classList.remove("active"));
+            card.classList.add("active");
+
+            const methodKey = card.dataset.method;
+            const details = methodConfig[methodKey];
+            activeMethod = details?.type ?? null;
+            const label = card.dataset.label ?? details?.label ?? "";
+            hiddenMethodInput.value = label;
+            methodLabel.textContent = label ? `${label} selected` : "No method selected";
+
+            methodFields.forEach(section => section.classList.remove("active"));
+            if (activeMethod === "wallet") {
+                walletFields.classList.add("active");
+            } else if (activeMethod === "bank") {
+                bankFields.classList.add("active");
+            }
+
+            const destination = card.dataset.destination || "";
+            accountDisplay.value = destination;
+            bankAccountLabel.textContent = destination ? `Transfer to ${destination}` : "Select a bank to view details.";
+        };
+
+        methodCards.forEach(card => {
+            card.addEventListener("click", () => activateCard(card));
+        });
+
+        const presetValue = hiddenMethodInput?.value?.trim();
+        if (presetValue) {
+            const presetCard = Array.from(methodCards).find(c => (c.dataset.label ?? "").toLowerCase() === presetValue.toLowerCase());
+            if (presetCard) {
+                activateCard(presetCard);
+            }
+        }
+
+        copyBtn?.addEventListener("click", () => {
+            if (!accountDisplay.value) {
+                Swal.fire({ icon: "info", title: "No account selected", text: "Select a bank first." });
+                return;
+            }
+
+            navigator.clipboard.writeText(accountDisplay.value)
+                .then(() => Swal.fire({ icon: "success", title: "Copied!", text: "Account number copied to clipboard." }))
+                .catch(() => Swal.fire({ icon: "error", title: "Copy failed", text: "Press CTRL+C to copy manually." }));
+        });
+
+        form?.addEventListener("submit", (event) => {
+            if (allowSubmit) {
+                return;
+            }
+
+            event.preventDefault();
+            const amount = parseFloat(document.getElementById("Input_Amount")?.value || "0");
+            const walletPhone = document.getElementById("walletPhone")?.value.trim();
+            const bankName = document.getElementById("bankAccountName")?.value.trim();
+            const bankNumber = document.getElementById("bankAccountNumber")?.value.trim();
+
+            if (!hiddenMethodInput.value) {
+                Swal.fire({ icon: "error", title: "Choose a method", text: "Select a payment method to continue." });
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                Swal.fire({ icon: "error", title: "Invalid amount", text: "Please enter an amount greater than ₱0.00." });
+                return;
+            }
+
+            if (activeMethod === "wallet" && !walletPhone) {
+                Swal.fire({ icon: "error", title: "Phone required", text: "Enter the phone number linked to your wallet." });
+                return;
+            }
+
+            if (activeMethod === "bank" && (!bankName || !bankNumber)) {
+                Swal.fire({ icon: "error", title: "Bank details missing", text: "Provide both account name and account number." });
+                return;
+            }
+
+            allowSubmit = true;
+            form.submit();
+        });
+    });
+</script>
 

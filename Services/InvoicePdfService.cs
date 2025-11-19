@@ -246,7 +246,8 @@ namespace Apartment.Services
             date.ToString("MMMM dd, yyyy", CultureInfo.InvariantCulture);
 
         private static string FormatCurrency(decimal amount) =>
-            string.Format(PhpCulture, "{0:C}", amount);
+            amount.ToString("C", PhpCulture);
+
     }
 }
 

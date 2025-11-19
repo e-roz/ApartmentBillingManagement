@@ -20,7 +20,7 @@ namespace Apartment.Model
 
         [Required]
         [StringLength(100)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         [Required]
         [Column(TypeName = "decimal(18, 2)")]
@@ -30,6 +30,9 @@ namespace Apartment.Model
         public DateTime DueDate { get; set; }
 
         public DateTime IssueDate { get; set; }
+
+        [StringLength(50)]
+        public string PaymentMethod { get; set; } = "Online Payment";
 
         [Column(TypeName = "nvarchar(20)")]
         public InvoiceStatus Status { get; set; } = InvoiceStatus.Pending;

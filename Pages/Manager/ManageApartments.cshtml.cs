@@ -48,6 +48,25 @@ namespace Apartment.Pages.Manager
             dbData = context;
         }
 
+        private void AssignTenantToApartment(Apartment.Model.Tenant tenant, ApartmentModel apartment)
+        {
+            tenant.ApartmentId = apartment.Id;
+            tenant.UnitNumber = apartment.UnitNumber;
+            tenant.MonthlyRent = apartment.MonthlyRent;
+            dbData.Tenants.Update(tenant);
+
+            apartment.IsOccupied = true;
+            dbData.Apartments.Update(apartment);
+        }
+
+        private void DetachTenantFromApartment(Apartment.Model.Tenant tenant)
+        {
+            tenant.ApartmentId = null;
+            tenant.UnitNumber = string.Empty;
+            tenant.MonthlyRent = 0m;
+            dbData.Tenants.Update(tenant);
+        }
+
         // -- Core Logic for the Manage Apartments Page will go here --
 
         public async Task OnGetAsync()
@@ -171,10 +190,7 @@ namespace Apartment.Pages.Manager
                 var tenant = await dbData.Tenants.FindAsync(SelectedTenantId.Value);
                 if (tenant != null)
                 {
-                    tenant.ApartmentId = ApartmentInput.Id;
-                    ApartmentInput.IsOccupied = true;
-                    dbData.Tenants.Update(tenant);
-                    dbData.Apartments.Update(ApartmentInput);
+                    AssignTenantToApartment(tenant, ApartmentInput);
                     await dbData.SaveChangesAsync();
                 }
             }
@@ -247,8 +263,7 @@ namespace Apartment.Pages.Manager
             if (existingTenant != null)
             {
                 // Unassign the previous tenant
-                existingTenant.ApartmentId = null;
-                dbData.Tenants.Update(existingTenant);
+                DetachTenantFromApartment(existingTenant);
                 SuccessMessage = $"Apartment {apartment.UnitNumber} was previously occupied by {existingTenant.FullName}. Tenant has been updated.";
             }
             else
@@ -257,11 +272,7 @@ namespace Apartment.Pages.Manager
             }
 
             // Assign the new tenant
-            tenant.ApartmentId = apartmentId;
-            apartment.IsOccupied = true;
-
-            dbData.Tenants.Update(tenant);
-            dbData.Apartments.Update(apartment);
+            AssignTenantToApartment(tenant, apartment);
             await dbData.SaveChangesAsync();
             return RedirectToPage();
         }
@@ -282,8 +293,7 @@ namespace Apartment.Pages.Manager
 
             if (tenant != null)
             {
-                tenant.ApartmentId = null;
-                dbData.Tenants.Update(tenant);
+                DetachTenantFromApartment(tenant);
             }
 
             apartment.IsOccupied = false;
@@ -333,14 +343,15 @@ namespace Apartment.Pages.Manager
                         .FirstOrDefaultAsync(t => t.ApartmentId == ApartmentId && t.Status == LeaseStatus.Active && t.Id != TenantId.Value);
                     if (existingTenant != null)
                     {
-                        existingTenant.ApartmentId = null;
-                        dbData.Tenants.Update(existingTenant);
+                        DetachTenantFromApartment(existingTenant);
                     }
 
                     // Assign the new tenant
-                    tenant.ApartmentId = ApartmentId;
-                    apartment.IsOccupied = true;
-                    dbData.Tenants.Update(tenant);
+                    AssignTenantToApartment(tenant, apartment);
+                }
+                else
+                {
+                    apartment.IsOccupied = false;
                 }
             }
             else
@@ -350,8 +361,7 @@ namespace Apartment.Pages.Manager
                     .FirstOrDefaultAsync(t => t.ApartmentId == ApartmentId && t.Status == LeaseStatus.Active);
                 if (existingTenant != null)
                 {
-                    existingTenant.ApartmentId = null;
-                    dbData.Tenants.Update(existingTenant);
+                    DetachTenantFromApartment(existingTenant);
                 }
                 apartment.IsOccupied = false;
             }

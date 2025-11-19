@@ -7,7 +7,7 @@ namespace Apartment.Services
 {
     public class TenantLinkingService : ITenantLinkingService
     {
-        private readonly ApplicationDbContext _context;
+      private readonly ApplicationDbContext _context;
 
         public TenantLinkingService(ApplicationDbContext context)
         {
