@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Apartment.Data;
 using Apartment.Model;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Apartment.Services
@@ -14,17 +16,20 @@ namespace Apartment.Services
     {
         private readonly ILogger<InvoicePdfService> _logger;
         private readonly IWebHostEnvironment _environment;
+        private readonly ApplicationDbContext _context;
         private static readonly CultureInfo PhpCulture = CultureInfo.CreateSpecificCulture("en-PH");
 
         public InvoicePdfService(
             ILogger<InvoicePdfService> logger,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            ApplicationDbContext context)
         {
             _logger = logger;
             _environment = environment;
+            _context = context;
         }
 
-        public byte[]? GenerateInvoicePdf(Invoice invoice)
+        public async Task<byte[]?> GenerateInvoicePdfAsync(Invoice invoice)
         {
             if (invoice == null)
             {
@@ -77,13 +82,53 @@ namespace Apartment.Services
                     ? Math.Max(0m, bill.AmountDue - bill.AmountPaid)
                     : 0m;
 
+                // Calculate overall remaining balance across all bills for this tenant
+                decimal overallRemainingBalance = 0m;
+                if (invoice.TenantId > 0)
+                {
+                    try
+                    {
+                        var allBills = await _context.Bills
+                            .Include(b => b.BillingPeriod)
+                            .Where(b => b.TenantId == invoice.TenantId)
+                            .ToListAsync();
+
+                        var allBillIds = allBills.Select(b => b.Id).ToList();
+                        
+                        if (allBillIds.Any())
+                        {
+                            var invoiceSums = await _context.Invoices
+                                .Where(i => i.BillId.HasValue && allBillIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                                .GroupBy(i => i.BillId!.Value)
+                                .Select(group => new
+                                {
+                                    BillId = group.Key,
+                                    TotalPaid = group.Sum(i => i.AmountDue)
+                                })
+                                .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
+
+                            overallRemainingBalance = allBills
+                                .Sum(b =>
+                                {
+                                    var paidAmount = invoiceSums.TryGetValue(b.Id, out var paid) ? paid : 0m;
+                                    return Math.Max(0m, b.AmountDue - paidAmount);
+                                });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to calculate overall remaining balance for tenant {TenantId}", invoice.TenantId);
+                    }
+                }
+
                 document.Add(CreateTwoColumnTable(new[]
                 {
                     ("Description", description),
                     ("Status", invoice.Status.ToString()),
                     ("Amount Due", FormatCurrency(bill?.AmountDue ?? invoice.AmountDue)),
                     ("Amount Paid (this invoice)", FormatCurrency(invoice.AmountDue)),
-                    ("Remaining Balance", FormatCurrency(remaining))
+                    ("Remaining Balance (this bill)", FormatCurrency(remaining)),
+                    ("Overall Remaining Balance", FormatCurrency(overallRemainingBalance))
                 }, labelFont, valueFont));
 
                 document.Close();

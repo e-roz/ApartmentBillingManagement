@@ -61,7 +61,7 @@ namespace Apartment.Pages.Tenant
             byte[] pdfBytes;
             try
             {
-                pdfBytes = _invoicePdfService.GenerateInvoicePdf(invoice) ?? Array.Empty<byte>();
+                pdfBytes = await _invoicePdfService.GenerateInvoicePdfAsync(invoice) ?? Array.Empty<byte>();
             }
             catch (Exception ex)
             {

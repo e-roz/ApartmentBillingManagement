@@ -2,11 +2,13 @@ using Apartment.Data;
 using Apartment.Model;
 using Apartment.ViewModels;
 using Apartment.Enums;
+using Apartment.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
@@ -17,10 +19,12 @@ namespace Apartment.Pages.Manager
     public class GenerateBillsModel : PageModel
     {
         private readonly ApplicationDbContext dbData;
+        private readonly ILogSnagClient _logSnagClient;
         private static readonly CultureInfo PhpCulture = CultureInfo.CreateSpecificCulture("en-PH");
-        public GenerateBillsModel(ApplicationDbContext context)
+        public GenerateBillsModel(ApplicationDbContext context, ILogSnagClient logSnagClient)
         {
             dbData = context;
+            _logSnagClient = logSnagClient;
         }
 
         //Input model to hold the selected month/year for bill generation
@@ -274,6 +278,18 @@ namespace Apartment.Pages.Manager
             };
 
             SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {Input.Year}. Total amount billed: {Summary.TotalAmountBilled.ToString("C", PhpCulture)}.";
+
+            await _logSnagClient.PublishAsync(new LogSnagEvent
+            {
+                Event = "Bills Generated",
+                Description = $"{Summary.BillsCreated} bills created for {monthName} {Input.Year}",
+                Icon = "🧾",
+                Tags = new Dictionary<string, string>
+                {
+                    { "period", Summary.PeriodKey },
+                    { "amount", Summary.TotalAmountBilled.ToString("0.##") }
+                }
+            });
 
             await LoadOccupiedApartmentsAsync();
             return Page();

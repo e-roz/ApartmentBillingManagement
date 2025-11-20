@@ -339,15 +339,19 @@
                     
                     <div class="mb-3">
                         <label asp-for="AddPaymentInput.BillId" class="form-label fw-semibold">Select Bill (Month)</label>
-                        <select asp-for="AddPaymentInput.BillId" class="form-select" required>
+                        <select asp-for="AddPaymentInput.BillId" class="form-select" id="billSelect" required>
                             <option value="">-- Select Month --</option>
+                            <option value="0" id="outstandingBalanceOption">Pay Outstanding Balance (Oldest Unpaid Bill)</option>
                             @if (Model.MonthlyBreakdowns.Any())
                             {
                                 @foreach (var breakdown in Model.MonthlyBreakdowns)
                                 {
-                                    <option value="@breakdown.BillId" data-remaining="@breakdown.RemainingBalance">
-                                        @breakdown.Month @breakdown.Year - Remaining: @breakdown.RemainingBalance.ToString("C", pesoCulture)
-                                    </option>
+                                    @if (breakdown.RemainingBalance > 0)
+                                    {
+                                        <option value="@breakdown.BillId" data-remaining="@breakdown.RemainingBalance">
+                                            @breakdown.Month @breakdown.Year - Remaining: @breakdown.RemainingBalance.ToString("C", pesoCulture)
+                                        </option>
+                                    }
                                 }
                             }
                             else
@@ -478,14 +482,29 @@
         }
 
         // Update max amount when bill is selected
-        document.getElementById('AddPaymentInput_BillId')?.addEventListener('change', function() {
+        document.getElementById('billSelect')?.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
-            const maxAmount = selectedOption.getAttribute('data-remaining') || '0';
-            document.getElementById('maxAmount').textContent = '₱' + parseFloat(maxAmount).toFixed(2);
+            const billId = selectedOption.value;
             
-            const amountInput = document.getElementById('AddPaymentInput_AmountPaid');
-            if (amountInput) {
-                amountInput.max = maxAmount;
+            if (billId === '0') {
+                // Outstanding balance option selected - use remaining balance from summary
+                const outstandingBalance = parseFloat('@(Model.SelectedTenantSummary?.RemainingBalance ?? 0)');
+                document.getElementById('maxAmount').textContent = '₱' + outstandingBalance.toFixed(2);
+                
+                const amountInput = document.getElementById('AddPaymentInput_AmountPaid');
+                if (amountInput) {
+                    amountInput.max = outstandingBalance;
+                    amountInput.value = outstandingBalance > 0 ? outstandingBalance.toFixed(2) : '';
+                }
+            } else {
+                const maxAmount = selectedOption.getAttribute('data-remaining') || '0';
+                document.getElementById('maxAmount').textContent = '₱' + parseFloat(maxAmount).toFixed(2);
+                
+                const amountInput = document.getElementById('AddPaymentInput_AmountPaid');
+                if (amountInput) {
+                    amountInput.max = maxAmount;
+                    amountInput.value = '';
+                }
             }
         });
 
@@ -540,16 +559,18 @@
                 return false;
             }
 
-            const billId = document.getElementById('AddPaymentInput_BillId').value;
-            if (!billId) {
+            const billId = document.getElementById('billSelect').value;
+            if (billId === '' || billId === null || billId === undefined) {
                 e.preventDefault();
                 Swal.fire({
                     icon: 'error',
                     title: 'Missing Required Fields',
-                    text: 'Please select a bill (month) for this payment.'
+                    text: 'Please select a bill (month) or outstanding balance option for this payment.'
                 });
                 return false;
             }
+            
+            // billId can be '0' for outstanding balance, which is valid
         });
     </script>
 }
