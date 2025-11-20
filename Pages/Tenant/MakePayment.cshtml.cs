@@ -146,6 +146,113 @@ namespace Apartment.Pages.Tenant
                             return RedirectToPage("/Tenant/PaymentHistory");
                         }
                     }
+                    else
+                    {
+                        var unpaidBills = await _context.Bills
+                            .Include(b => b.BillingPeriod)
+                            .Where(b => b.TenantId == user.Tenant.Id)
+                            .OrderBy(b => b.DueDate)
+                            .ToListAsync();
+
+                        var billIds = unpaidBills.Select(b => b.Id).ToList();
+
+                        var invoiceSums = await _context.Invoices
+                            .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                            .GroupBy(i => i.BillId!.Value)
+                            .Select(group => new
+                            {
+                                BillId = group.Key,
+                                TotalPaid = group.Sum(i => i.AmountDue)
+                            })
+                            .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
+
+                        var outstandingBills = unpaidBills
+                            .Select(b => new
+                            {
+                                Bill = b,
+                                Paid = invoiceSums.TryGetValue(b.Id, out var paid) ? paid : 0m
+                            })
+                            .Where(x => x.Bill.AmountDue > x.Paid)
+                            .OrderBy(x => x.Bill.DueDate)
+                            .ToList();
+
+                        if (!outstandingBills.Any())
+                        {
+                            ModelState.AddModelError(nameof(Input.BillId), "You have no outstanding bills to pay.");
+                            await LoadDataAsync();
+                            return Page();
+                        }
+
+                        var outstandingBalance = outstandingBills.Sum(x => x.Bill.AmountDue - x.Paid);
+
+                        if (Input.Amount > outstandingBalance)
+                        {
+                            ModelState.AddModelError(nameof(Input.Amount), $"Payment amount exceeds your outstanding balance of {outstandingBalance.ToString("C", PhpCulture)}.");
+                            await LoadDataAsync();
+                            return Page();
+                        }
+
+                        var amountToAllocate = Input.Amount;
+                        var now = DateTime.UtcNow;
+
+                        foreach (var entry in outstandingBills)
+                        {
+                            if (amountToAllocate <= 0)
+                            {
+                                break;
+                            }
+
+                            var remainingForBill = entry.Bill.AmountDue - entry.Paid;
+                            if (remainingForBill <= 0)
+                            {
+                                continue;
+                            }
+
+                            var amountApplied = Math.Min(remainingForBill, amountToAllocate);
+                            var newTotalPaid = entry.Paid + amountApplied;
+                            var billFullyPaid = newTotalPaid >= entry.Bill.AmountDue;
+
+                            entry.Bill.AmountPaid = newTotalPaid;
+                            if (billFullyPaid)
+                            {
+                                entry.Bill.PaymentDate = now;
+                            }
+
+                            var invoiceStatus = billFullyPaid ? InvoiceStatus.Paid : InvoiceStatus.Partial;
+
+                            var invoice = new Invoice
+                            {
+                                BillId = entry.Bill.Id,
+                                TenantId = entry.Bill.TenantId,
+                                ApartmentId = entry.Bill.ApartmentId,
+                                Title = entry.Bill.BillingPeriod != null
+                                    ? $"{entry.Bill.BillingPeriod.MonthName} {entry.Bill.BillingPeriod.Year} - Payment"
+                                    : $"Bill #{entry.Bill.Id} Payment",
+                                AmountDue = amountApplied,
+                                DueDate = entry.Bill.DueDate,
+                                IssueDate = now,
+                                PaymentDate = now,
+                                PaymentMethod = Input.PaymentMethod,
+                                Status = invoiceStatus
+                            };
+
+                            _context.Invoices.Add(invoice);
+
+                            amountToAllocate -= amountApplied;
+                        }
+
+                        if (amountToAllocate > 0)
+                        {
+                            ModelState.AddModelError(nameof(Input.Amount), "Unable to allocate the full payment amount. Please try again.");
+                            await LoadDataAsync();
+                            return Page();
+                        }
+
+                        await _context.SaveChangesAsync();
+
+                        TempData["SuccessMessage"] = $"Payment of {Input.Amount.ToString("C", PhpCulture)} has been successfully recorded.";
+                        return RedirectToPage("/Tenant/PaymentHistory");
+                    }
                 }
             }
 
