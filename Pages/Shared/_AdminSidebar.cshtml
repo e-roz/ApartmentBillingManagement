@@ -1,71 +1,103 @@
 @using System.Security.Claims
 @{
     var username = User.Identity?.Name ?? "Unknown User";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Administrator";
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    var isDashboard = currentPage.Contains("AdminDashboard");
+    var isManageUsers = currentPage.Contains("ManageUsers");
+    var isAuditLogs = currentPage.Contains("AuditLogs");
 }
 
-<div class="sidebar">
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="adminSidebar">
+    <!-- Brand Section -->
     <div class="sidebar-brand">
-        <h4 class="text-white mb-0">ADMIN PORTAL</h4>
-    </div>
-    
-    <div class="px-3 py-3 border-bottom border-white border-opacity-10">
-        <p class="text-white mb-1 small">Welcome, <strong>@username</strong></p>
-        <span class="badge bg-light text-dark">Administrator</span>
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <div class="brand-icon me-2">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold">Admin Portal</h5>
+                    <small class="text-muted opacity-75">System Control</small>
+                </div>
+            </div>
+            <button class="btn btn-link text-white d-lg-none p-0 sidebar-close" id="sidebarClose" type="button">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
     </div>
 
-    <nav class="sidebar-nav px-2 py-3">
-        <a asp-page="/Admin/AdminDashboard" class="nav-link @(currentPage.Contains("AdminDashboard") ? "active" : "")">
-            <i class="bi bi-speedometer2 me-2"></i>System Overview
-        </a>
-        <a asp-page="/Admin/ManageUsers" class="nav-link @(currentPage.Contains("ManageUsers") ? "active" : "")">
-            <i class="bi bi-people-fill me-2"></i>User & Role Control
-        </a>
-        <a asp-page="/Admin/AuditLogs" class="nav-link @(currentPage.Contains("AuditLogs") ? "active" : "")">
-            <i class="bi bi-clipboard-data me-2"></i>Audit Logs
-        </a>
-        <a href="#" class="nav-link mt-4" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
-            <i class="bi bi-box-arrow-right me-2"></i>Logout
-        </a>
+    <!-- User Profile Section -->
+    <div class="sidebar-profile">
+        <div class="d-flex align-items-center px-3 py-3">
+            <div class="profile-avatar me-3">
+                <div class="avatar-circle">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <span class="avatar-status bg-success"></span>
+            </div>
+            <div class="flex-grow-1 min-w-0">
+                <h6 class="mb-0 text-truncate fw-semibold">@username</h6>
+                <small class="text-muted d-block text-truncate">@userRole</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+        <div class="nav-content">
+            <a asp-page="/Admin/AdminDashboard" 
+               class="nav-item @(isDashboard ? "active" : "")"
+               aria-current="@(isDashboard ? "page" : null)">
+                <span class="nav-icon">
+                    <i class="bi bi-speedometer2"></i>
+                </span>
+                <span class="nav-label">Dashboard</span>
+                @if (isDashboard)
+                {
+                    <span class="nav-indicator"></span>
+                }
+            </a>
+
+            <a asp-page="/Admin/ManageUsers" 
+               class="nav-item @(isManageUsers ? "active" : "")"
+               aria-current="@(isManageUsers ? "page" : null)">
+                <span class="nav-icon">
+                    <i class="bi bi-people-fill"></i>
+                </span>
+                <span class="nav-label">User Management</span>
+                @if (isManageUsers)
+                {
+                    <span class="nav-indicator"></span>
+                }
+            </a>
+
+            <a asp-page="/Admin/AuditLogs" 
+               class="nav-item @(isAuditLogs ? "active" : "")"
+               aria-current="@(isAuditLogs ? "page" : null)">
+                <span class="nav-icon">
+                    <i class="bi bi-clipboard-data"></i>
+                </span>
+                <span class="nav-label">Audit Logs</span>
+                @if (isAuditLogs)
+                {
+                    <span class="nav-indicator"></span>
+                }
+            </a>
+        </div>
     </nav>
-</div>
 
-<style>
-    .sidebar {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        min-height: 100vh;
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 280px;
-        z-index: 1000;
-    }
-
-    .sidebar-brand {
-        padding: 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .sidebar-nav {
-        padding: 1rem 0;
-    }
-
-    .sidebar-nav .nav-link {
-        color: rgba(255, 255, 255, 0.8);
-        padding: 0.75rem 1rem;
-        margin: 0.25rem 0;
-        border-radius: 0.5rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        transition: all 0.3s ease;
-    }
-
-    .sidebar-nav .nav-link:hover,
-    .sidebar-nav .nav-link.active {
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-    }
-</style>
-
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+        <a href="#" class="nav-item text-danger" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
+            <span class="nav-icon">
+                <i class="bi bi-box-arrow-right"></i>
+            </span>
+            <span class="nav-label">Logout</span>
+        </a>
+    </div>
+</aside>

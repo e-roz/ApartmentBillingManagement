@@ -14,11 +14,21 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <!-- Bootstrap Icons CDN for beautiful icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    
+    <!-- UI Enhancement Libraries - CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ui-libraries.css" asp-append-version="true" />
     <style>
         /* Custom styles for clean registration page - matches login design */
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #c5dcc0 0%, #b8d4b3 30%, #9fbf9f 70%, #7aa378 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -42,20 +52,31 @@
             transition: all 0.3s ease;
         }
         .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: #9fbf9f;
+            box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25);
         }
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #b8d4b3 0%, #9fbf9f 50%, #7aa378 100%);
             border: none;
             border-radius: 10px;
             padding: 12px 24px;
             font-weight: 600;
             transition: all 0.3s ease;
+            color: #ffffff;
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(159, 191, 159, 0.4);
+            background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 50%, #6a9370 100%);
+        }
+        .btn-outline-primary {
+            border-color: #9fbf9f;
+            color: #9fbf9f;
+        }
+        .btn-outline-primary:hover {
+            background-color: #9fbf9f;
+            border-color: #9fbf9f;
+            color: #ffffff;
         }
         .password-strength {
             font-size: 0.8rem;
@@ -191,7 +212,7 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="termsCheck" required>
                                         <label class="form-check-label text-muted small" for="termsCheck">
-                                            I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                                            I agree to the <a href="#" class="text-primary" style="color: #9fbf9f !important;">Terms of Service</a> and <a href="#" class="text-primary" style="color: #9fbf9f !important;">Privacy Policy</a>
                                         </label>
                                     </div>
                                 </div>
@@ -218,9 +239,23 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Core Libraries -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- UI Enhancement Libraries - JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="~/js/ui-utils.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <!-- 

@@ -182,7 +182,7 @@
                         @if (Model.MonthlyBreakdowns.Any())
                         {
                             <div class="table-responsive">
-                                <table class="table table-hover table-striped mb-0">
+                                <table class="table table-hover table-striped mb-0 data-table" id="paymentsTable">
                                     <thead class="table-primary">
                                         <tr>
                                             <th class="fw-semibold">Month</th>
@@ -264,7 +264,7 @@
                         @if (Model.TenantSummaries.Any())
                         {
                             <div class="table-responsive">
-                                <table class="table table-hover table-striped mb-0">
+                                <table class="table table-hover table-striped mb-0 data-table" id="paymentsTable">
                                     <thead class="table-primary">
                                         <tr>
                                             <th class="fw-semibold">Tenant Name</th>
@@ -447,39 +447,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
-        // Auto-dismiss alerts
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-
-        // Show SweetAlert notifications
-        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-        {
-            <text>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                text: '@Model.SuccessMessage',
-                timer: 3000,
-                showConfirmButton: false
-            });
-            </text>
-        }
-
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <text>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: '@Model.ErrorMessage'
-            });
-            </text>
-        }
+        // Success/Error messages are now handled by page-enhancements.js (Toastr)
 
         // Update max amount when bill is selected
         document.getElementById('billSelect')?.addEventListener('change', function() {

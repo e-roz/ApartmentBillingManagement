@@ -25,7 +25,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover data-table" id="requestsTable">
                             <thead>
                                 <tr>
                                     <th>Request ID</th>
@@ -70,9 +70,21 @@
         }
         else
         {
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                No maintenance requests found. <a asp-page="/Tenant/SubmitRequest" class="alert-link">Submit a new request</a> to get started.
+            <div class="empty-state-card">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <h3 class="empty-state-title">No Maintenance Requests</h3>
+                    <p class="empty-state-message">
+                        You haven't submitted any maintenance requests yet. Submit a request to track its progress here.
+                    </p>
+                    <div class="empty-state-action">
+                        <a asp-page="/Tenant/SubmitRequest" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Submit New Request
+                        </a>
+                    </div>
+                </div>
             </div>
         }
 

@@ -102,7 +102,7 @@
                     @if (Model.Users.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0 data-table" id="usersTable">
                                 <thead class="table-light">
                                     <tr>
                                         <th class="border-0">
@@ -170,37 +170,37 @@
                                                     {
                                                         @if (user.Role == UserRoles.User)
                                                         {
-                                                            <form method="post" asp-page-handler="UpdateRole" class="d-inline">
+                                                            <form method="post" asp-page-handler="UpdateRole" class="d-inline" id="promoteForm_@user.Id">
                                                                 <input type="hidden" name="userId" value="@user.Id" />
                                                                 <input type="hidden" name="newRole" value="Manager" />
-                                                                <button type="submit" 
+                                                                <button type="button" 
                                                                         class="btn btn-warning btn-sm" 
                                                                         title="Promote to Manager"
-                                                                        onclick="return confirm('Are you sure you want to promote @user.Username to Manager?')">
+                                                                        onclick="confirmPromote('@user.Username', '@user.Id')">
                                                                     <i class="bi bi-arrow-up"></i>
                                                                 </button>
                                                             </form>
                                                         }
                                                         else if (user.Role == UserRoles.Manager)
                                                         {
-                                                            <form method="post" asp-page-handler="UpdateRole" class="d-inline">
+                                                            <form method="post" asp-page-handler="UpdateRole" class="d-inline" id="demoteForm_@user.Id">
                                                                 <input type="hidden" name="userId" value="@user.Id" />
                                                                 <input type="hidden" name="newRole" value="User" />
-                                                                <button type="submit" 
+                                                                <button type="button" 
                                                                         class="btn btn-info btn-sm" 
                                                                         title="Demote to User"
-                                                                        onclick="return confirm('Are you sure you want to demote @user.Username to User?')">
+                                                                        onclick="confirmDemote('@user.Username', '@user.Id')">
                                                                     <i class="bi bi-arrow-down"></i>
                                                                 </button>
                                                             </form>
                                                         }
 
-                                                        <form method="post" asp-page-handler="DeleteUser" class="d-inline">
+                                                        <form method="post" asp-page-handler="DeleteUser" class="d-inline" id="deleteForm_@user.Id">
                                                             <input type="hidden" name="userId" value="@user.Id" />
-                                                            <button type="submit" 
+                                                            <button type="button" 
                                                                     class="btn btn-danger btn-sm" 
                                                                     title="Delete User"
-                                                                    onclick="return confirm('Are you sure you want to delete user @user.Username? This action cannot be undone!')">
+                                                                    onclick="confirmDeleteUser('@user.Username', '@user.Id')">
                                                                 <i class="bi bi-trash"></i>
                                                             </button>
                                                         </form>
@@ -221,19 +221,23 @@
                     }
                     else
                     {
-                        <div class="text-center py-5">
-                            <i class="bi bi-person-x display-1 text-muted"></i>
-                            <h4 class="text-muted mt-3">No Users Found</h4>
-                            <p class="text-muted">
-                                @if (!string.IsNullOrEmpty(Model.SearchTerm))
-                                {
-                                    <span>No users match your search criteria.</span>
-                                }
-                                else
-                                {
-                                    <span>There are no users in the system.</span>
-                                }
-                            </p>
+                        <div class="empty-state-card">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="bi bi-person-x"></i>
+                                </div>
+                                <h3 class="empty-state-title">No Users Found</h3>
+                                <p class="empty-state-message">
+                                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                                    {
+                                        <span>No users match your search criteria. Try adjusting your search terms.</span>
+                                    }
+                                    else
+                                    {
+                                        <span>There are no users in the system yet.</span>
+                                    }
+                                </p>
+                            </div>
                         </div>
                     }
                 </div>
@@ -315,4 +319,48 @@
         transform: translateY(-2px);
     }
 </style>
+
+@section Scripts {
+    <script>
+        // Promote to Manager confirmation
+        function confirmPromote(username, userId) {
+            showAlert.confirm(
+                'Promote User',
+                `Are you sure you want to promote <strong>${username}</strong> to Manager?`,
+                'Yes, Promote',
+                'Cancel'
+            ).then((confirmed) => {
+                if (confirmed) {
+                    document.getElementById(`promoteForm_${userId}`).submit();
+                }
+            });
+        }
+
+        // Demote to User confirmation
+        function confirmDemote(username, userId) {
+            showAlert.confirm(
+                'Demote User',
+                `Are you sure you want to demote <strong>${username}</strong> to User?`,
+                'Yes, Demote',
+                'Cancel'
+            ).then((confirmed) => {
+                if (confirmed) {
+                    document.getElementById(`demoteForm_${userId}`).submit();
+                }
+            });
+        }
+
+        // Delete user confirmation
+        function confirmDeleteUser(username, userId) {
+            showAlert.delete(
+                'Delete User',
+                `Are you sure you want to delete user <strong>${username}</strong>? This action cannot be undone!`
+            ).then((confirmed) => {
+                if (confirmed) {
+                    document.getElementById(`deleteForm_${userId}`).submit();
+                }
+            });
+        }
+    </script>
+}
 

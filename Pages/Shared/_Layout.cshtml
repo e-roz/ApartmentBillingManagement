@@ -8,25 +8,65 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <!-- Bootstrap Icons CDN for beautiful icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    
+    <!-- UI Enhancement Libraries - CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    
+    <!-- Application Styles -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ui-libraries.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/empty-states.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/enhancements.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/alignment-fixes.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Apartment.styles.css" asp-append-version="true" />
     <style>
         .main-content {
             min-height: 100vh;
-            background: #f8f9fa;
+            background: var(--main-bg);
+            color: var(--main-text);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .content-header {
-            background: white;
+            background: var(--main-content-bg);
             padding: 1.5rem 2rem;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid var(--main-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            color: var(--main-text);
         }
         
         .content-body {
             padding: 2rem;
+            color: var(--main-text);
+        }
+
+        /* Ensure all text in main content respects theme */
+        .main-content * {
+            color: inherit;
+        }
+
+        .main-content h1,
+        .main-content h2,
+        .main-content h3,
+        .main-content h4,
+        .main-content h5,
+        .main-content h6,
+        .main-content p,
+        .main-content span,
+        .main-content div,
+        .main-content td,
+        .main-content th {
+            color: inherit;
         }
     </style>
 </head>
@@ -42,8 +82,30 @@
     <!-- Logout Confirmation Modal - Reusable Component -->
     @await Html.PartialAsync("_LogoutConfirmationModal")
 
+    <!-- Mobile Sidebar Toggle Button -->
+    <button class="sidebar-toggle d-lg-none" type="button" aria-label="Toggle sidebar">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Core Libraries -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- UI Enhancement Libraries - JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="~/js/sidebar.js" asp-append-version="true"></script>
+    <script src="~/js/ui-utils.js" asp-append-version="true"></script>
+    <script src="~/js/page-enhancements.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)

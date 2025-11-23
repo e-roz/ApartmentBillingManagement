@@ -1,5 +1,20 @@
+:root {
+  --matcha-primary: #9fbf9f;
+  --matcha-secondary: #b8d4b3;
+  --matcha-light: #e8f5e9;
+  --matcha-dark: #7aa378;
+  
+  --main-bg: #f8f9fa;
+  --main-content-bg: #ffffff;
+  --main-border: #e9ecef;
+  --main-text: #1a1a1a;
+  --main-text-muted: #6c757d;
+}
+
 html {
   font-size: 14px;
+  position: relative;
+  min-height: 100%;
 }
 
 @media (min-width: 768px) {
@@ -8,24 +23,62 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
 body {
   margin-bottom: 60px;
+  background-color: var(--main-bg);
+  color: var(--main-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* Matcha green accent colors for primary elements */
+.btn-primary {
+  background-color: var(--matcha-primary);
+  border-color: var(--matcha-primary);
+  color: #ffffff;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.btn-primary:hover {
+  background-color: var(--matcha-dark);
+  border-color: var(--matcha-dark);
+  color: #ffffff;
+}
+
+.btn-outline-primary {
+  color: var(--matcha-primary);
+  border-color: var(--matcha-primary);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--matcha-primary);
+  border-color: var(--matcha-primary);
+  color: #ffffff;
+}
+
+.bg-primary {
+  background-color: var(--matcha-primary) !important;
+}
+
+.text-primary {
+  color: var(--matcha-primary) !important;
+}
+
+.border-primary {
+  border-color: var(--matcha-primary) !important;
+}
+
+.table-primary {
+  --bs-table-bg: var(--matcha-light);
+  --bs-table-color: var(--main-text);
+  --bs-table-border-color: var(--matcha-secondary);
+}
+
+.alert-primary {
+  background-color: var(--matcha-light);
+  border-color: var(--matcha-secondary);
+  color: var(--matcha-dark);
+}
+
+.badge-primary {
+  background-color: var(--matcha-primary);
+  color: #ffffff;
 }

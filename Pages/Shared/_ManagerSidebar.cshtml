@@ -1,79 +1,178 @@
 @using System.Security.Claims
 @{
     var username = User.Identity?.Name ?? "Unknown User";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Manager";
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    var isDashboard = currentPage.Contains("ManagerDashboard");
+    var isManageTenants = currentPage.Contains("ManageTenants");
+    var isManageApartments = currentPage.Contains("ManageApartments");
+    var isGenerateBills = currentPage.Contains("GenerateBills");
+    var isRecordPayments = currentPage.Contains("RecordPayments");
+    var isBillingSummary = currentPage.Contains("BillingSummary");
+    
+    // Determine if billing section should be expanded
+    var isBillingSection = isGenerateBills || isRecordPayments || isBillingSummary;
 }
 
-<div class="sidebar">
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="managerSidebar">
+    <!-- Brand Section -->
     <div class="sidebar-brand">
-        <h4 class="text-white mb-0">MANAGER PORTAL</h4>
-    </div>
-    
-    <div class="px-3 py-3 border-bottom border-white border-opacity-10">
-        <p class="text-white mb-1 small">Welcome, <strong>@username</strong></p>
-        <span class="badge bg-light text-dark">Manager</span>
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <div class="brand-icon me-2">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold">Manager Portal</h5>
+                    <small class="text-muted opacity-75">Property Management</small>
+                </div>
+            </div>
+            <button class="btn btn-link text-white d-lg-none p-0 sidebar-close" id="sidebarClose" type="button">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
     </div>
 
-    <nav class="sidebar-nav px-2 py-3">
-        <a asp-page="/Manager/ManagerDashboard" class="nav-link @(currentPage.Contains("ManagerDashboard") ? "active" : "")">
-            <i class="bi bi-speedometer2 me-2"></i>System Overview
-        </a>
-        <a asp-page="/Manager/ManageTenants" class="nav-link @(currentPage.Contains("ManageTenants") ? "active" : "")">
-            <i class="bi bi-person-lines-fill me-2"></i>Tenant Management
-        </a>
-        <a asp-page="/Manager/ManageApartments" class="nav-link @(currentPage.Contains("ManageApartments") ? "active" : "")">
-            <i class="bi bi-house-door-fill me-2"></i>Unit Management
-        </a>
-        <a asp-page="/Manager/GenerateBills" class="nav-link @(currentPage.Contains("GenerateBills") ? "active" : "")">
-            <i class="bi bi-receipt me-2"></i>Billing & Generation
-        </a>
-        <a asp-page="/Manager/RecordPayments" class="nav-link @(currentPage.Contains("RecordPayments") ? "active" : "")">
-            <i class="bi bi-cash-stack me-2"></i>Payment Processing
-        </a>
-        <a asp-page="/Manager/BillingSummary" class="nav-link @(currentPage.Contains("BillingSummary") ? "active" : "")">
-            <i class="bi bi-graph-up me-2"></i>Reporting & Summary
-        </a>
-        <a href="#" class="nav-link mt-4" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
-            <i class="bi bi-box-arrow-right me-2"></i>Logout
-        </a>
+    <!-- User Profile Section -->
+    <div class="sidebar-profile">
+        <div class="d-flex align-items-center px-3 py-3">
+            <div class="profile-avatar me-3">
+                <div class="avatar-circle">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <span class="avatar-status bg-success"></span>
+            </div>
+            <div class="flex-grow-1 min-w-0">
+                <h6 class="mb-0 text-truncate fw-semibold">@username</h6>
+                <small class="text-muted d-block text-truncate">@userRole</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+        <div class="nav-content">
+            <!-- Dashboard -->
+            <a asp-page="/Manager/ManagerDashboard" 
+               class="nav-item @(isDashboard ? "active" : "")"
+               aria-current="@(isDashboard ? "page" : null)">
+                <span class="nav-icon">
+                    <i class="bi bi-speedometer2"></i>
+                </span>
+                <span class="nav-label">Dashboard</span>
+                @if (isDashboard)
+                {
+                    <span class="nav-indicator"></span>
+                }
+            </a>
+
+            <!-- Management Section -->
+            <div class="nav-section mt-3">
+                <div class="nav-section-header">
+                    <small class="text-uppercase">Management</small>
+                </div>
+                
+                <a asp-page="/Manager/ManageTenants" 
+                   class="nav-item @(isManageTenants ? "active" : "")"
+                   aria-current="@(isManageTenants ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-person-lines-fill"></i>
+                    </span>
+                    <span class="nav-label">Tenant Management</span>
+                    @if (isManageTenants)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+
+                <a asp-page="/Manager/ManageApartments" 
+                   class="nav-item @(isManageApartments ? "active" : "")"
+                   aria-current="@(isManageApartments ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-house-door-fill"></i>
+                    </span>
+                    <span class="nav-label">Unit Management</span>
+                    @if (isManageApartments)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+            </div>
+
+            <!-- Billing Section (Collapsible) -->
+            <div class="nav-section mt-3">
+                <button class="nav-section-toggle" 
+                        type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#billingCollapse"
+                        aria-expanded="@(isBillingSection ? "true" : "false")"
+                        aria-controls="billingCollapse">
+                    <div class="d-flex align-items-center w-100">
+                        <span class="nav-icon">
+                            <i class="bi bi-cash-stack"></i>
+                        </span>
+                        <span class="nav-label flex-grow-1">Billing & Payments</span>
+                        <i class="bi bi-chevron-down collapse-icon"></i>
+                    </div>
+                </button>
+                
+                <div class="collapse @(isBillingSection ? "show" : "")" id="billingCollapse">
+                    <div class="nav-submenu">
+                        <a asp-page="/Manager/GenerateBills" 
+                           class="nav-item @(isGenerateBills ? "active" : "")"
+                           aria-current="@(isGenerateBills ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-receipt"></i>
+                            </span>
+                            <span class="nav-label">Generate Bills</span>
+                            @if (isGenerateBills)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+
+                        <a asp-page="/Manager/RecordPayments" 
+                           class="nav-item @(isRecordPayments ? "active" : "")"
+                           aria-current="@(isRecordPayments ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-credit-card"></i>
+                            </span>
+                            <span class="nav-label">Record Payments</span>
+                            @if (isRecordPayments)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+
+                        <a asp-page="/Manager/BillingSummary" 
+                           class="nav-item @(isBillingSummary ? "active" : "")"
+                           aria-current="@(isBillingSummary ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </span>
+                            <span class="nav-label">Billing Summary</span>
+                            @if (isBillingSummary)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </nav>
-</div>
 
-<style>
-    .sidebar {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        min-height: 100vh;
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 280px;
-        z-index: 1000;
-    }
-
-    .sidebar-brand {
-        padding: 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .sidebar-nav {
-        padding: 1rem 0;
-    }
-
-    .sidebar-nav .nav-link {
-        color: rgba(255, 255, 255, 0.8);
-        padding: 0.75rem 1rem;
-        margin: 0.25rem 0;
-        border-radius: 0.5rem;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        transition: all 0.3s ease;
-    }
-
-    .sidebar-nav .nav-link:hover,
-    .sidebar-nav .nav-link.active {
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-    }
-</style>
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+        <a href="#" class="nav-item text-danger" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
+            <span class="nav-icon">
+                <i class="bi bi-box-arrow-right"></i>
+            </span>
+            <span class="nav-label">Logout</span>
+        </a>
+    </div>
+</aside>

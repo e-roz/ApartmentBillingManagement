@@ -149,7 +149,7 @@
                         @if (Model.Summary.TopOverdueTenants.Any())
                         {
                             <div class="table-responsive">
-                                <table class="table table-sm align-middle">
+                                <table class="table table-sm align-middle data-table" id="overdueTable">
                                     <thead>
                                         <tr>
                                             <th>Tenant</th>
@@ -217,8 +217,8 @@
                         {
                             label: "Billed",
                             data: trendBilled,
-                            borderColor: "#0d6efd",
-                            backgroundColor: "rgba(13, 110, 253, 0.1)",
+                            borderColor: "#7aa378",
+                            backgroundColor: "rgba(122, 163, 120, 0.1)",
                             tension: 0.4,
                             borderWidth: 2,
                             fill: true
@@ -226,8 +226,8 @@
                         {
                             label: "Collected",
                             data: trendCollected,
-                            borderColor: "#198754",
-                            backgroundColor: "rgba(25, 135, 84, 0.1)",
+                            borderColor: "#9fbf9f",
+                            backgroundColor: "rgba(159, 191, 159, 0.1)",
                             tension: 0.4,
                             borderWidth: 2,
                             fill: true

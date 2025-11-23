@@ -18,7 +18,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover data-table" id="paymentHistoryTable">
                             <thead>
                                 <tr>
                                     <th>Transaction ID</th>
@@ -47,9 +47,16 @@
         }
         else
         {
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                No payment history found.
+            <div class="empty-state-card">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-credit-card"></i>
+                    </div>
+                    <h3 class="empty-state-title">No Payment History</h3>
+                    <p class="empty-state-message">
+                        You haven't made any payments yet. Payment records will appear here once you complete a transaction.
+                    </p>
+                </div>
             </div>
         }
     </div>
