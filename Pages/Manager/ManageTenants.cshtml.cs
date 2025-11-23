@@ -362,16 +362,44 @@ namespace Apartment.Pages.Manager
                 return NotFound();
             }
 
-            // STEP 1: FINANCIAL INTEGRITY CHECK (MANDATORY)
-            var hasUnpaidBills = await _context.Bills
+            // STEP 1: FINANCIAL INTEGRITY CHECK (MANDATORY) - Calculate from actual invoice payments
+            var tenantBills = await _context.Bills
                 .AsNoTracking()
-                .AnyAsync(b => b.TenantId == id.Value && b.AmountPaid < b.AmountDue);
+                .Where(b => b.TenantId == id.Value)
+                .Select(b => b.Id)
+                .ToListAsync();
 
-            // STEP 2: BLOCK DELETION if unpaid bills exist
-            if (hasUnpaidBills)
+            if (tenantBills.Any())
             {
-                TempData["ErrorMessage"] = "Cannot delete tenant. Please ensure all bills are marked as paid.";
-                return RedirectToPage();
+                var billIds = tenantBills.ToList();
+                var invoiceSums = await _context.Invoices
+                    .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                    .GroupBy(i => i.BillId!.Value)
+                    .Select(group => new
+                    {
+                        BillId = group.Key,
+                        TotalPaid = group.Sum(i => i.AmountDue)
+                    })
+                    .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
+
+                var billsWithAmounts = await _context.Bills
+                    .AsNoTracking()
+                    .Where(b => b.TenantId == id.Value)
+                    .Select(b => new { b.Id, b.AmountDue })
+                    .ToListAsync();
+
+                var hasUnpaidBills = billsWithAmounts.Any(b =>
+                {
+                    var paidAmount = invoiceSums.TryGetValue(b.Id, out var paid) ? paid : 0m;
+                    return b.AmountDue > paidAmount;
+                });
+
+                // STEP 2: BLOCK DELETION if unpaid bills exist
+                if (hasUnpaidBills)
+                {
+                    TempData["ErrorMessage"] = "Cannot delete tenant. Please ensure all bills are marked as paid.";
+                    return RedirectToPage();
+                }
             }
 
             // STEP 3: EXECUTE DELETION with transaction

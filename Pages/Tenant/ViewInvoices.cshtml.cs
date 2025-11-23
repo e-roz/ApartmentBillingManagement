@@ -75,16 +75,28 @@ namespace Apartment.Pages.Tenant
                     }
 
                     // Fetch all Invoice entities where TenantId matches the logged-in tenant's ID
+                    // Security: Verify tenant belongs to logged-in user
                     if (TenantInfo != null)
                     {
                         var tenantId = TenantInfo.Id;
-                        Invoices = await _context.Invoices
-                            .Include(i => i.Bill)
-                                .ThenInclude(b => b.BillingPeriod)
-                            .Include(i => i.Apartment)
-                            .Where(i => i.TenantId == tenantId)
-                            .OrderByDescending(i => i.IssueDate)
-                            .ToListAsync();
+                        
+                        // Double-check: Ensure the tenant actually belongs to this user
+                        var userTenantId = user.TenantID;
+                        if (userTenantId.HasValue && userTenantId.Value == tenantId)
+                        {
+                            Invoices = await _context.Invoices
+                                .Include(i => i.Bill)
+                                    .ThenInclude(b => b.BillingPeriod)
+                                .Include(i => i.Apartment)
+                                .Where(i => i.TenantId == tenantId)
+                                .OrderByDescending(i => i.IssueDate)
+                                .ToListAsync();
+                        }
+                        else
+                        {
+                            // Security: Tenant doesn't belong to user, return empty list
+                            Invoices = new List<Invoice>();
+                        }
                     }
                 }
             }

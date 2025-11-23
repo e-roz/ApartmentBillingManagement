@@ -49,9 +49,16 @@ namespace Apartment.Pages.Admin
 
             if (!string.IsNullOrEmpty(SearchTerm))
             {
+                // Sanitize and limit search term length to prevent abuse
+                var sanitizedTerm = SearchTerm.Trim();
+                if (sanitizedTerm.Length > 100)
+                {
+                    sanitizedTerm = sanitizedTerm.Substring(0, 100);
+                }
+                
                 query = query.Where(u =>
-                    u.Username.Contains(SearchTerm) ||
-                    u.Email.Contains(SearchTerm)
+                    u.Username.Contains(sanitizedTerm) ||
+                    u.Email.Contains(sanitizedTerm)
                 );
             }
 
@@ -83,6 +90,14 @@ namespace Apartment.Pages.Admin
                 return RedirectToPage();
             }
 
+            // Security: Prevent admin from changing their own role
+            var currentAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentAdminId != null && int.TryParse(currentAdminId, out int adminId) && userToUpdate.Id == adminId)
+            {
+                ErrorMessage = "You cannot change your own role. Please ask another administrator to do this.";
+                return RedirectToPage();
+            }
+
             // Validate the new role and update 
             if (Enum.TryParse(newRole, true, out UserRoles role))
             {
@@ -104,7 +119,9 @@ namespace Apartment.Pages.Admin
         // POST Method: Deletes a user account
         public async Task<IActionResult> OnPostDeleteUserAsync(int userId)
         {
-            var userToDelete = await dbData.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var userToDelete = await dbData.Users
+                .Include(u => u.Tenant)
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (userToDelete == null)
             {
@@ -120,8 +137,50 @@ namespace Apartment.Pages.Admin
                 return RedirectToPage();
             }
 
+            // Check for dependencies before deletion
+            if (userToDelete.TenantID.HasValue)
+            {
+                var tenantId = userToDelete.TenantID.Value;
+                
+                // Check if tenant has unpaid bills (calculate from invoices, not Bill.AmountPaid)
+                var tenantBills = await dbData.Bills
+                    .Where(b => b.TenantId == tenantId)
+                    .Select(b => b.Id)
+                    .ToListAsync();
 
-            //delete the user
+                if (tenantBills.Any())
+                {
+                    var billIds = tenantBills.ToList();
+                    var invoiceSums = await dbData.Invoices
+                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                        .GroupBy(i => i.BillId!.Value)
+                        .Select(group => new
+                        {
+                            BillId = group.Key,
+                            TotalPaid = group.Sum(i => i.AmountDue)
+                        })
+                        .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
+
+                    var billsWithAmounts = await dbData.Bills
+                        .Where(b => b.TenantId == tenantId)
+                        .Select(b => new { b.Id, b.AmountDue })
+                        .ToListAsync();
+
+                    var hasUnpaidBills = billsWithAmounts.Any(b =>
+                    {
+                        var paidAmount = invoiceSums.TryGetValue(b.Id, out var paid) ? paid : 0m;
+                        return b.AmountDue > paidAmount;
+                    });
+
+                    if (hasUnpaidBills)
+                    {
+                        ErrorMessage = "Cannot delete user. The associated tenant has unpaid bills. Please resolve all outstanding payments first.";
+                        return RedirectToPage();
+                    }
+                }
+            }
+
+            // Delete the user
             dbData.Users.Remove(userToDelete);
             await dbData.SaveChangesAsync();
 

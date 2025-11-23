@@ -36,24 +36,12 @@
         </div>
     </div>
 
-    <!-- Success/Error Messages -->
-    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>
-            @Model.SuccessMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    @* Standardized Messages *@
+    @{
+        ViewData["SuccessMessage"] = Model.SuccessMessage;
+        ViewData["ErrorMessage"] = Model.ErrorMessage;
     }
-
-    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            @Model.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    @await Html.PartialAsync("_MessagePartial")
 
     <!-- Modern Table Card -->
     <div class="card shadow-lg rounded-4 border-0">

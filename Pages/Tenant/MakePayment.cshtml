@@ -69,16 +69,25 @@
                                 @{
                                     var pendingBills = Model.PendingBills ?? new List<Apartment.Model.Bill>();
                                 }
-                                <select asp-for="Input.BillId" class="fancy-select">
+                                <select asp-for="Input.BillId" class="fancy-select" id="billSelect">
                                     <option value="">Pay Total Outstanding Balance</option>
                                     @foreach (var bill in pendingBills)
                                     {
                                         var remaining = bill.AmountDue - bill.AmountPaid;
-                                        <option value="@bill.Id">
+                                        var isOverdue = bill.DueDate < DateTime.UtcNow.Date && remaining > 0;
+                                        <option value="@bill.Id" data-remaining="@remaining" data-due-date="@bill.DueDate.ToString("yyyy-MM-dd")" data-overdue="@isOverdue.ToString().ToLower()">
                                             @(bill.BillingPeriod != null ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}" : "N/A") — @remaining.ToString("C", pesoCulture) due
+                                            @if (isOverdue)
+                                            {
+                                                <text> (OVERDUE)</text>
+                                            }
                                         </option>
                                     }
                                 </select>
+                                <div id="billStatusInfo" class="mt-2 small" style="display: none;">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <span id="billStatusText"></span>
+                                </div>
                             </div>
                             <div class="field-block">
                                 <label asp-for="Input.Amount">Payment Amount</label>
@@ -704,6 +713,21 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // Hide loading overlay if page loaded (in case of validation errors or page reload)
+        if (typeof showLoading !== 'undefined') {
+            showLoading.hide('body');
+        }
+        
+        // Re-enable submit button if page reloaded with errors
+        const form = document.getElementById('paymentForm');
+        if (form) {
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton && submitButton.disabled) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Submit Payment';
+            }
+        }
+        
         const methodCards = document.querySelectorAll(".payment-method-card");
         const methodLabel = document.getElementById("selectedMethodLabel");
         const hiddenMethodInput = document.getElementById("selectedPaymentMethod");
@@ -772,12 +796,29 @@
                 .catch(() => Swal.fire({ icon: "error", title: "Copy failed", text: "Press CTRL+C to copy manually." }));
         });
 
-        form?.addEventListener("submit", (event) => {
+        const handleFormSubmit = function(event) {
+            // If already validated, just show loading and let it proceed
             if (allowSubmit) {
+                // Disable submit button and show processing state
+                const submitButton = form.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing...';
+                }
+                
+                // Show loading indicator
+                if (typeof showLoading !== 'undefined') {
+                    showLoading.show('body', 'Processing payment...');
+                }
+                
+                // Allow form to submit naturally
                 return;
             }
 
+            // Prevent default to do client-side validation first
             event.preventDefault();
+            event.stopPropagation();
+            
             const amount = parseFloat(document.getElementById("Input_Amount")?.value || "0");
             const walletPhone = document.getElementById("walletPhone")?.value.trim();
             const bankName = document.getElementById("bankAccountName")?.value.trim();
@@ -803,9 +844,59 @@
                 return;
             }
 
+            // All validation passed - mark as allowed
             allowSubmit = true;
+            
+            // Disable submit button and show processing state
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing...';
+            }
+            
+            // Show loading indicator
+            if (typeof showLoading !== 'undefined') {
+                showLoading.show('body', 'Processing payment...');
+            }
+            
+            // Remove this event listener to prevent infinite loop
+            form.removeEventListener('submit', handleFormSubmit);
+            
+            // Submit the form directly - this bypasses the submit event
             form.submit();
-        });
+        };
+        
+        form?.addEventListener("submit", handleFormSubmit);
+
+        // Enhance bill selection with status information
+        const billSelect = document.getElementById('billSelect');
+        const billStatusInfo = document.getElementById('billStatusInfo');
+        const billStatusText = document.getElementById('billStatusText');
+        
+        if (billSelect && billStatusInfo && billStatusText) {
+            billSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.value && selectedOption.dataset.remaining) {
+                    const remaining = parseFloat(selectedOption.dataset.remaining);
+                    const isOverdue = selectedOption.dataset.overdue === 'true';
+                    const dueDate = selectedOption.dataset.dueDate;
+                    
+                    let statusHtml = '';
+                    if (isOverdue) {
+                        statusHtml = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>This bill is <strong>OVERDUE</strong>. Remaining balance: ${remaining.toLocaleString('en-PH', {style: 'currency', currency: 'PHP'})}</span>`;
+                        billStatusInfo.className = 'mt-2 small text-danger';
+                    } else {
+                        statusHtml = `<span class="text-info"><i class="bi bi-info-circle-fill me-1"></i>Remaining balance: ${remaining.toLocaleString('en-PH', {style: 'currency', currency: 'PHP'})}</span>`;
+                        billStatusInfo.className = 'mt-2 small text-info';
+                    }
+                    
+                    billStatusText.innerHTML = statusHtml;
+                    billStatusInfo.style.display = 'block';
+                } else {
+                    billStatusInfo.style.display = 'none';
+                }
+            });
+        }
     });
 </script>
 

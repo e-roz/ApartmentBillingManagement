@@ -14,7 +14,7 @@ namespace Apartment.Model
 
         [Required]
         [StringLength(50)]
-        public string Username { get; set; }
+        public string Username { get; set; } = string.Empty;
 
         // Stores the securely HASHED password (never plain text)
         [Required]

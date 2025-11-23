@@ -114,9 +114,14 @@
                                                 <a asp-page="/Manager/ManageTenants" asp-page-handler="Edit" asp-route-id="@tenant.Id" class="btn btn-outline-primary btn-sm" title="Edit">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </a>
-                                                <a asp-page="/Manager/ManageTenants" asp-page-handler="Delete" asp-route-id="@tenant.Id" class="btn btn-outline-danger btn-sm" title="Delete">
+                                                <button type="button" 
+                                                        class="btn btn-outline-danger btn-sm" 
+                                                        title="Delete"
+                                                        onclick="confirmDeleteTenant('@tenant.FullName', '@tenant.Id')">
                                                     <i class="bi bi-trash"></i>
-                                                </a>
+                                                </button>
+                                                <form method="post" asp-page-handler="Delete" asp-route-id="@tenant.Id" id="deleteTenantForm_@tenant.Id" style="display: none;">
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>

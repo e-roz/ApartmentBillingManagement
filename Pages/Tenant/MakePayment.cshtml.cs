@@ -79,22 +79,12 @@ namespace Apartment.Pages.Tenant
 
                         if (bill != null)
                         {
-                            var tenantMonthlyRent = user.Tenant.MonthlyRent;
-
-                            if (tenantMonthlyRent > 0 && Input.Amount > tenantMonthlyRent)
-                            {
-                                ModelState.AddModelError(nameof(Input.Amount), $"Payment amount cannot exceed your monthly rent of {tenantMonthlyRent.ToString("C", PhpCulture)}.");
-                                await LoadDataAsync();
-                                return Page();
-                            }
-
+                            // Calculate actual remaining balance from invoices (not from Bill.AmountPaid)
                             var existingPayments = await _context.Invoices
                                 .Where(i => i.BillId == bill.Id && i.PaymentDate != null)
                                 .SumAsync(i => i.AmountDue);
 
-                            bill.AmountPaid = existingPayments;
-
-                            var remainingBalance = bill.AmountDue - bill.AmountPaid;
+                            var remainingBalance = bill.AmountDue - existingPayments;
 
                             if (remainingBalance <= 0)
                             {
@@ -103,44 +93,57 @@ namespace Apartment.Pages.Tenant
                                 return Page();
                             }
 
+                            // Fix: Check against remaining balance, not monthly rent
                             if (Input.Amount > remainingBalance)
                             {
-                                ModelState.AddModelError(nameof(Input.Amount), "Payment amount exceeds the remaining balance for this bill.");
+                                ModelState.AddModelError(nameof(Input.Amount), $"Payment amount exceeds the remaining balance of {remainingBalance.ToString("C", PhpCulture)} for this bill.");
                                 await LoadDataAsync();
                                 return Page();
                             }
 
-                            bill.AmountPaid += Input.Amount;
-
-                            var now = DateTime.UtcNow;
-                            if (bill.AmountPaid == bill.AmountDue)
+                            // Use transaction to ensure data integrity
+                            await using var transaction = await _context.Database.BeginTransactionAsync();
+                            try
                             {
-                                bill.PaymentDate = now;
+                                var now = DateTime.UtcNow;
+                                var newTotalPaid = existingPayments + Input.Amount;
+                                var isFullyPaid = newTotalPaid >= bill.AmountDue;
+
+                                // Only update PaymentDate if fully paid - AmountPaid should always be calculated from invoices
+                                if (isFullyPaid)
+                                {
+                                    bill.PaymentDate = now;
+                                }
+
+                                var invoiceStatus = isFullyPaid
+                                    ? InvoiceStatus.Paid
+                                    : InvoiceStatus.Partial;
+
+                                var paymentInvoice = new Invoice
+                                {
+                                    BillId = bill.Id,
+                                    TenantId = bill.TenantId,
+                                    ApartmentId = bill.ApartmentId,
+                                    Title = bill.BillingPeriod != null
+                                        ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year} - Payment"
+                                        : $"Bill #{bill.Id} Payment",
+                                    AmountDue = Input.Amount,
+                                    DueDate = bill.DueDate,
+                                    IssueDate = now,
+                                    PaymentDate = now,
+                                    PaymentMethod = Input.PaymentMethod,
+                                    Status = invoiceStatus
+                                };
+
+                                _context.Invoices.Add(paymentInvoice);
+                                await _context.SaveChangesAsync();
+                                await transaction.CommitAsync();
                             }
-
-                            var invoiceStatus = bill.AmountPaid == bill.AmountDue
-                                ? InvoiceStatus.Paid
-                                : InvoiceStatus.Partial;
-
-                            var paymentInvoice = new Invoice
+                            catch
                             {
-                                BillId = bill.Id,
-                                TenantId = bill.TenantId,
-                                ApartmentId = bill.ApartmentId,
-                                Title = bill.BillingPeriod != null
-                                    ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year} - Payment"
-                                    : $"Bill #{bill.Id} Payment",
-                                AmountDue = Input.Amount,
-                                DueDate = bill.DueDate,
-                                IssueDate = now,
-                                PaymentDate = now,
-                                PaymentMethod = Input.PaymentMethod,
-                                Status = invoiceStatus
-                            };
-
-                            _context.Invoices.Add(paymentInvoice);
-
-                            await _context.SaveChangesAsync();
+                                await transaction.RollbackAsync();
+                                throw;
+                            }
 
                             TempData["SuccessMessage"] = $"Payment of {Input.Amount.ToString("C", PhpCulture)} has been successfully recorded.";
                             return RedirectToPage("/Tenant/PaymentHistory");
@@ -192,63 +195,76 @@ namespace Apartment.Pages.Tenant
                             return Page();
                         }
 
-                        var amountToAllocate = Input.Amount;
-                        var now = DateTime.UtcNow;
-
-                        foreach (var entry in outstandingBills)
+                        // Use transaction to ensure all payments are processed atomically
+                        await using var transaction = await _context.Database.BeginTransactionAsync();
+                        try
                         {
-                            if (amountToAllocate <= 0)
+                            var amountToAllocate = Input.Amount;
+                            var now = DateTime.UtcNow;
+
+                            foreach (var entry in outstandingBills)
                             {
-                                break;
+                                if (amountToAllocate <= 0)
+                                {
+                                    break;
+                                }
+
+                                var remainingForBill = entry.Bill.AmountDue - entry.Paid;
+                                if (remainingForBill <= 0)
+                                {
+                                    continue;
+                                }
+
+                                var amountApplied = Math.Min(remainingForBill, amountToAllocate);
+                                var newTotalPaid = entry.Paid + amountApplied;
+                                var billFullyPaid = newTotalPaid >= entry.Bill.AmountDue;
+
+                                // Don't update Bill.AmountPaid - it should always be calculated from invoices
+                                // Only update PaymentDate if fully paid
+                                if (billFullyPaid)
+                                {
+                                    entry.Bill.PaymentDate = now;
+                                }
+
+                                var invoiceStatus = billFullyPaid ? InvoiceStatus.Paid : InvoiceStatus.Partial;
+
+                                var invoice = new Invoice
+                                {
+                                    BillId = entry.Bill.Id,
+                                    TenantId = entry.Bill.TenantId,
+                                    ApartmentId = entry.Bill.ApartmentId,
+                                    Title = entry.Bill.BillingPeriod != null
+                                        ? $"{entry.Bill.BillingPeriod.MonthName} {entry.Bill.BillingPeriod.Year} - Payment"
+                                        : $"Bill #{entry.Bill.Id} Payment",
+                                    AmountDue = amountApplied,
+                                    DueDate = entry.Bill.DueDate,
+                                    IssueDate = now,
+                                    PaymentDate = now,
+                                    PaymentMethod = Input.PaymentMethod,
+                                    Status = invoiceStatus
+                                };
+
+                                _context.Invoices.Add(invoice);
+
+                                amountToAllocate -= amountApplied;
                             }
 
-                            var remainingForBill = entry.Bill.AmountDue - entry.Paid;
-                            if (remainingForBill <= 0)
+                            if (amountToAllocate > 0)
                             {
-                                continue;
+                                await transaction.RollbackAsync();
+                                ModelState.AddModelError(nameof(Input.Amount), "Unable to allocate the full payment amount. Please try again.");
+                                await LoadDataAsync();
+                                return Page();
                             }
 
-                            var amountApplied = Math.Min(remainingForBill, amountToAllocate);
-                            var newTotalPaid = entry.Paid + amountApplied;
-                            var billFullyPaid = newTotalPaid >= entry.Bill.AmountDue;
-
-                            entry.Bill.AmountPaid = newTotalPaid;
-                            if (billFullyPaid)
-                            {
-                                entry.Bill.PaymentDate = now;
-                            }
-
-                            var invoiceStatus = billFullyPaid ? InvoiceStatus.Paid : InvoiceStatus.Partial;
-
-                            var invoice = new Invoice
-                            {
-                                BillId = entry.Bill.Id,
-                                TenantId = entry.Bill.TenantId,
-                                ApartmentId = entry.Bill.ApartmentId,
-                                Title = entry.Bill.BillingPeriod != null
-                                    ? $"{entry.Bill.BillingPeriod.MonthName} {entry.Bill.BillingPeriod.Year} - Payment"
-                                    : $"Bill #{entry.Bill.Id} Payment",
-                                AmountDue = amountApplied,
-                                DueDate = entry.Bill.DueDate,
-                                IssueDate = now,
-                                PaymentDate = now,
-                                PaymentMethod = Input.PaymentMethod,
-                                Status = invoiceStatus
-                            };
-
-                            _context.Invoices.Add(invoice);
-
-                            amountToAllocate -= amountApplied;
+                            await _context.SaveChangesAsync();
+                            await transaction.CommitAsync();
                         }
-
-                        if (amountToAllocate > 0)
+                        catch
                         {
-                            ModelState.AddModelError(nameof(Input.Amount), "Unable to allocate the full payment amount. Please try again.");
-                            await LoadDataAsync();
-                            return Page();
+                            await transaction.RollbackAsync();
+                            throw;
                         }
-
-                        await _context.SaveChangesAsync();
 
                         TempData["SuccessMessage"] = $"Payment of {Input.Amount.ToString("C", PhpCulture)} has been successfully recorded.";
                         return RedirectToPage("/Tenant/PaymentHistory");

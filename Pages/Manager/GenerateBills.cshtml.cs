@@ -125,113 +125,115 @@ namespace Apartment.Pages.Manager
             string periodKey = targetDate.ToString("yyyy-MM");
             string monthName = targetDate.ToString("MMMM"); // Full month name
 
-
-            // Check if billing period already exists
-            var existingPeriod = await dbData.BillingPeriods
-                .FirstOrDefaultAsync(bp => bp.PeriodKey == periodKey);
-
-            if (existingPeriod != null)
+            // Use transaction to prevent race conditions
+            await using var transaction = await dbData.Database.BeginTransactionAsync();
+            try
             {
-                // check if any bills have already been generated for this period
-                bool biilsAlreadyGenerated = await dbData.Bills
-                    .AnyAsync(b => b.BillingPeriodId == existingPeriod.Id);
+                // Check if billing period already exists (within transaction to prevent race condition)
+                var existingPeriod = await dbData.BillingPeriods
+                    .FirstOrDefaultAsync(bp => bp.PeriodKey == periodKey);
 
-                if (biilsAlreadyGenerated)
+                if (existingPeriod != null)
                 {
-                    Summary = new GenerationSummary
+                    // check if any bills have already been generated for this period
+                    bool biilsAlreadyGenerated = await dbData.Bills
+                        .AnyAsync(b => b.BillingPeriodId == existingPeriod.Id);
+
+                    if (biilsAlreadyGenerated)
+                    {
+                        await transaction.RollbackAsync();
+                        Summary = new GenerationSummary
+                        {
+                            PeriodKey = periodKey,
+                            BillsCreated = 0,
+                            OccupiedUnits = 0,
+                            AlreadyExists = true,
+                            TotalAmountBilled = 0
+                        };
+                        ModelState.AddModelError(string.Empty, $"Bills for {monthName} {Input.Year} have already been generated and exist in the system.");
+                        await LoadOccupiedApartmentsAsync();
+                        return Page();
+                    }
+                }
+
+                // find or create billing period (within transaction)
+                BillingPeriod billingPeriod;
+                if (existingPeriod == null)
+                {
+                    billingPeriod = new BillingPeriod
                     {
                         PeriodKey = periodKey,
-                        BillsCreated = 0,
-                        OccupiedUnits = 0,
-                        AlreadyExists = true,
-                        TotalAmountBilled = 0
+                        MonthName = monthName,
+                        Year = Input.Year
                     };
-                    ModelState.AddModelError(string.Empty, $"Bills for {monthName} {Input.Year} have already been generated and exist in the system.");
+                    dbData.BillingPeriods.Add(billingPeriod);
+                    await dbData.SaveChangesAsync();
+                }
+                else
+                {
+                    billingPeriod = existingPeriod;
+                }
+
+                // Fetch Active Leases: Query for all Tenant records where Status is Active
+                var activeTenants = await dbData.Tenants
+                    .Include(t => t.Apartment)
+                    .Where(t => t.Status == LeaseStatus.Active && t.ApartmentId.HasValue)
+                    .ToListAsync();
+
+
+                // Filter by selected apartment IDs if provided
+                var tenantsToBill = activeTenants
+                    .Where(t => t.Apartment != null && selectedApartmentIds.Contains(t.Apartment.Id))
+                    .ToList();
+
+                if (!tenantsToBill.Any())
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("Input.SelectedApartmentIds", "No active tenants matched the selected units. Please review your selection.");
                     await LoadOccupiedApartmentsAsync();
                     return Page();
                 }
-            }
+                // Re-check for existing bills within transaction to prevent race conditions
+                var existingTenantIdsWithBills = await dbData.Bills
+                    .Where(b => b.BillingPeriodId == billingPeriod.Id)
+                    .Select(b => b.TenantId)
+                    .ToListAsync();
 
-            // find or create billing period
-            BillingPeriod billingPeriod;
-            if (existingPeriod == null)
-            {
-                billingPeriod = new BillingPeriod
+                var billedTenantsIds = new HashSet<int>(existingTenantIdsWithBills);
+
+                var billsCreate = new List<Bill>();
+                var dueDate = Input.DueDate.Value;
+
+                // Generate bills for each active tenant
+                foreach (var tenant in tenantsToBill)
                 {
-                    PeriodKey = periodKey,
-                    MonthName = monthName,
-                    Year = Input.Year
-                };
-                dbData.BillingPeriods.Add(billingPeriod);
-                await dbData.SaveChangesAsync();
-            }
-            else
-            {
-                billingPeriod = existingPeriod;
-            }
-
-            // Fetch Active Leases: Query for all Tenant records where Status is Active
-            var activeTenants = await dbData.Tenants
-                .Include(t => t.Apartment)
-                .Where(t => t.Status == LeaseStatus.Active && t.ApartmentId.HasValue)
-                .ToListAsync();
-
-
-            // Filter by selected apartment IDs if provided
-            var tenantsToBill = activeTenants
-                .Where(t => t.Apartment != null && selectedApartmentIds.Contains(t.Apartment.Id))
-                .ToList();
-
-            if (!tenantsToBill.Any())
-            {
-                ModelState.AddModelError("Input.SelectedApartmentIds", "No active tenants matched the selected units. Please review your selection.");
-                await LoadOccupiedApartmentsAsync();
-                return Page();
-            }
-
-            var existingTenantIdsWithBills = await dbData.Bills
-                .Where(b => b.BillingPeriodId == billingPeriod.Id)
-                .Select(b => b.TenantId)
-                .ToListAsync();
-
-            var billedTenantsIds = new HashSet<int>(existingTenantIdsWithBills);
-
-            var billsCreate = new List<Bill>();
-            var dueDate = Input.DueDate.Value;
-
-            // Generate bills for each active tenant
-            foreach (var tenant in tenantsToBill)
-            {
-                // Check if a Bill already exists for this TenantId and the current BillingPeriodId
-
-                if (billedTenantsIds.Contains(tenant.Id))
-                {
-                    // Skip this tenant if bill already exists
-                    continue;
-                }
-
-                // Create a new Bill entity
-                if (tenant.Apartment != null)
-                {
-                    var newBill = new Bill
+                    // Check if a Bill already exists for this TenantId and the current BillingPeriodId
+                    if (billedTenantsIds.Contains(tenant.Id))
                     {
-                        ApartmentId = tenant.Apartment.Id,
-                        TenantId = tenant.Id,
-                        BillingPeriodId = billingPeriod.Id,
-                        AmountDue = tenant.MonthlyRent, // Use Tenant.MonthlyRent
-                        AmountPaid = 0.00m,
-                        DueDate = dueDate,
-                        GeneratedDate = DateTime.UtcNow,
-                        PaymentDate = null
-                    };
-                    billsCreate.Add(newBill);
-                }
-            }
+                        // Skip this tenant if bill already exists
+                        continue;
+                    }
 
-            // Save all generated bills to the database
-            if (billsCreate.Any())
-            {
-                try
+                    // Create a new Bill entity
+                    if (tenant.Apartment != null)
+                    {
+                        var newBill = new Bill
+                        {
+                            ApartmentId = tenant.Apartment.Id,
+                            TenantId = tenant.Id,
+                            BillingPeriodId = billingPeriod.Id,
+                            AmountDue = tenant.MonthlyRent, // Use Tenant.MonthlyRent
+                            AmountPaid = 0.00m, // Will be calculated from invoices
+                            DueDate = dueDate,
+                            GeneratedDate = DateTime.UtcNow,
+                            PaymentDate = null
+                        };
+                        billsCreate.Add(newBill);
+                    }
+                }
+
+                // Save all generated bills to the database
+                if (billsCreate.Any())
                 {
                     dbData.Bills.AddRange(billsCreate);
                     int savedCount = await dbData.SaveChangesAsync();
@@ -244,56 +246,49 @@ namespace Apartment.Pages.Manager
 
                     if (savedBillsCount == 0)
                     {
+                        await transaction.RollbackAsync();
                         ModelState.AddModelError(string.Empty, "Warning: Bills were created but may not have been saved to the database. Please verify the database connection.");
                         await LoadOccupiedApartmentsAsync();
                         return Page();
                     }
 
+                    await transaction.CommitAsync();
                 }
-                catch (Exception ex)
+
+                // Prepare summary - bills were saved within transaction
+                Summary = new GenerationSummary
                 {
-                    ModelState.AddModelError(string.Empty, $"Error saving bills to database: {ex.Message}");
-                    await LoadOccupiedApartmentsAsync();
-                    return Page();
-                }
-            }
+                    PeriodKey = periodKey,
+                    BillsCreated = billsCreate.Count,
+                    OccupiedUnits = tenantsToBill.Count,
+                    AlreadyExists = false,
+                    TotalAmountBilled = billsCreate.Sum(b => b.AmountDue)
+                };
 
-            // Prepare summary - verify actual saved count
-            int actualSavedCount = 0;
-            if (billsCreate.Any())
-            {
-                actualSavedCount = await dbData.Bills
-                    .Where(b => b.BillingPeriodId == billingPeriod.Id && 
-                                billsCreate.Select(bc => bc.TenantId).Contains(b.TenantId))
-                    .CountAsync();
-            }
+                SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {Input.Year}. Total amount billed: {Summary.TotalAmountBilled.ToString("C", PhpCulture)}.";
 
-            Summary = new GenerationSummary
-            {
-                PeriodKey = periodKey,
-                BillsCreated = actualSavedCount > 0 ? actualSavedCount : billsCreate.Count,
-                OccupiedUnits = tenantsToBill.Count,
-                AlreadyExists = false,
-                TotalAmountBilled = billsCreate.Sum(b => b.AmountDue)
-            };
-
-            SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {Input.Year}. Total amount billed: {Summary.TotalAmountBilled.ToString("C", PhpCulture)}.";
-
-            await _logSnagClient.PublishAsync(new LogSnagEvent
-            {
-                Event = "Bills Generated",
-                Description = $"{Summary.BillsCreated} bills created for {monthName} {Input.Year}",
-                Icon = "🧾",
-                Tags = new Dictionary<string, string>
+                await _logSnagClient.PublishAsync(new LogSnagEvent
                 {
-                    { "period", Summary.PeriodKey },
-                    { "amount", Summary.TotalAmountBilled.ToString("0.##") }
-                }
-            });
+                    Event = "Bills Generated",
+                    Description = $"{Summary.BillsCreated} bills created for {monthName} {Input.Year}",
+                    Icon = "🧾",
+                    Tags = new Dictionary<string, string>
+                    {
+                        { "period", Summary.PeriodKey },
+                        { "amount", Summary.TotalAmountBilled.ToString("0.##") }
+                    }
+                });
 
-            await LoadOccupiedApartmentsAsync();
-            return Page();
-
+                await LoadOccupiedApartmentsAsync();
+                return Page();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                ModelState.AddModelError(string.Empty, $"Error saving bills to database: {ex.Message}");
+                await LoadOccupiedApartmentsAsync();
+                return Page();
+            }
         }
     }
 }

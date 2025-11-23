@@ -13,22 +13,12 @@
     <!-- Main Content -->
     <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
         <div class="container-fluid">
-    <!-- Success/Error Messages -->
-    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>@Model.SuccessMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    @* Standardized Messages *@
+    @{
+        ViewData["SuccessMessage"] = Model.SuccessMessage;
+        ViewData["ErrorMessage"] = Model.ErrorMessage;
     }
-    
-    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    @await Html.PartialAsync("_MessagePartial")
 
     <!-- Page Header -->
     <div class="row mb-4">
@@ -221,24 +211,13 @@
                     }
                     else
                     {
-                        <div class="empty-state-card">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">
-                                    <i class="bi bi-person-x"></i>
-                                </div>
-                                <h3 class="empty-state-title">No Users Found</h3>
-                                <p class="empty-state-message">
-                                    @if (!string.IsNullOrEmpty(Model.SearchTerm))
-                                    {
-                                        <span>No users match your search criteria. Try adjusting your search terms.</span>
-                                    }
-                                    else
-                                    {
-                                        <span>There are no users in the system yet.</span>
-                                    }
-                                </p>
-                            </div>
-                        </div>
+                        @* Standardized Empty State *@
+                        ViewData["EmptyIcon"] = "bi-person-x";
+                        ViewData["EmptyTitle"] = "No Users Found";
+                        ViewData["EmptyMessage"] = !string.IsNullOrEmpty(Model.SearchTerm) 
+                            ? "No users match your search criteria. Try adjusting your search terms." 
+                            : "There are no users in the system yet.";
+                        @await Html.PartialAsync("_EmptyStatePartial")
                     }
                 </div>
             </div>

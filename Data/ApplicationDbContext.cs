@@ -65,6 +65,39 @@ namespace Apartment.Data
                 .Property(tl => tl.Id)
                 .ValueGeneratedOnAdd();
 
+            // Performance indexes for frequently queried columns
+            modelBuilder.Entity<Bill>()
+                .HasIndex(b => b.TenantId)
+                .HasDatabaseName("IX_Bills_TenantId");
+
+            modelBuilder.Entity<Bill>()
+                .HasIndex(b => b.BillingPeriodId)
+                .HasDatabaseName("IX_Bills_BillingPeriodId");
+
+            modelBuilder.Entity<Bill>()
+                .HasIndex(b => b.DueDate)
+                .HasDatabaseName("IX_Bills_DueDate");
+
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => i.BillId)
+                .HasDatabaseName("IX_Invoices_BillId");
+
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => i.TenantId)
+                .HasDatabaseName("IX_Invoices_TenantId");
+
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => i.PaymentDate)
+                .HasDatabaseName("IX_Invoices_PaymentDate");
+
+            modelBuilder.Entity<Tenant>()
+                .HasIndex(t => t.ApartmentId)
+                .HasDatabaseName("IX_Tenants_ApartmentId");
+
+            modelBuilder.Entity<Tenant>()
+                .HasIndex(t => t.Status)
+                .HasDatabaseName("IX_Tenants_Status");
+
         }
 
     }

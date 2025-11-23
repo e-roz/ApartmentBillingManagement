@@ -140,6 +140,14 @@ namespace Apartment.Pages.Manager
                 return Page();
             }
 
+            // Validate payment date is not in the future
+            if (AddPaymentInput.PaymentDate > DateTime.UtcNow)
+            {
+                ErrorMessage = "Payment date cannot be in the future.";
+                await OnGetAsync();
+                return Page();
+            }
+
             try
             {
                 Bill? bill;
@@ -278,8 +286,19 @@ namespace Apartment.Pages.Manager
                     ReferenceNumber = AddPaymentInput.ReferenceNumber
                 };
 
-                _context.Invoices.Add(paymentInvoice);
-                await _context.SaveChangesAsync();
+                // Use transaction to ensure data integrity
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    _context.Invoices.Add(paymentInvoice);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
 
                 await _logSnagClient.PublishAsync(new LogSnagEvent
                 {
@@ -363,12 +382,13 @@ namespace Apartment.Pages.Manager
                 })
                 .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
 
-            // Update bill amounts
+            // Note: bill.AmountPaid is only updated for display purposes here (bills are AsNoTracking)
+            // The actual AmountPaid should always be calculated from invoices when needed
             foreach (var bill in bills)
             {
                 if (invoiceSums.TryGetValue(bill.Id, out var paidAmount))
                 {
-                    bill.AmountPaid = paidAmount;
+                    bill.AmountPaid = paidAmount; // Only for display, not persisted
                 }
             }
 
@@ -451,13 +471,20 @@ namespace Apartment.Pages.Manager
             var query = _context.Tenants
                 .AsQueryable();
 
-            // Apply search filter
+            // Apply search filter with sanitization
             if (!string.IsNullOrEmpty(SearchTerm))
             {
+                // Sanitize and limit search term length to prevent abuse
+                var sanitizedTerm = SearchTerm.Trim();
+                if (sanitizedTerm.Length > 100)
+                {
+                    sanitizedTerm = sanitizedTerm.Substring(0, 100);
+                }
+                
                 query = query.Where(t => 
-                    t.FullName.Contains(SearchTerm) || 
-                    t.UnitNumber.Contains(SearchTerm) ||
-                    t.PrimaryEmail.Contains(SearchTerm));
+                    t.FullName.Contains(sanitizedTerm) || 
+                    t.UnitNumber.Contains(sanitizedTerm) ||
+                    t.PrimaryEmail.Contains(sanitizedTerm));
             }
 
             var tenants = await query.ToListAsync();
@@ -481,12 +508,13 @@ namespace Apartment.Pages.Manager
                 })
                 .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
 
-            // Update bill amounts
+            // Note: bill.AmountPaid is only updated for display purposes here
+            // The actual AmountPaid should always be calculated from invoices when needed
             foreach (var bill in allBills)
             {
                 if (invoiceSums.TryGetValue(bill.Id, out var totalPaid))
                 {
-                    bill.AmountPaid = totalPaid;
+                    bill.AmountPaid = totalPaid; // Only for display, not persisted
                 }
             }
 
@@ -579,8 +607,9 @@ namespace Apartment.Pages.Manager
                 // Get actual paid amount from invoices
                 var actualPaid = invoiceSums.TryGetValue(bill.Id, out var totalPaid) ? totalPaid : 0m;
                 
-                // Update bill's AmountPaid to match invoices
-                bill.AmountPaid = actualPaid;
+                // Note: bill.AmountPaid is only updated for display purposes here (bill is AsNoTracking)
+                // The actual AmountPaid should always be calculated from invoices when needed
+                bill.AmountPaid = actualPaid; // Only for display, not persisted
 
                 var latestPayment = await _context.Invoices
                     .Where(i => i.BillId == bill.Id && i.PaymentDate != null)
