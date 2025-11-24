@@ -194,10 +194,22 @@
     .chart-wrapper {
         position: relative;
         height: 320px;
+        width: 100%;
+    }
+
+    .chart-wrapper canvas {
+        width: 100% !important;
+        height: 100% !important;
     }
 
     .chart-wrapper--small {
         height: 260px;
+    }
+
+    @@media (max-width: 992px) {
+        .chart-wrapper {
+            height: 260px;
+        }
     }
 </style>
 

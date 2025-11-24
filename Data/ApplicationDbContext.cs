@@ -55,6 +55,11 @@ namespace Apartment.Data
                 .HasForeignKey(b => b.TenantId)
                 .OnDelete(DeleteBehavior.Restrict); // prevents deleting a tenant if they have associated bills
 
+            modelBuilder.Entity<Tenant>()
+                .Property(t => t.Status)
+                .HasConversion<string>()
+                .HasMaxLength(32);
+
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.Status)
                 .HasConversion<string>()

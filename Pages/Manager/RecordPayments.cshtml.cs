@@ -254,10 +254,9 @@ namespace Apartment.Pages.Manager
                     return Page();
                 }
 
-                // Don't update bill.AmountPaid - it should always be calculated from invoices
-                // Just update PaymentDate if fully paid
                 var newTotalPaid = existingPayments + AddPaymentInput.AmountPaid;
                 var isFullyPaid = newTotalPaid >= bill.AmountDue;
+                bill.AmountPaid = newTotalPaid;
                 
                 if (isFullyPaid)
                 {

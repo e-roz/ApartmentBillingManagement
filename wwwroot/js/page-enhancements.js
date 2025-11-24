@@ -15,7 +15,7 @@
         // Skip informational UI alerts that should stay on the page
         
         // Find success alerts (only dismissible ones from backend)
-        document.querySelectorAll('.alert-success.alert-dismissible').forEach(function(alert) {
+        document.querySelectorAll('.alert-success.alert-dismissible[data-auto-toast="true"]').forEach(function(alert) {
             // Skip if it's marked to not convert
             if (alert.classList.contains('no-toast')) return;
             
@@ -36,7 +36,7 @@
         });
 
         // Find error alerts (only dismissible ones from backend)
-        document.querySelectorAll('.alert-danger.alert-dismissible').forEach(function(alert) {
+        document.querySelectorAll('.alert-danger.alert-dismissible[data-auto-toast="true"]').forEach(function(alert) {
             if (alert.classList.contains('no-toast')) return;
             
             const message = alert.textContent.trim().replace(/\s+/g, ' ');
@@ -54,7 +54,7 @@
 
         // Don't convert warning/info alerts automatically - they're usually UI elements
         // Only convert if explicitly marked with data-toast="true"
-        document.querySelectorAll('.alert-warning[data-toast="true"], .alert-info[data-toast="true"]').forEach(function(alert) {
+        document.querySelectorAll('.alert-warning[data-auto-toast="true"], .alert-info[data-auto-toast="true"]').forEach(function(alert) {
             const message = alert.textContent.trim().replace(/\s+/g, ' ');
             if (message && message.length > 5 && typeof showToast !== 'undefined') {
                 if (alert.classList.contains('alert-warning')) {

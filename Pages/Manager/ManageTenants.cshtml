@@ -1,5 +1,6 @@
 ﻿@page "/Manager/ManageTenants"
 @model Apartment.Pages.Manager.ManageTenantsModel
+@using System.Globalization
 @{
     // Determine which view to show based on the handler parameter
     var handler = Request.Query["handler"].ToString().ToLower();
@@ -17,6 +18,7 @@
         ViewData["Title"] = "Tenant Management";
     }
     Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
 <div class="d-flex">
@@ -92,7 +94,7 @@
                                         <td class="fw-medium">@tenant.FullName</td>
                                         <td>@tenant.PrimaryEmail</td>
                                         <td>@tenant.PrimaryPhone</td>
-                                        <td class="text-success fw-semibold">$@tenant.MonthlyRent.ToString("N2")</td>
+                                        <td class="text-success fw-semibold">@tenant.MonthlyRent.ToString("C", pesoCulture)</td>
                                         <td>
                                             <span class="badge bg-info fs-6">@tenant.LeaseStatus</span>
                                         </td>
@@ -232,7 +234,7 @@
                     <div class="card-body">
                         <dl class="row mb-0">
                             <dt class="col-sm-4 fw-semibold">Monthly Rent</dt>
-                            <dd class="col-sm-8 text-success fw-semibold">$@Model.TenantDetails.MonthlyRent.ToString("N2")</dd>
+                            <dd class="col-sm-8 text-success fw-semibold">@Model.TenantDetails.MonthlyRent.ToString("C", pesoCulture)</dd>
 
                             <dt class="col-sm-4 fw-semibold">Lease Start</dt>
                             <dd class="col-sm-8">@Model.TenantDetails.LeaseStartDate.ToString("MMM dd, yyyy")</dd>
@@ -385,7 +387,7 @@ else if (isDetails)
                                 <!-- Lease Start Date -->
                                 <div class="col-md-6 mb-4">
                                     <div class="form-floating">
-                                        <input asp-for="Tenant.LeaseStartDate" type="date" class="form-control" min="2025-01-01" required />
+                                        <input asp-for="Tenant.LeaseStartDate" type="text" class="form-control" placeholder="yyyy-MM-dd" required />
                                         <label asp-for="Tenant.LeaseStartDate">
                                             <i class="bi bi-calendar-event me-1"></i>Lease Start Date
                                         </label>
@@ -396,7 +398,7 @@ else if (isDetails)
                                 <!-- Lease End Date -->
                                 <div class="col-md-6 mb-4">
                                     <div class="form-floating">
-                                        <input asp-for="Tenant.LeaseEndDate" type="date" class="form-control" min="2025-01-01" required />
+                                        <input asp-for="Tenant.LeaseEndDate" type="text" class="form-control" placeholder="yyyy-MM-dd" required />
                                         <label asp-for="Tenant.LeaseEndDate">
                                             <i class="bi bi-calendar-x me-1"></i>Lease End Date
                                         </label>
@@ -443,36 +445,32 @@ else if (isDetails)
 
     @section Scripts {
         <partial name="_ValidationScriptsPartial" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
         <script>
             // Apartment rents data from server
             const apartmentRents = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApartmentRents));
             
             document.addEventListener('DOMContentLoaded', function() {
-                const leaseStartDate = document.querySelector('input[name="Tenant.LeaseStartDate"]');
-                const leaseEndDate = document.querySelector('input[name="Tenant.LeaseEndDate"]');
+                var leaseStartDatePicker = flatpickr('input[name="Tenant.LeaseStartDate"]', {
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    dateFormat: "Y-m-d",
+                    theme: "lark", // A modern, clean theme
+                    onChange: function(selectedDates, dateStr, instance) {
+                        leaseEndDatePicker.set('minDate', dateStr);
+                    }
+                });
+
+                var leaseEndDatePicker = flatpickr('input[name="Tenant.LeaseEndDate"]', {
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    dateFormat: "Y-m-d",
+                    theme: "lark" // A modern, clean theme
+                });
+
                 const apartmentSelect = document.querySelector('select[name="SelectedApartmentId"]');
                 const monthlyRentInput = document.getElementById('MonthlyRentInput') || document.querySelector('input[name="Tenant.MonthlyRent"]');
-                
-                // Ensure Lease End Date is always after Lease Start Date
-                if (leaseStartDate && leaseEndDate) {
-                    // Update min date for end date when start date changes
-                    leaseStartDate.addEventListener('change', function() {
-                        if (this.value) {
-                            leaseEndDate.min = this.value;
-                            // If end date is before start date, clear it
-                            if (leaseEndDate.value && leaseEndDate.value < this.value) {
-                                leaseEndDate.value = '';
-                            }
-                        } else {
-                            leaseEndDate.min = '2025-01-01';
-                        }
-                    });
-                    
-                    // Set initial min date for end date if start date has a value
-                    if (leaseStartDate.value) {
-                        leaseEndDate.min = leaseStartDate.value;
-                    }
-                }
                 
                 // Auto-populate Monthly Rent when apartment is selected
                 if (apartmentSelect && monthlyRentInput) {
@@ -522,7 +520,6 @@ else if (isDetails)
         </script>
     }
 }
-
 @* EDIT VIEW - Update Tenant Form *@
 @if (isEdit)
 {
@@ -624,7 +621,7 @@ else if (isDetails)
                                 <!-- Lease Start Date -->
                                 <div class="col-md-6 mb-4">
                                     <div class="form-floating">
-                                        <input asp-for="Tenant.LeaseStartDate" type="date" class="form-control" min="2025-01-01" required />
+                                        <input asp-for="Tenant.LeaseStartDate" type="text" class="form-control" placeholder="yyyy-MM-dd" required />
                                         <label asp-for="Tenant.LeaseStartDate">
                                             <i class="bi bi-calendar-event me-1"></i>Lease Start Date
                                         </label>
@@ -635,7 +632,7 @@ else if (isDetails)
                                 <!-- Lease End Date -->
                                 <div class="col-md-6 mb-4">
                                     <div class="form-floating">
-                                        <input asp-for="Tenant.LeaseEndDate" type="date" class="form-control" min="2025-01-01" required />
+                                        <input asp-for="Tenant.LeaseEndDate" type="text" class="form-control" placeholder="yyyy-MM-dd" required />
                                         <label asp-for="Tenant.LeaseEndDate">
                                             <i class="bi bi-calendar-x me-1"></i>Lease End Date
                                         </label>
@@ -682,36 +679,32 @@ else if (isDetails)
 
     @section Scripts {
         <partial name="_ValidationScriptsPartial" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
         <script>
             // Apartment rents data from server
             const apartmentRents = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApartmentRents));
             
             document.addEventListener('DOMContentLoaded', function() {
-                const leaseStartDate = document.querySelector('input[name="Tenant.LeaseStartDate"]');
-                const leaseEndDate = document.querySelector('input[name="Tenant.LeaseEndDate"]');
+                var leaseStartDatePicker = flatpickr('input[name="Tenant.LeaseStartDate"]', {
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    dateFormat: "Y-m-d",
+                    theme: "lark", // A modern, clean theme
+                    onChange: function(selectedDates, dateStr, instance) {
+                        leaseEndDatePicker.set('minDate', dateStr);
+                    }
+                });
+
+                var leaseEndDatePicker = flatpickr('input[name="Tenant.LeaseEndDate"]', {
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    dateFormat: "Y-m-d",
+                    theme: "lark" // A modern, clean theme
+                });
+
                 const apartmentSelect = document.querySelector('select[name="SelectedApartmentId"]');
                 const monthlyRentInput = document.getElementById('MonthlyRentInput') || document.querySelector('input[name="Tenant.MonthlyRent"]');
-                
-                // Ensure Lease End Date is always after Lease Start Date
-                if (leaseStartDate && leaseEndDate) {
-                    // Update min date for end date when start date changes
-                    leaseStartDate.addEventListener('change', function() {
-                        if (this.value) {
-                            leaseEndDate.min = this.value;
-                            // If end date is before start date, clear it
-                            if (leaseEndDate.value && leaseEndDate.value < this.value) {
-                                leaseEndDate.value = '';
-                            }
-                        } else {
-                            leaseEndDate.min = '2025-01-01';
-                        }
-                    });
-                    
-                    // Set initial min date for end date if start date has a value
-                    if (leaseStartDate.value) {
-                        leaseEndDate.min = leaseStartDate.value;
-                    }
-                }
                 
                 // Auto-populate Monthly Rent when apartment is selected
                 if (apartmentSelect && monthlyRentInput) {

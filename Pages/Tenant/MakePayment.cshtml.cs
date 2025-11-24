@@ -14,7 +14,7 @@ namespace Apartment.Pages.Tenant
     public class MakePaymentModel : PageModel
     {
         private readonly ApplicationDbContext _context;
-            private static readonly CultureInfo PhpCulture = CultureInfo.CreateSpecificCulture("en-PH");
+        private static readonly CultureInfo PhpCulture = CultureInfo.CreateSpecificCulture("en-PH");
 
         public MakePaymentModel(ApplicationDbContext context)
         {
@@ -32,294 +32,236 @@ namespace Apartment.Pages.Tenant
         {
             public decimal Amount { get; set; }
             public int? BillId { get; set; }
-            public string PaymentMethod { get; set; } = "Credit Card";
+            public string PaymentMethod { get; set; } = string.Empty;
         }
 
-        public async Task OnGetAsync(int? billId = null)
+        private static readonly HashSet<string> KnownPaymentMethods = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "GCash", "Maya", "BDO", "Metrobank", "Landbank", "BPI"
+        };
+
+        public async Task<IActionResult> OnGetAsync(int? billId = null)
         {
             if (billId.HasValue)
             {
                 Input.BillId = billId.Value;
             }
             await LoadDataAsync();
+            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (string.IsNullOrWhiteSpace(Input.PaymentMethod))
-            {
-                ModelState.AddModelError(nameof(Input.PaymentMethod), "Please select a payment method.");
-            }
+            NormalizePaymentInput();
 
-            if (Input.Amount <= 0)
+            var tenant = await GetTenantFromClaimsAsync();
+            if (tenant == null)
             {
-                ModelState.AddModelError(nameof(Input.Amount), "Payment amount must be greater than zero.");
-            }
-
-            if (!ModelState.IsValid)
-            {
+                ModelState.AddModelError(string.Empty, "Unable to find your tenant profile. Please contact support.");
                 await LoadDataAsync();
                 return Page();
             }
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            // Perform initial validation checks
+            if (Input.Amount <= 0)
+                ModelState.AddModelError(nameof(Input.Amount), "Payment amount must be greater than zero.");
+            if (!IsValidPaymentMethod(Input.PaymentMethod))
+                ModelState.AddModelError(nameof(Input.PaymentMethod), "Please select a valid payment method.");
+            
+            if (!ModelState.IsValid)
             {
-                var user = await _context.Users
-                    .Include(u => u.Tenant)
-                    .FirstOrDefaultAsync(u => u.Id == userId);
+                await LoadDataAsync(tenant.Id);
+                return Page();
+            }
 
-                if (user?.Tenant != null)
+            var outstandingBills = await _context.Bills
+                .Where(b => b.TenantId == tenant.Id && b.AmountDue > b.AmountPaid)
+                .OrderBy(b => b.DueDate).ThenBy(b => b.Id)
+                .ToListAsync();
+
+            if (!outstandingBills.Any())
+            {
+                ModelState.AddModelError(string.Empty, "You have no outstanding bills to pay.");
+                await LoadDataAsync(tenant.Id);
+                return Page();
+            }
+
+            // Filter bills if a specific one is targeted
+            var paymentPlan = outstandingBills;
+            if (Input.BillId.HasValue)
+            {
+                paymentPlan = outstandingBills.Where(b => b.Id == Input.BillId.Value).ToList();
+                if (!paymentPlan.Any())
                 {
-                    if (Input.BillId.HasValue)
-                    {
-                        var bill = await _context.Bills
-                            .Include(b => b.BillingPeriod)
-                            .FirstOrDefaultAsync(b => b.Id == Input.BillId.Value && b.TenantId == user.Tenant.Id);
-
-                        if (bill != null)
-                        {
-                            // Calculate actual remaining balance from invoices (not from Bill.AmountPaid)
-                            var existingPayments = await _context.Invoices
-                                .Where(i => i.BillId == bill.Id && i.PaymentDate != null)
-                                .SumAsync(i => i.AmountDue);
-
-                            var remainingBalance = bill.AmountDue - existingPayments;
-
-                            if (remainingBalance <= 0)
-                            {
-                                ModelState.AddModelError(nameof(Input.BillId), "This bill has already been paid in full.");
-                                await LoadDataAsync();
-                                return Page();
-                            }
-
-                            // Fix: Check against remaining balance, not monthly rent
-                            if (Input.Amount > remainingBalance)
-                            {
-                                ModelState.AddModelError(nameof(Input.Amount), $"Payment amount exceeds the remaining balance of {remainingBalance.ToString("C", PhpCulture)} for this bill.");
-                                await LoadDataAsync();
-                                return Page();
-                            }
-
-                            // Use transaction to ensure data integrity
-                            await using var transaction = await _context.Database.BeginTransactionAsync();
-                            try
-                            {
-                                var now = DateTime.UtcNow;
-                                var newTotalPaid = existingPayments + Input.Amount;
-                                var isFullyPaid = newTotalPaid >= bill.AmountDue;
-
-                                // Only update PaymentDate if fully paid - AmountPaid should always be calculated from invoices
-                                if (isFullyPaid)
-                                {
-                                    bill.PaymentDate = now;
-                                }
-
-                                var invoiceStatus = isFullyPaid
-                                    ? InvoiceStatus.Paid
-                                    : InvoiceStatus.Partial;
-
-                                var paymentInvoice = new Invoice
-                                {
-                                    BillId = bill.Id,
-                                    TenantId = bill.TenantId,
-                                    ApartmentId = bill.ApartmentId,
-                                    Title = bill.BillingPeriod != null
-                                        ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year} - Payment"
-                                        : $"Bill #{bill.Id} Payment",
-                                    AmountDue = Input.Amount,
-                                    DueDate = bill.DueDate,
-                                    IssueDate = now,
-                                    PaymentDate = now,
-                                    PaymentMethod = Input.PaymentMethod,
-                                    Status = invoiceStatus
-                                };
-
-                                _context.Invoices.Add(paymentInvoice);
-                                await _context.SaveChangesAsync();
-                                await transaction.CommitAsync();
-                            }
-                            catch
-                            {
-                                await transaction.RollbackAsync();
-                                throw;
-                            }
-
-                            TempData["SuccessMessage"] = $"Payment of {Input.Amount.ToString("C", PhpCulture)} has been successfully recorded.";
-                            return RedirectToPage("/Tenant/PaymentHistory");
-                        }
-                    }
-                    else
-                    {
-                        var unpaidBills = await _context.Bills
-                            .Include(b => b.BillingPeriod)
-                            .Where(b => b.TenantId == user.Tenant.Id)
-                            .OrderBy(b => b.DueDate)
-                            .ToListAsync();
-
-                        var billIds = unpaidBills.Select(b => b.Id).ToList();
-
-                        var invoiceSums = await _context.Invoices
-                            .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
-                            .GroupBy(i => i.BillId!.Value)
-                            .Select(group => new
-                            {
-                                BillId = group.Key,
-                                TotalPaid = group.Sum(i => i.AmountDue)
-                            })
-                            .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
-
-                        var outstandingBills = unpaidBills
-                            .Select(b => new
-                            {
-                                Bill = b,
-                                Paid = invoiceSums.TryGetValue(b.Id, out var paid) ? paid : 0m
-                            })
-                            .Where(x => x.Bill.AmountDue > x.Paid)
-                            .OrderBy(x => x.Bill.DueDate)
-                            .ToList();
-
-                        if (!outstandingBills.Any())
-                        {
-                            ModelState.AddModelError(nameof(Input.BillId), "You have no outstanding bills to pay.");
-                            await LoadDataAsync();
-                            return Page();
-                        }
-
-                        var outstandingBalance = outstandingBills.Sum(x => x.Bill.AmountDue - x.Paid);
-
-                        if (Input.Amount > outstandingBalance)
-                        {
-                            ModelState.AddModelError(nameof(Input.Amount), $"Payment amount exceeds your outstanding balance of {outstandingBalance.ToString("C", PhpCulture)}.");
-                            await LoadDataAsync();
-                            return Page();
-                        }
-
-                        // Use transaction to ensure all payments are processed atomically
-                        await using var transaction = await _context.Database.BeginTransactionAsync();
-                        try
-                        {
-                            var amountToAllocate = Input.Amount;
-                            var now = DateTime.UtcNow;
-
-                            foreach (var entry in outstandingBills)
-                            {
-                                if (amountToAllocate <= 0)
-                                {
-                                    break;
-                                }
-
-                                var remainingForBill = entry.Bill.AmountDue - entry.Paid;
-                                if (remainingForBill <= 0)
-                                {
-                                    continue;
-                                }
-
-                                var amountApplied = Math.Min(remainingForBill, amountToAllocate);
-                                var newTotalPaid = entry.Paid + amountApplied;
-                                var billFullyPaid = newTotalPaid >= entry.Bill.AmountDue;
-
-                                // Don't update Bill.AmountPaid - it should always be calculated from invoices
-                                // Only update PaymentDate if fully paid
-                                if (billFullyPaid)
-                                {
-                                    entry.Bill.PaymentDate = now;
-                                }
-
-                                var invoiceStatus = billFullyPaid ? InvoiceStatus.Paid : InvoiceStatus.Partial;
-
-                                var invoice = new Invoice
-                                {
-                                    BillId = entry.Bill.Id,
-                                    TenantId = entry.Bill.TenantId,
-                                    ApartmentId = entry.Bill.ApartmentId,
-                                    Title = entry.Bill.BillingPeriod != null
-                                        ? $"{entry.Bill.BillingPeriod.MonthName} {entry.Bill.BillingPeriod.Year} - Payment"
-                                        : $"Bill #{entry.Bill.Id} Payment",
-                                    AmountDue = amountApplied,
-                                    DueDate = entry.Bill.DueDate,
-                                    IssueDate = now,
-                                    PaymentDate = now,
-                                    PaymentMethod = Input.PaymentMethod,
-                                    Status = invoiceStatus
-                                };
-
-                                _context.Invoices.Add(invoice);
-
-                                amountToAllocate -= amountApplied;
-                            }
-
-                            if (amountToAllocate > 0)
-                            {
-                                await transaction.RollbackAsync();
-                                ModelState.AddModelError(nameof(Input.Amount), "Unable to allocate the full payment amount. Please try again.");
-                                await LoadDataAsync();
-                                return Page();
-                            }
-
-                            await _context.SaveChangesAsync();
-                            await transaction.CommitAsync();
-                        }
-                        catch
-                        {
-                            await transaction.RollbackAsync();
-                            throw;
-                        }
-
-                        TempData["SuccessMessage"] = $"Payment of {Input.Amount.ToString("C", PhpCulture)} has been successfully recorded.";
-                        return RedirectToPage("/Tenant/PaymentHistory");
-                    }
+                    ModelState.AddModelError(nameof(Input.BillId), "The selected bill is already paid or does not exist.");
+                    await LoadDataAsync(tenant.Id);
+                    return Page();
                 }
             }
 
-            ModelState.AddModelError("", "Unable to process payment. Please try again.");
-            await LoadDataAsync();
-            return Page();
+            var totalOutstanding = paymentPlan.Sum(b => b.AmountDue - b.AmountPaid);
+            if (Input.Amount > totalOutstanding)
+            {
+                var formattedBalance = totalOutstanding.ToString("C", PhpCulture);
+                var message = Input.BillId.HasValue
+                    ? $"Payment exceeds the remaining balance of {formattedBalance} for this bill."
+                    : $"Payment exceeds your total outstanding balance of {formattedBalance}.";
+                ModelState.AddModelError(nameof(Input.Amount), message);
+                await LoadDataAsync(tenant.Id);
+                return Page();
+            }
+
+            var (success, errorMessage) = await ExecutePaymentAsync(tenant.Id, paymentPlan, Input.Amount, Input.PaymentMethod);
+
+            if (!success)
+            {
+                ModelState.AddModelError(string.Empty, errorMessage ?? "An unexpected error occurred during payment.");
+                await LoadDataAsync(tenant.Id);
+                return Page();
+            }
+
+            TempData["SuccessMessage"] = $"Payment of {Input.Amount.ToString("C", PhpCulture)} was successfully recorded.";
+            return RedirectToPage("/Tenant/PaymentHistory");
         }
 
-        private async Task LoadDataAsync()
+        private async Task LoadDataAsync(int? tenantId = null)
+        {
+            var targetTenantId = tenantId;
+            if (!targetTenantId.HasValue)
+            {
+                var tenant = await GetTenantFromClaimsAsync();
+                if (tenant == null) return;
+                targetTenantId = tenant.Id;
+                TenantInfo = tenant;
+            }
+
+            if (TenantInfo == null && targetTenantId.HasValue)
+            {
+                TenantInfo = await _context.Tenants.FindAsync(targetTenantId.Value);
+            }
+
+            if (targetTenantId.HasValue)
+            {
+                PendingBills = await _context.Bills
+                    .Include(b => b.BillingPeriod)
+                    .Where(b => b.TenantId == targetTenantId.Value && b.AmountDue > b.AmountPaid)
+                    .OrderBy(b => b.DueDate).ThenBy(b => b.Id)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                OutstandingBalance = PendingBills.Sum(b => b.AmountDue - b.AmountPaid);
+            }
+        }
+        
+        private async Task<Model.Tenant?> GetTenantFromClaimsAsync()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
                     .Include(u => u.Tenant)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(u => u.Id == userId);
+                return user?.Tenant;
+            }
+            return null;
+        }
 
-                if (user?.Tenant != null)
+        private void NormalizePaymentInput()
+        {
+            Input.PaymentMethod = Input.PaymentMethod?.Trim() ?? string.Empty;
+        }
+
+        private bool IsValidPaymentMethod(string? method)
+        {
+            return !string.IsNullOrWhiteSpace(method) && KnownPaymentMethods.Contains(method.Trim());
+        }
+
+        private async Task<(bool Success, string? ErrorMessage)> ExecutePaymentAsync(
+            int tenantId,
+            List<Bill> paymentPlan,
+            decimal paymentAmount,
+            string paymentMethod)
+        {
+            if (!paymentPlan.Any() || paymentAmount <= 0)
+            {
+                return (false, "No bills to pay or payment amount is zero.");
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var amountLeftToAllocate = paymentAmount;
+                var now = DateTime.UtcNow;
+
+                var billIds = paymentPlan.Select(b => b.Id).ToList();
+
+                // Lock the specific bills we are about to work on to prevent concurrent modifications
+                var billsToUpdate = await _context.Bills
+                    .Include(b => b.BillingPeriod) // Ensure BillingPeriod is loaded
+                    .Where(b => b.TenantId == tenantId && billIds.Contains(b.Id))
+                    .OrderBy(b => b.DueDate).ThenBy(b => b.Id)
+                    .ToListAsync();
+
+                foreach (var bill in billsToUpdate)
                 {
-                    TenantInfo = user.Tenant;
+                    if (amountLeftToAllocate <= 0) break;
 
-                    var bills = await _context.Bills
-                        .Include(b => b.BillingPeriod)
-                        .Where(b => b.TenantId == TenantInfo.Id && b.AmountPaid < b.AmountDue)
-                        .AsNoTracking()
-                        .OrderBy(b => b.DueDate)
-                        .ToListAsync();
+                    var remainingOnBill = bill.AmountDue - bill.AmountPaid;
+                    if (remainingOnBill <= 0) continue;
 
-                    var billIds = bills.Select(b => b.Id).ToList();
+                    var amountToApply = Math.Min(amountLeftToAllocate, remainingOnBill);
 
-                    var invoiceSums = await _context.Invoices
-                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
-                        .GroupBy(i => i.BillId!.Value)
-                        .Select(group => new
-                        {
-                            BillId = group.Key,
-                            TotalPaid = group.Sum(i => i.AmountDue)
-                        })
-                        .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
-
-                    foreach (var bill in bills)
+                    // 1. Update the Bill itself
+                    bill.AmountPaid += amountToApply;
+                    if (bill.AmountPaid >= bill.AmountDue)
                     {
-                        if (invoiceSums.TryGetValue(bill.Id, out var totalPaid))
-                        {
-                            bill.AmountPaid = totalPaid;
-                        }
+                        bill.PaymentDate ??= now;
                     }
+                    
+                    // 2. Create a corresponding Invoice record for this part of the payment
+                    var invoice = new Invoice
+                    {
+                        TenantId = bill.TenantId,
+                        ApartmentId = bill.ApartmentId,
+                        BillId = bill.Id,
+                        Title = $"Payment for {bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}",
+                        AmountDue = amountToApply, // This invoice represents the amount just paid
+                        IssueDate = now,
+                        DueDate = bill.DueDate,
+                        PaymentDate = now,
+                        PaymentMethod = paymentMethod,
+                        Status = InvoiceStatus.Paid, // This record represents a completed payment
+                        ReferenceNumber = $"PAY-{now:yyyyMMddHHmmss}-{bill.Id}"
+                    };
+                    _context.Invoices.Add(invoice);
 
-                    PendingBills = bills;
-                    OutstandingBalance = bills.Sum(b => Math.Max(0m, b.AmountDue - b.AmountPaid));
+                    amountLeftToAllocate -= amountToApply;
                 }
+
+                if (amountLeftToAllocate > 0.005m) // Allow for small rounding differences
+                {
+                    // This case should ideally not be hit if pre-validation is correct, but as a safeguard:
+                    await transaction.RollbackAsync();
+                    return (false, "Could not fully allocate payment. This may be due to a concurrent update. Please try again.");
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                
+                return (true, null);
+            }
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync();
+                // Log the exception ex
+                return (false, "A database error occurred while saving the payment. Please try again.");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                // Log the exception ex
+                return (false, "An unexpected error occurred. Please try again.");
             }
         }
     }

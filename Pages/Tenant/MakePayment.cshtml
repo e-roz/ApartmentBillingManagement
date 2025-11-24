@@ -14,7 +14,7 @@
             <div>
                 <h1 class="page-title">Make a Payment</h1>
                 <p class="page-subtitle">Complete your payment in a few guided steps.</p>
-            </div>
+        </div>
             <div class="status-chip">
                 <span class="dot"></span>
                 Secure Simulation
@@ -54,13 +54,14 @@
                                 <p class="upcoming-title">Total Pending Bills</p>
                                 <p class="upcoming-desc">@((Model.PendingBills?.Count) ?? 0) open invoices</p>
                             </div>
-                        </div>
-                    </div>
+                </div>
+            </div>
                 </section>
 
                 <section class="payment-card">
                     <form id="paymentForm" method="post" novalidate>
                         <input type="hidden" asp-for="Input.PaymentMethod" id="selectedPaymentMethod" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                         <div class="input-grid">
                             <div class="field-block">
@@ -70,9 +71,9 @@
                                     var pendingBills = Model.PendingBills ?? new List<Apartment.Model.Bill>();
                                 }
                                 <select asp-for="Input.BillId" class="fancy-select" id="billSelect">
-                                    <option value="">Pay Total Outstanding Balance</option>
+                                <option value="">Pay Total Outstanding Balance</option>
                                     @foreach (var bill in pendingBills)
-                                    {
+                                {
                                         var remaining = bill.AmountDue - bill.AmountPaid;
                                         var isOverdue = bill.DueDate < DateTime.UtcNow.Date && remaining > 0;
                                         <option value="@bill.Id" data-remaining="@remaining" data-due-date="@bill.DueDate.ToString("yyyy-MM-dd")" data-overdue="@isOverdue.ToString().ToLower()">
@@ -81,9 +82,9 @@
                                             {
                                                 <text> (OVERDUE)</text>
                                             }
-                                        </option>
-                                    }
-                                </select>
+                                    </option>
+                                }
+                            </select>
                                 <div id="billStatusInfo" class="mt-2 small" style="display: none;">
                                     <i class="bi bi-info-circle me-1"></i>
                                     <span id="billStatusText"></span>
@@ -104,7 +105,7 @@
                             <div class="method-header">
                                 <div>
                                     <p class="label">Payment Method</p>
-                                    <p class="method-hint">Tap a card to reveal the required fields.</p>
+                                    <p class="method-hint">Choose how you’d like to pay.</p>
                                 </div>
                                 <div class="selected-method" id="selectedMethodLabel">No method selected</div>
                             </div>
@@ -159,34 +160,12 @@
                         <div class="dynamic-fields">
                             <div class="method-fields" data-field-type="wallet">
                                 <h6>Wallet Details</h6>
-                                <div class="field-grid">
-                                    <label class="input-label">Phone Number linked to wallet</label>
-                                    <input type="tel" id="walletPhone" name="walletPhone" placeholder="09XX XXX XXXX" />
-                                </div>
+                                <p class="text-muted mb-0">Wallet confirmation details can be provided after submission if needed.</p>
                             </div>
 
                             <div class="method-fields" data-field-type="bank">
                                 <h6>Bank Transfer Details</h6>
-                                <div class="field-grid">
-                                    <div class="field-block slim">
-                                        <label class="input-label">Account Name</label>
-                                        <input type="text" id="bankAccountName" name="bankAccountName" placeholder="e.g. Juan Dela Cruz" />
-                                    </div>
-                                    <div class="field-block slim">
-                                        <label class="input-label">Account Number</label>
-                                        <input type="text" id="bankAccountNumber" name="bankAccountNumber" placeholder="XXXX XXXX XXXX" />
-                                    </div>
-                                </div>
-                                <div class="copy-card">
-                                    <div>
-                                        <p class="label">Copy Account Number</p>
-                                        <p class="copy-hint" id="bankAccountLabel">Select a bank to view details.</p>
-                                    </div>
-                                    <div class="copy-box">
-                                        <input type="text" id="accountNumberDisplay" readonly value="" />
-                                        <button type="button" id="copyAccountBtn">Copy</button>
-                                    </div>
-                                </div>
+                                <p class="text-muted mb-0">Bank account information will be collected separately if required.</p>
                             </div>
                         </div>
 
@@ -662,8 +641,14 @@
     }
 
     .btn.ghost {
-        background: rgba(148, 163, 184, 0.1);
-        color: #475467;
+        background: #ffc0cb;
+        color: #7a0445;
+        box-shadow: 0 10px 25px rgba(255, 192, 203, 0.4);
+    }
+
+    .btn.ghost:hover {
+        filter: brightness(0.95);
+        transform: translateY(-1px);
     }
 
     .modern-alert {
@@ -713,190 +698,77 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        // Hide loading overlay if page loaded (in case of validation errors or page reload)
-        if (typeof showLoading !== 'undefined') {
-            showLoading.hide('body');
-        }
-        
-        // Re-enable submit button if page reloaded with errors
-        const form = document.getElementById('paymentForm');
-        if (form) {
-            const submitButton = form.querySelector('button[type="submit"]');
-            if (submitButton && submitButton.disabled) {
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Submit Payment';
-            }
-        }
-        
+        const paymentForm = document.getElementById('paymentForm');
+        const submitButton = paymentForm.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.innerHTML;
+
         const methodCards = document.querySelectorAll(".payment-method-card");
-        const methodLabel = document.getElementById("selectedMethodLabel");
         const hiddenMethodInput = document.getElementById("selectedPaymentMethod");
-        const methodFields = document.querySelectorAll(".method-fields");
-        const walletFields = document.querySelector('.method-fields[data-field-type="wallet"]');
-        const bankFields = document.querySelector('.method-fields[data-field-type="bank"]');
-        const accountDisplay = document.getElementById("accountNumberDisplay");
-        const bankAccountLabel = document.getElementById("bankAccountLabel");
-        const copyBtn = document.getElementById("copyAccountBtn");
-        const form = document.getElementById("paymentForm");
+        const selectedMethodLabel = document.getElementById("selectedMethodLabel");
 
-        let activeMethod = null;
-        let allowSubmit = false;
-        const methodConfig = {
-            gcash: { label: "GCash", type: "wallet" },
-            maya: { label: "Maya", type: "wallet" },
-            bdo: { label: "BDO", type: "bank" },
-            metrobank: { label: "Metrobank", type: "bank" },
-            landbank: { label: "Landbank", type: "bank" },
-            bpi: { label: "BPI", type: "bank" }
-        };
-
-        const activateCard = (card) => {
-            methodCards.forEach(c => c.classList.remove("active"));
-            card.classList.add("active");
-
-            const methodKey = card.dataset.method;
-            const details = methodConfig[methodKey];
-            activeMethod = details?.type ?? null;
-            const label = card.dataset.label ?? details?.label ?? "";
-            hiddenMethodInput.value = label;
-            methodLabel.textContent = label ? `${label} selected` : "No method selected";
-
-            methodFields.forEach(section => section.classList.remove("active"));
-            if (activeMethod === "wallet") {
-                walletFields.classList.add("active");
-            } else if (activeMethod === "bank") {
-                bankFields.classList.add("active");
-            }
-
-            const destination = card.dataset.destination || "";
-            accountDisplay.value = destination;
-            bankAccountLabel.textContent = destination ? `Transfer to ${destination}` : "Select a bank to view details.";
-        };
-
-        methodCards.forEach(card => {
-            card.addEventListener("click", () => activateCard(card));
-        });
-
-        const presetValue = hiddenMethodInput?.value?.trim();
-        if (presetValue) {
-            const presetCard = Array.from(methodCards).find(c => (c.dataset.label ?? "").toLowerCase() === presetValue.toLowerCase());
-            if (presetCard) {
-                activateCard(presetCard);
-            }
-        }
-
-        copyBtn?.addEventListener("click", () => {
-            if (!accountDisplay.value) {
-                Swal.fire({ icon: "info", title: "No account selected", text: "Select a bank first." });
-                return;
-            }
-
-            navigator.clipboard.writeText(accountDisplay.value)
-                .then(() => Swal.fire({ icon: "success", title: "Copied!", text: "Account number copied to clipboard." }))
-                .catch(() => Swal.fire({ icon: "error", title: "Copy failed", text: "Press CTRL+C to copy manually." }));
-        });
-
-        const handleFormSubmit = function(event) {
-            // If already validated, just show loading and let it proceed
-            if (allowSubmit) {
-                // Disable submit button and show processing state
-                const submitButton = form.querySelector('button[type="submit"]');
-                if (submitButton) {
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing...';
-                }
-                
-                // Show loading indicator
-                if (typeof showLoading !== 'undefined') {
-                    showLoading.show('body', 'Processing payment...');
-                }
-                
-                // Allow form to submit naturally
-                return;
-            }
-
-            // Prevent default to do client-side validation first
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const amount = parseFloat(document.getElementById("Input_Amount")?.value || "0");
-            const walletPhone = document.getElementById("walletPhone")?.value.trim();
-            const bankName = document.getElementById("bankAccountName")?.value.trim();
-            const bankNumber = document.getElementById("bankAccountNumber")?.value.trim();
-
-            if (!hiddenMethodInput.value) {
-                Swal.fire({ icon: "error", title: "Choose a method", text: "Select a payment method to continue." });
-                return;
-            }
-
-            if (!amount || amount <= 0) {
-                Swal.fire({ icon: "error", title: "Invalid amount", text: "Please enter an amount greater than ₱0.00." });
-                return;
-            }
-
-            if (activeMethod === "wallet" && !walletPhone) {
-                Swal.fire({ icon: "error", title: "Phone required", text: "Enter the phone number linked to your wallet." });
-                return;
-            }
-
-            if (activeMethod === "bank" && (!bankName || !bankNumber)) {
-                Swal.fire({ icon: "error", title: "Bank details missing", text: "Provide both account name and account number." });
-                return;
-            }
-
-            // All validation passed - mark as allowed
-            allowSubmit = true;
-            
-            // Disable submit button and show processing state
-            const submitButton = form.querySelector('button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing...';
-            }
-            
-            // Show loading indicator
-            if (typeof showLoading !== 'undefined') {
-                showLoading.show('body', 'Processing payment...');
-            }
-            
-            // Remove this event listener to prevent infinite loop
-            form.removeEventListener('submit', handleFormSubmit);
-            
-            // Submit the form directly - this bypasses the submit event
-            form.submit();
-        };
-        
-        form?.addEventListener("submit", handleFormSubmit);
-
-        // Enhance bill selection with status information
         const billSelect = document.getElementById('billSelect');
-        const billStatusInfo = document.getElementById('billStatusInfo');
-        const billStatusText = document.getElementById('billStatusText');
+        const amountInput = document.getElementById('Input_Amount');
         
-        if (billSelect && billStatusInfo && billStatusText) {
-            billSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption.value && selectedOption.dataset.remaining) {
-                    const remaining = parseFloat(selectedOption.dataset.remaining);
-                    const isOverdue = selectedOption.dataset.overdue === 'true';
-                    const dueDate = selectedOption.dataset.dueDate;
-                    
-                    let statusHtml = '';
-                    if (isOverdue) {
-                        statusHtml = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>This bill is <strong>OVERDUE</strong>. Remaining balance: ${remaining.toLocaleString('en-PH', {style: 'currency', currency: 'PHP'})}</span>`;
-                        billStatusInfo.className = 'mt-2 small text-danger';
-                    } else {
-                        statusHtml = `<span class="text-info"><i class="bi bi-info-circle-fill me-1"></i>Remaining balance: ${remaining.toLocaleString('en-PH', {style: 'currency', currency: 'PHP'})}</span>`;
-                        billStatusInfo.className = 'mt-2 small text-info';
-                    }
-                    
-                    billStatusText.innerHTML = statusHtml;
-                    billStatusInfo.style.display = 'block';
-                } else {
-                    billStatusInfo.style.display = 'none';
-                }
+        // --- Payment Method Selection ---
+        methodCards.forEach(card => {
+            card.addEventListener("click", function () {
+                // Update active visual state
+                methodCards.forEach(c => c.classList.remove("active"));
+                this.classList.add("active");
+
+                // Set hidden input value
+                const methodName = this.dataset.label;
+                hiddenMethodInput.value = methodName;
+                selectedMethodLabel.textContent = `${methodName} selected`;
             });
-        }
+        });
+        
+        // --- Auto-fill amount when a bill is selected ---
+        billSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                const remaining = selectedOption.dataset.remaining;
+                if (remaining) {
+                    amountInput.value = parseFloat(remaining).toFixed(2);
+                }
+            } else {
+                // If "Pay Total" is selected, clear the amount
+                amountInput.value = '';
+            }
+        });
+
+
+        // --- Form Submission Logic ---
+        paymentForm.addEventListener('submit', function(e) {
+            // Client-side validation
+            const amount = parseFloat(amountInput.value);
+            const paymentMethod = hiddenMethodInput.value.trim();
+
+            if (!paymentMethod) {
+                alert('Please select a payment method.');
+                e.preventDefault(); // Stop submission
+                return;
+            }
+
+            if (isNaN(amount) || amount <= 0) {
+                alert('Please enter a valid payment amount greater than zero.');
+                e.preventDefault(); // Stop submission
+                return;
+            }
+
+            // If validation passes, disable the button to prevent multiple submissions
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        });
+
+        // --- Reset button on page back/forward ---
+        // This handles cases where the user navigates away and then back
+        window.addEventListener('pageshow', function() {
+            if (submitButton.disabled) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            }
+        });
     });
 </script>
 
