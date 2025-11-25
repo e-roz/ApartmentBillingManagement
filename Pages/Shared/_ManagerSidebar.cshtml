@@ -9,7 +9,8 @@
     var isGenerateBills = currentPage.Contains("GenerateBills");
     var isRecordPayments = currentPage.Contains("RecordPayments");
     var isBillingSummary = currentPage.Contains("BillingSummary");
-    
+    var isViewAllRequests = currentPage.Contains("ViewAllRequests");
+
     // Determine if billing section should be expanded
     var isBillingSection = isGenerateBills || isRecordPayments || isBillingSummary;
 }
@@ -97,6 +98,21 @@
                     </span>
                     <span class="nav-label">Unit Management</span>
                     @if (isManageApartments)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+
+                </a>
+
+                <a asp-page="/Manager/ViewAllRequests" 
+                   class="nav-item @(isViewAllRequests ? "active" : "")"
+                   aria-current="@(isViewAllRequests ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-card-list"></i>
+                    </span>
+                    <span class="nav-label">Tenant Requests</span>
+                    @if (isViewAllRequests)
                     {
                         <span class="nav-indicator"></span>
                     }

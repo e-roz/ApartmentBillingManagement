@@ -8,14 +8,14 @@
     var isPaymentHistory = currentPage.Contains("PaymentHistory");
     var isMakePayment = currentPage.Contains("MakePayment");
     var isSubmitRequest = currentPage.Contains("SubmitRequest");
-    var isTrackRequests = currentPage.Contains("TrackRequests");
+    var isViewRequests = currentPage.Contains("ViewRequests");
     var isDocuments = currentPage.Contains("Documents");
     var isMessages = currentPage.Contains("Messages");
     var isProfile = currentPage.Contains("Profile");
     
     // Determine if sections should be expanded
     var isFinancialsSection = isViewInvoices || isPaymentHistory || isMakePayment;
-    var isMaintenanceSection = isSubmitRequest || isTrackRequests;
+    var isMaintenanceSection = isSubmitRequest || isViewRequests;
 }
 
 <!-- Mobile Sidebar Overlay -->
@@ -167,14 +167,14 @@
                             }
                         </a>
 
-                        <a asp-page="/Tenant/TrackRequests" 
-                           class="nav-item @(isTrackRequests ? "active" : "")"
-                           aria-current="@(isTrackRequests ? "page" : null)">
+                        <a asp-page="/Tenant/ViewRequests" 
+                           class="nav-item @(isViewRequests ? "active" : "")"
+                           aria-current="@(isViewRequests ? "page" : null)">
                             <span class="nav-icon">
                                 <i class="bi bi-list-check"></i>
                             </span>
-                            <span class="nav-label">Track Requests</span>
-                            @if (isTrackRequests)
+                            <span class="nav-label">View My Requests</span>
+                            @if (isViewRequests)
                             {
                                 <span class="nav-indicator"></span>
                             }

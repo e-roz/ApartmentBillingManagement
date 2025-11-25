@@ -251,13 +251,13 @@ namespace Apartment.Pages.Tenant
                 
                 return (true, null);
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException)
             {
                 await transaction.RollbackAsync();
                 // Log the exception ex
                 return (false, "A database error occurred while saving the payment. Please try again.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transaction.RollbackAsync();
                 // Log the exception ex

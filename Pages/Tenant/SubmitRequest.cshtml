@@ -30,12 +30,18 @@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Input.Priority" class="form-label">Priority</label>
-                            <select asp-for="Input.Priority" class="form-select">
-                                <option value="Low">Low</option>
-                                <option value="Medium" selected>Medium</option>
-                                <option value="High">High</option>
+                            <label asp-for="Input.RequestType" class="form-label">Request Type</label>
+                            <select asp-for="Input.RequestType" asp-items="Html.GetEnumSelectList<Apartment.Enums.RequestType>()" class="form-select">
+                                <option value="">-- Select a Type --</option>
                             </select>
+                            <span asp-validation-for="Input.RequestType" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Priority" class="form-label">Priority</label>
+                            <select asp-for="Input.Priority" asp-items="Html.GetEnumSelectList<Apartment.Enums.RequestPriority>()" class="form-select">
+                            </select>
+                            <span asp-validation-for="Input.Priority" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">

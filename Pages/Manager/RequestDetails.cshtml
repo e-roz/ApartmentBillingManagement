@@ -1,0 +1,217 @@
+@page "/Manager/RequestDetails/{id:int}"
+@model Apartment.Pages.Manager.RequestDetailsModel
+@{
+    ViewData["Title"] = $"Request: {Model.TenantRequest?.Title ?? "Details"}";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_ManagerSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <div class="container-fluid">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="display-5 fw-bold text-primary mb-0">
+                            <i class="bi bi-patch-question me-3"></i>Request Details
+                        </h1>
+                        <a asp-page="/Manager/ViewAllRequests" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to All Requests
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @Model.SuccessMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @Model.ErrorMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (Model.TenantRequest != null)
+            {
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card shadow-lg rounded-4 border-0 mb-4">
+                            <div class="card-header bg-primary text-white py-3">
+                                <h5 class="mb-0">Request Information - @Model.TenantRequest.Title</h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4 fw-semibold">Description</dt>
+                                    <dd class="col-sm-8">@Model.TenantRequest.Description</dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Submitted By</dt>
+                                    <dd class="col-sm-8">@(Model.TenantRequest.SubmittedByUser?.Username ?? "N/A")</dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Unit</dt>
+                                    <dd class="col-sm-8">@(Model.TenantRequest.Apartment?.UnitNumber ?? "N/A")</dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Request Type</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge bg-secondary">@Model.TenantRequest.RequestType</span>
+                                    </dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Priority</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge @GetPriorityBadgeClass(Model.TenantRequest.Priority)">@Model.TenantRequest.Priority</span>
+                                    </dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Status</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge @GetStatusBadgeClass(Model.TenantRequest.Status)">@Model.TenantRequest.Status</span>
+                                    </dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Date Submitted</dt>
+                                    <dd class="col-sm-8">@Model.TenantRequest.DateSubmitted.ToString("MMM dd, yyyy hh:mm tt")</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <!-- Message History -->
+                        <div class="card shadow-lg rounded-4 border-0 mb-4">
+                            <div class="card-header bg-info text-white py-3">
+                                <h5 class="mb-0">Communication History</h5>
+                            </div>
+                            <div class="card-body p-4 message-history">
+                                @if (Model.Messages.Any())
+                                {
+                                    @foreach (var message in Model.Messages)
+                                    {
+                                        <div class="message-item mb-3 @(message.SenderUserId == Model.TenantRequest.SubmittedByUserId ? "tenant-message" : "manager-message")">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <small class="fw-semibold">
+                                                    @(message.SenderUserId == Model.TenantRequest.SubmittedByUserId ? Model.TenantRequest.SubmittedByUser?.Username ?? "Tenant" : "Manager")
+                                                </small>
+                                                <small class="text-muted">@message.Timestamp.ToString("MMM dd, yyyy hh:mm tt")</small>
+                                            </div>
+                                            <p class="mb-0">@message.Content</p>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-center text-muted">No communication for this request yet.</div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Reply Form -->
+                        <div class="card shadow-lg rounded-4 border-0 mb-4">
+                            <div class="card-header bg-success text-white py-3">
+                                <h5 class="mb-0">Send a Reply</h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <form method="post">
+                                    <input type="hidden" asp-for="Id" />
+                                    <div class="mb-3">
+                                        <label asp-for="ReplyContent" class="form-label">Your Message</label>
+                                        <textarea asp-for="ReplyContent" class="form-control" rows="5" placeholder="Type your reply here..." required></textarea>
+                                        <span asp-validation-for="ReplyContent" class="text-danger"></span>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-send me-2"></i>Send Reply
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <!-- Other panels or actions can go here -->
+                        <div class="card shadow-lg rounded-4 border-0 mb-4">
+                            <div class="card-header bg-light py-3">
+                                <h5 class="mb-0">Request Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-warning w-100 mb-2">Change Status</button>
+                                <button class="btn btn-danger w-100">Close Request</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Request not found.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    public string GetStatusBadgeClass(Apartment.Enums.RequestStatus status)
+    {
+        return status switch
+        {
+            Apartment.Enums.RequestStatus.Submitted => "bg-primary",
+            Apartment.Enums.RequestStatus.InProgress => "bg-warning text-dark",
+            Apartment.Enums.RequestStatus.Completed => "bg-success",
+            Apartment.Enums.RequestStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    public string GetPriorityBadgeClass(Apartment.Enums.RequestPriority priority)
+    {
+        return priority switch
+        {
+            Apartment.Enums.RequestPriority.Low => "bg-info",
+            Apartment.Enums.RequestPriority.Medium => "bg-warning text-dark",
+            Apartment.Enums.RequestPriority.High => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+    .message-history {
+        max-height: 400px;
+        overflow-y: auto;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 1rem;
+    }
+    .message-item {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .tenant-message {
+        background-color: #e9f7ef; /* Light green */
+        border: 1px solid #c3e6cb;
+        margin-right: 20%; /* Pushes tenant message to left */
+    }
+    .manager-message {
+        background-color: #e0f2f7; /* Light blue */
+        border: 1px solid #b3e5fc;
+        margin-left: 20%; /* Pushes manager message to right */
+        text-align: right;
+    }
+    .manager-message p {
+        text-align: right;
+    }
+    .tenant-message small.fw-semibold {
+        color: #28a745; /* Green */
+    }
+    .manager-message small.fw-semibold {
+        color: #007bff; /* Blue */
+    }
+</style>

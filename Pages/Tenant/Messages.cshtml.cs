@@ -1,9 +1,13 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Apartment.Data;
 using Apartment.Model;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace Apartment.Pages.Tenant
 {
@@ -19,54 +23,92 @@ namespace Apartment.Pages.Tenant
 
         public Model.Tenant? TenantInfo { get; set; }
 
-        public class MessageViewModel
-        {
-            public int Id { get; set; }
-            public string Subject { get; set; } = string.Empty;
-            public string Content { get; set; } = string.Empty;
-            public DateTime SentDate { get; set; }
-            public bool IsRead { get; set; }
-        }
+        public IList<Model.Message> Messages { get; set; } = new List<Model.Message>();
 
-        public List<MessageViewModel> Messages { get; set; } = new();
+        [TempData]
+        public string SuccessMessage { get; set; }
+        [TempData]
+        public string ErrorMessage { get; set; }
+        public int CurrentUserId { get; set; }
 
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                var user = await _context.Users
-                    .Include(u => u.Tenant)
-                    .FirstOrDefaultAsync(u => u.Id == userId);
+                return Forbid(); // User not identified or not logged in
+            }
+            CurrentUserId = userId; // Set CurrentUserId
 
-                if (user?.Tenant != null)
-                {
-                    TenantInfo = user.Tenant;
-                }
+            var user = await _context.Users
+                .Include(u => u.Tenant)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user?.Tenant != null)
+            {
+                TenantInfo = user.Tenant;
+            } else {
+                // If a user is logged in but has no tenant profile, it's an inconsistent state.
+                // Log an error and prevent further access.
+                ErrorMessage = "Your user account is not linked to a tenant profile. Please contact support.";
+                return RedirectToPage("/TenantDashboard"); // Redirect to a safe page
             }
 
-            // In a real implementation, this would query a Messages table
-            // For now, we'll show mock data
-            Messages = new List<MessageViewModel>
+
+            Messages = await _context.Messages
+                .Where(m => m.ReceiverUserId == userId || m.SenderUserId == userId) // Get messages sent to or by the tenant
+                .Include(m => m.Sender)
+                .Include(m => m.AssociatedRequest)
+                .OrderByDescending(m => m.Timestamp)
+                .ToListAsync();
+
+            // Mark unread messages as read when tenant views them
+            foreach (var message in Messages.Where(m => m.ReceiverUserId == userId && !m.IsRead))
             {
-                new MessageViewModel
-                {
-                    Id = 1,
-                    Subject = "Welcome to Your New Home!",
-                    Content = "We're excited to have you as a resident. If you have any questions, please don't hesitate to contact us.",
-                    SentDate = DateTime.Now.AddDays(-5),
-                    IsRead = true
-                },
-                new MessageViewModel
-                {
-                    Id = 2,
-                    Subject = "Building Maintenance Notice",
-                    Content = "Scheduled maintenance will occur on the elevators this Saturday from 8 AM to 12 PM. We apologize for any inconvenience.",
-                    SentDate = DateTime.Now.AddDays(-2),
-                    IsRead = false
-                }
-            };
+                message.IsRead = true;
+            }
+            await _context.SaveChangesAsync();
+
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostDeleteAsync(int messageId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                ErrorMessage = "User not identified. Please log in again.";
+                return RedirectToPage("/Tenant/Messages"); // Explicit redirect
+            }
+
+            var message = await _context.Messages.FirstOrDefaultAsync(m => m.Id == messageId);
+
+            if (message == null)
+            {
+                ErrorMessage = "Message not found.";
+                return RedirectToPage("/Tenant/Messages"); // Explicit redirect
+            }
+
+            // Ensure tenant can only delete messages they received or sent
+            if (message.ReceiverUserId != userId && message.SenderUserId != userId)
+            {
+                ErrorMessage = "You are not authorized to delete this message.";
+                return RedirectToPage("/Tenant/Messages"); // Explicit redirect
+            }
+
+            try
+            {
+                _context.Messages.Remove(message);
+                await _context.SaveChangesAsync();
+                SuccessMessage = "Message deleted successfully!";
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                ErrorMessage = $"Error deleting message: {ex.Message}";
+            }
+
+            return RedirectToPage("/Tenant/Messages"); // Explicit redirect
         }
     }
 }
-

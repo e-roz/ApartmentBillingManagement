@@ -32,7 +32,11 @@ namespace Apartment.Pages.Tenant
             [Required]
             public string Description { get; set; } = string.Empty;
 
-            public string Priority { get; set; } = "Medium";
+            [Required]
+            public Apartment.Enums.RequestType RequestType { get; set; }
+
+            [Required]
+            public Apartment.Enums.RequestPriority Priority { get; set; } = Apartment.Enums.RequestPriority.Medium;
         }
 
         public async Task OnGetAsync()
@@ -55,29 +59,56 @@ namespace Apartment.Pages.Tenant
         {
             if (!ModelState.IsValid)
             {
-                await OnGetAsync();
+                await OnGetAsync(); // Repopulate TenantInfo if model state is invalid
                 return Page();
             }
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
-                var user = await _context.Users
-                    .Include(u => u.Tenant)
-                    .FirstOrDefaultAsync(u => u.Id == userId);
-
-                if (user?.Tenant != null)
-                {
-                    // In a real implementation, this would save to a MaintenanceRequest table
-                    // For now, we'll just show a success message
-                    TempData["SuccessMessage"] = $"Maintenance request '{Input.Title}' has been submitted successfully. Request ID: {new Random().Next(1000, 9999)}";
-                    return RedirectToPage("/Tenant/TrackRequests");
-                }
+                ModelState.AddModelError("", "Unable to identify user. Please log in again.");
+                await OnGetAsync();
+                return Page();
             }
 
-            ModelState.AddModelError("", "Unable to submit request. Please try again.");
-            await OnGetAsync();
-            return Page();
+            var user = await _context.Users
+                .Include(u => u.Tenant)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user?.Tenant == null)
+            {
+                ModelState.AddModelError("", "No tenant profile found for the current user.");
+                await OnGetAsync();
+                return Page();
+            }
+
+            var newRequest = new Request
+            {
+                Title = Input.Title,
+                Description = Input.Description,
+                RequestType = Input.RequestType,
+                Priority = Input.Priority,
+                Status = Enums.RequestStatus.Submitted,
+                DateSubmitted = DateTime.UtcNow,
+                SubmittedByUserId = user.Id,
+                ApartmentId = user.Tenant.ApartmentId
+            };
+
+            try
+            {
+                _context.Requests.Add(newRequest);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Your request '{Input.Title}' has been submitted successfully!";
+                return RedirectToPage("/Tenant/ViewRequests");
+            }
+            catch (Exception)
+            {
+                // In a real application, you would log this exception
+                ModelState.AddModelError("", "An unexpected error occurred while saving your request. Please try again.");
+                await OnGetAsync();
+                return Page();
+            }
         }
     }
 }

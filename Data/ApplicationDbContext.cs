@@ -27,6 +27,12 @@ namespace Apartment.Data
         // Tenant Link Table
         public DbSet<TenantLink> TenantLinks { get; set; }
 
+        // Request Table
+        public DbSet<Request> Requests { get; set; }
+
+        // Message Table
+        public DbSet<Message> Messages { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -64,6 +70,34 @@ namespace Apartment.Data
                 .Property(i => i.Status)
                 .HasConversion<string>()
                 .HasMaxLength(20);
+
+            modelBuilder.Entity<Request>()
+                .Property(r => r.RequestType)
+                .HasConversion<string>()
+                .HasMaxLength(32);
+            
+            modelBuilder.Entity<Request>()
+                .Property(r => r.Status)
+                .HasConversion<string>()
+                .HasMaxLength(32);
+            
+            modelBuilder.Entity<Request>()
+                .Property(r => r.Priority)
+                .HasConversion<string>()
+                .HasMaxLength(32);
+
+            // Configure Message relationships to prevent cascade delete issues
+            modelBuilder.Entity<Message>()
+                .HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Message>()
+                .HasOne(m => m.Receiver)
+                .WithMany()
+                .HasForeignKey(m => m.ReceiverUserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Configure TenantLink Id as auto-incrementing identity column
             modelBuilder.Entity<TenantLink>()

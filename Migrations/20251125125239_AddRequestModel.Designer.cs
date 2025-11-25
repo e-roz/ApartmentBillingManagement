@@ -4,6 +4,7 @@ using Apartment.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apartment.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251125125239_AddRequestModel")]
+    partial class AddRequestModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -194,44 +197,6 @@ namespace Apartment.Migrations
                     b.ToTable("Invoices");
                 });
 
-            modelBuilder.Entity("Apartment.Model.Message", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AssociatedRequestId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ReceiverUserId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SenderUserId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssociatedRequestId");
-
-                    b.HasIndex("ReceiverUserId");
-
-                    b.HasIndex("SenderUserId");
-
-                    b.ToTable("Messages");
-                });
-
             modelBuilder.Entity("Apartment.Model.PaymentReceipt", b =>
                 {
                     b.Property<int>("Id")
@@ -283,11 +248,6 @@ namespace Apartment.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
 
                     b.Property<string>("RequestType")
                         .IsRequired()
@@ -495,31 +455,6 @@ namespace Apartment.Migrations
                     b.Navigation("Bill");
 
                     b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("Apartment.Model.Message", b =>
-                {
-                    b.HasOne("Apartment.Model.Request", "AssociatedRequest")
-                        .WithMany()
-                        .HasForeignKey("AssociatedRequestId");
-
-                    b.HasOne("Apartment.Model.User", "Receiver")
-                        .WithMany()
-                        .HasForeignKey("ReceiverUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Apartment.Model.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AssociatedRequest");
-
-                    b.Navigation("Receiver");
-
-                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("Apartment.Model.PaymentReceipt", b =>
