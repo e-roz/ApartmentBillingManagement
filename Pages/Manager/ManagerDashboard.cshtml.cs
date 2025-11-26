@@ -22,6 +22,7 @@ namespace Apartment.Pages.Manager
         public string Username { get; set; } = string.Empty;
         public int ActiveTenants { get; set; }
         public int OccupiedUnits { get; set; }
+        public int OpenServiceTickets { get; set; }
         public int PendingBills { get; set; }
         public decimal TotalRevenue { get; set; }
 
@@ -37,6 +38,8 @@ namespace Apartment.Pages.Manager
             OccupiedUnits = await _context.Apartments
                 .Where(a => a.IsOccupied)
                 .CountAsync();
+
+            OpenServiceTickets = await _context.Requests.CountAsync(r => r.Status == Enums.RequestStatus.Submitted || r.Status == Enums.RequestStatus.InProgress);
 
             PendingBills = await _context.Bills
                 .Where(b => b.AmountPaid < b.AmountDue)

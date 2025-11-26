@@ -25,7 +25,7 @@ namespace Apartment.Pages.Admin
         // KPI Data
         public int TotalUsers { get; set; }
         public int TotalUnits { get; set; }
-        public int OpenServiceTickets { get; set; } = 0; // Placeholder - no service ticket model yet
+        public int OpenServiceTickets { get; set; }
         public int OverdueBills { get; set; }
 
         public async Task OnGetAsync()
@@ -37,6 +37,7 @@ namespace Apartment.Pages.Admin
             // Fetch KPI data
             TotalUsers = await _context.Users.CountAsync();
             TotalUnits = await _context.Apartments.CountAsync();
+            OpenServiceTickets = await _context.Requests.CountAsync(r => r.Status == Enums.RequestStatus.Submitted || r.Status == Enums.RequestStatus.InProgress);
             
             // Count overdue bills - calculate from actual invoice payments, not Bill.AmountPaid
             var today = DateTime.UtcNow.Date;

@@ -63,18 +63,20 @@ namespace Apartment.Pages.Admin
             }
 
             // Execute the query and project the data into the safe UserList 
-            Users = await query
+            var usersFromDb = await query.ToListAsync();
+
+            Users = usersFromDb
                 .Select(u => new UserList
                 {
                     Id = u.Id,
                     Username = u.Username,
                     Email = u.Email,
-                    Role = (UserRoles)Enum.Parse(typeof(UserRoles), u.Role.ToString()),
+                    Role = u.Role,
                     CreationDate = u.CreatedAt
                 })
                 .OrderBy(u => u.Role)
                 .ThenBy(u => u.Id)
-                .ToListAsync();
+                .ToList();
         }
 
 
