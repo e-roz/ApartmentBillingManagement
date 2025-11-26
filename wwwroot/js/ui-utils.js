@@ -225,7 +225,7 @@
             const defaultOptions = {
                 theme: 'bootstrap-5',
                 width: '100%',
-                allowClear: true,
+                allowClear: false,
                 ...options
             };
             return jQuery(selector).select2(defaultOptions);

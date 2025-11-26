@@ -1,14 +1,55 @@
 :root {
+  /* ========================================
+     PRIMARY - Matcha Green
+     ======================================== */
   --matcha-primary: #9fbf9f;
   --matcha-secondary: #b8d4b3;
   --matcha-light: #e8f5e9;
   --matcha-dark: #7aa378;
+  --matcha-deep: #5a8a58;
   
-  --main-bg: #f8f9fa;
+  /* ========================================
+     ACCENT - Warm Terracotta/Coral
+     Use for: Secondary CTAs, highlights, badges
+     ======================================== */
+  --accent-primary: #C9826E;
+  --accent-secondary: #E8A598;
+  --accent-light: #FAE5E0;
+  --accent-dark: #A66B5A;
+  
+  /* ========================================
+     SECONDARY - Dusty Teal
+     Use for: Info states, links, secondary buttons
+     ======================================== */
+  --teal-primary: #6B9E9E;
+  --teal-secondary: #8FBFBF;
+  --teal-light: #E5F2F2;
+  --teal-dark: #4A7A7A;
+  
+  /* ========================================
+     NEUTRALS - Warm Cream/Sand
+     ======================================== */
+  --cream: #FAF8F5;
+  --sand: #F0EBE3;
+  --warm-gray: #B5A99A;
+  --charcoal: #3D3D3D;
+  
+  /* ========================================
+     SEMANTIC - Status Colors (Harmonized)
+     ======================================== */
+  --success: #7aa378;
+  --warning: #E6B566;
+  --danger: #C9574E;
+  --info: #6B9E9E;
+  
+  /* ========================================
+     BACKGROUNDS & TEXT
+     ======================================== */
+  --main-bg: #FAF8F5;
   --main-content-bg: #ffffff;
-  --main-border: #e9ecef;
-  --main-text: #1a1a1a;
-  --main-text-muted: #6c757d;
+  --main-border: #E8E2D9;
+  --main-text: #3D3D3D;
+  --main-text-muted: #8C8279;
 }
 
 html {
@@ -75,10 +116,199 @@ body {
 .alert-primary {
   background-color: var(--matcha-light);
   border-color: var(--matcha-secondary);
-  color: var(--matcha-dark);
+  color: var(--matcha-deep);
 }
 
 .badge-primary {
   background-color: var(--matcha-primary);
   color: #ffffff;
+}
+
+/* ========================================
+   ACCENT Button Styles
+   ======================================== */
+.btn-accent {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #ffffff;
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: #ffffff;
+}
+
+.btn-outline-accent {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn-outline-accent:hover {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #ffffff;
+}
+
+/* ========================================
+   TEAL/Secondary Button Styles
+   ======================================== */
+.btn-teal {
+  background-color: var(--teal-primary);
+  border-color: var(--teal-primary);
+  color: #ffffff;
+}
+
+.btn-teal:hover {
+  background-color: var(--teal-dark);
+  border-color: var(--teal-dark);
+  color: #ffffff;
+}
+
+.btn-outline-teal {
+  color: var(--teal-primary);
+  border-color: var(--teal-primary);
+}
+
+.btn-outline-teal:hover {
+  background-color: var(--teal-primary);
+  border-color: var(--teal-primary);
+  color: #ffffff;
+}
+
+/* ========================================
+   Harmonized Status Colors
+   ======================================== */
+.btn-success {
+  background-color: var(--success);
+  border-color: var(--success);
+}
+
+.btn-success:hover {
+  background-color: var(--matcha-deep);
+  border-color: var(--matcha-deep);
+}
+
+.btn-warning {
+  background-color: var(--warning);
+  border-color: var(--warning);
+  color: var(--charcoal);
+}
+
+.btn-warning:hover {
+  background-color: #D4A455;
+  border-color: #D4A455;
+  color: var(--charcoal);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  background-color: #B34840;
+  border-color: #B34840;
+}
+
+.btn-info {
+  background-color: var(--info);
+  border-color: var(--info);
+  color: #ffffff;
+}
+
+.btn-info:hover {
+  background-color: var(--teal-dark);
+  border-color: var(--teal-dark);
+  color: #ffffff;
+}
+
+/* ========================================
+   Accent Backgrounds & Text
+   ======================================== */
+.bg-accent {
+  background-color: var(--accent-primary) !important;
+}
+
+.bg-accent-light {
+  background-color: var(--accent-light) !important;
+}
+
+.bg-teal {
+  background-color: var(--teal-primary) !important;
+}
+
+.bg-teal-light {
+  background-color: var(--teal-light) !important;
+}
+
+.bg-cream {
+  background-color: var(--cream) !important;
+}
+
+.bg-sand {
+  background-color: var(--sand) !important;
+}
+
+.text-accent {
+  color: var(--accent-primary) !important;
+}
+
+.text-teal {
+  color: var(--teal-primary) !important;
+}
+
+.text-warm-gray {
+  color: var(--warm-gray) !important;
+}
+
+.text-charcoal {
+  color: var(--charcoal) !important;
+}
+
+/* ========================================
+   Status Badges
+   ======================================== */
+.badge-success, .bg-success {
+  background-color: var(--success) !important;
+}
+
+.badge-warning, .bg-warning {
+  background-color: var(--warning) !important;
+  color: var(--charcoal) !important;
+}
+
+.badge-danger, .bg-danger {
+  background-color: var(--danger) !important;
+}
+
+.badge-info, .bg-info {
+  background-color: var(--info) !important;
+}
+
+/* ========================================
+   Alerts with Harmonized Colors
+   ======================================== */
+.alert-success {
+  background-color: var(--matcha-light);
+  border-color: var(--matcha-secondary);
+  color: var(--matcha-deep);
+}
+
+.alert-warning {
+  background-color: #FDF4E3;
+  border-color: var(--warning);
+  color: #8B6914;
+}
+
+.alert-danger {
+  background-color: #FAEAE9;
+  border-color: var(--danger);
+  color: #8B3A35;
+}
+
+.alert-info {
+  background-color: var(--teal-light);
+  border-color: var(--teal-secondary);
+  color: var(--teal-dark);
 }

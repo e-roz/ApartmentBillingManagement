@@ -1,7 +1,7 @@
 @page "/Admin/AuditLogs"
 @model Apartment.Pages.Admin.AuditLogsModel
 @{
-    ViewData["Title"] = "Audit Logs";
+    ViewData["Title"] = "System Audit Logs";
     Layout = "_Layout";
 }
 
@@ -10,14 +10,47 @@
 
     <!-- Main Content -->
     <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">Audit Logs</h1>
-        <p class="text-muted">View system activity and user actions.</p>
-        
-        <div class="card border-0 shadow-sm">
+        <h1 class="h3 mb-4">System Audit Logs</h1>
+        <p class="text-muted mb-4">A chronological record of significant events that have occurred in the system.</p>
+
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Activity</h5>
+            </div>
             <div class="card-body">
-                <p class="text-muted">Audit log functionality coming soon...</p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in Model.AuditLogs)
+                            {
+                                <tr>
+                                    <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    <td>@(log.User?.Username ?? "System")</td>
+                                    <td>@log.Action</td>
+                                    <td>@log.Details</td>
+                                    <td>@log.IpAddress</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>

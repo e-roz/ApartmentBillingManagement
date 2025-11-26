@@ -43,6 +43,11 @@ namespace Apartment.Pages
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
+                // Count unread messages for the notification badge
+                var unreadMessagesCount = await _context.Messages
+                    .CountAsync(m => m.ReceiverUserId == userId && !m.IsRead);
+                ViewData["UnreadMessagesCount"] = unreadMessagesCount;
+
                 // Find tenant linked to this user via User.TenantID
                 var user = await _context.Users
                     .Include(u => u.Tenant)

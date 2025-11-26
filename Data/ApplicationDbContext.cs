@@ -33,6 +33,9 @@ namespace Apartment.Data
         // Message Table
         public DbSet<Message> Messages { get; set; }
 
+        // Audit Log Table
+        public DbSet<AuditLog> AuditLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -41,6 +44,12 @@ namespace Apartment.Data
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)
                 .HasConversion<int>();
+
+            // Configure the AuditActionType enum to be stored as a string
+            modelBuilder.Entity<AuditLog>()
+                .Property(a => a.Action)
+                .HasConversion<string>()
+                .HasMaxLength(50);
 
             //Ensure the periodKey is unique in BillingPeriod
             modelBuilder.Entity<BillingPeriod>()

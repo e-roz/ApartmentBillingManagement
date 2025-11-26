@@ -55,18 +55,20 @@
 }
 
 .table tbody tr:hover {
-    background-color: #f8f9fa;
+    background-color: var(--cream, #FAF8F5);
 }
 
 /* Form input focus animations */
 .form-control,
 .form-select {
     transition: all 0.2s ease;
+    border-color: var(--sand, #F0EBE3);
 }
 
 .form-control:focus,
 .form-select:focus {
     transform: scale(1.01);
+    border-color: var(--matcha-primary, #9fbf9f);
     box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25);
 }
 
@@ -91,8 +93,8 @@
 
 .dashboard-card:hover {
     transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
-    border-color: #9fbf9f;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12) !important;
+    border-color: var(--matcha-primary, #9fbf9f);
 }
 
 .dashboard-card:active {
@@ -150,8 +152,8 @@
     display: inline-block;
     width: 1rem;
     height: 1rem;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #9fbf9f;
+    border: 2px solid var(--sand, #F0EBE3);
+    border-top: 2px solid var(--matcha-primary, #9fbf9f);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -246,30 +248,79 @@
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 50%, #6a9368 100%);
+    background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 50%, #5a8a58 100%);
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(159, 191, 159, 0.3);
 }
 
 .btn-success {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 100%);
     border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #7aa378 0%, #5a8a58 100%);
 }
 
 .btn-danger {
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    background: linear-gradient(135deg, #D4726A 0%, #C9574E 100%);
     border: none;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #C9574E 0%, #B34840 100%);
 }
 
 .btn-warning {
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    background: linear-gradient(135deg, #F0C878 0%, #E6B566 100%);
     border: none;
-    color: #1a1a1a;
+    color: #3D3D3D;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #E6B566 0%, #D4A455 100%);
+    color: #3D3D3D;
 }
 
 .btn-info {
-    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    background: linear-gradient(135deg, #8FBFBF 0%, #6B9E9E 100%);
     border: none;
+    color: #ffffff;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #6B9E9E 0%, #4A7A7A 100%);
+    color: #ffffff;
+}
+
+/* Accent button gradient */
+.btn-accent {
+    background: linear-gradient(135deg, #E8A598 0%, #C9826E 100%);
+    border: none;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.btn-accent:hover {
+    background: linear-gradient(135deg, #C9826E 0%, #A66B5A 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(201, 130, 110, 0.3);
+    color: #ffffff;
+}
+
+/* Teal button gradient */
+.btn-teal {
+    background: linear-gradient(135deg, #8FBFBF 0%, #6B9E9E 100%);
+    border: none;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.btn-teal:hover {
+    background: linear-gradient(135deg, #6B9E9E 0%, #4A7A7A 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(107, 158, 158, 0.3);
+    color: #ffffff;
 }
 
 /* ========================================
@@ -285,7 +336,7 @@ html {
    ======================================== */
 
 *:focus-visible {
-    outline: 2px solid #9fbf9f;
+    outline: 2px solid var(--matcha-primary, #9fbf9f);
     outline-offset: 2px;
     border-radius: 4px;
 }

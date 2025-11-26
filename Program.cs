@@ -27,6 +27,8 @@ namespace Apartment
             builder.Services.AddScoped<InvoicePdfService>();
             builder.Services.AddScoped<ManagerReportingService>();
             builder.Services.AddScoped<ExcelExportService>();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IAuditService, AuditService>();
 
             // Add Cookie Authentication Service
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -43,6 +45,24 @@ namespace Apartment
                 });
 
             var app = builder.Build();
+
+            // Automatically apply database migrations on startup to ensure the DB is up to date
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var context = services.GetRequiredService<ApplicationDbContext>();
+                    // Ensure the database is created and all pending migrations are applied.
+                    context.Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while migrating the database.");
+                    // In a real production scenario, you might want to handle this more gracefully.
+                }
+            }
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())

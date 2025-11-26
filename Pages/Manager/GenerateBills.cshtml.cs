@@ -33,10 +33,10 @@ namespace Apartment.Pages.Manager
 
         public List<ApartmentList> OccupiedApartments { get; set; } = new List<ApartmentList>();
 
-        [TempData]
+        // Using regular properties instead of TempData since we return Page() not Redirect
+        // TempData would persist to the next page visit if not consumed
         public string SuccessMessage { get; set; } = string.Empty;
 
-        [TempData]
         public string ErrorMessage { get; set; } = string.Empty;
 
         // Model to display the results of the generation process

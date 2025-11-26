@@ -709,6 +709,39 @@
         const billSelect = document.getElementById('billSelect');
         const amountInput = document.getElementById('Input_Amount');
         
+        // Total outstanding balance from server
+        const totalOutstandingBalance = @Model.OutstandingBalance;
+        
+        // Helper function to format as Philippine Peso
+        function formatPeso(amount) {
+            return new Intl.NumberFormat('en-PH', { 
+                style: 'currency', 
+                currency: 'PHP' 
+            }).format(amount);
+        }
+        
+        // Helper function to get the maximum payable amount
+        function getMaxPayableAmount() {
+            const selectedOption = billSelect.options[billSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                // A specific bill is selected - max is that bill's remaining balance
+                return parseFloat(selectedOption.dataset.remaining) || 0;
+            } else {
+                // "Pay Total Outstanding Balance" is selected - max is total outstanding
+                return totalOutstandingBalance;
+            }
+        }
+        
+        // Helper function to get a friendly description of what's selected
+        function getSelectionDescription() {
+            const selectedOption = billSelect.options[billSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                return "the selected bill";
+            } else {
+                return "your total outstanding balance";
+            }
+        }
+        
         // --- Payment Method Selection ---
         methodCards.forEach(card => {
             card.addEventListener("click", function () {
@@ -745,20 +778,48 @@
             const paymentMethod = hiddenMethodInput.value.trim();
 
             if (!paymentMethod) {
-                alert('Please select a payment method.');
-                e.preventDefault(); // Stop submission
-                return;
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Payment Method Required',
+                    text: 'Please select a payment method before proceeding.',
+                    confirmButtonColor: '#9fbf9f'
+                });
+                return false;
             }
 
             if (isNaN(amount) || amount <= 0) {
-                alert('Please enter a valid payment amount greater than zero.');
-                e.preventDefault(); // Stop submission
-                return;
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Invalid Amount',
+                    text: 'Please enter a valid payment amount greater than ₱0.00',
+                    confirmButtonColor: '#9fbf9f'
+                });
+                return false;
+            }
+            
+            // Check if amount exceeds the maximum allowed
+            const maxAmount = getMaxPayableAmount();
+            if (amount > maxAmount) {
+                e.preventDefault();
+                const description = getSelectionDescription();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Amount Exceeds Balance',
+                    html: `You cannot pay more than <strong>${formatPeso(maxAmount)}</strong>, which is the remaining balance for ${description}.<br><br>Please enter an amount equal to or less than ${formatPeso(maxAmount)}.`,
+                    confirmButtonColor: '#9fbf9f',
+                    confirmButtonText: 'Got it'
+                });
+                return false;
             }
 
-            // If validation passes, disable the button to prevent multiple submissions
+            // If ALL validation passes, disable the button to prevent multiple submissions
             submitButton.disabled = true;
             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            
+            // Allow form submission
+            return true;
         });
 
         // --- Reset button on page back/forward ---

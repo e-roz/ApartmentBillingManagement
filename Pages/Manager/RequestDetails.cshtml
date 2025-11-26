@@ -80,34 +80,6 @@
                             </div>
                         </div>
 
-                        <!-- Message History -->
-                        <div class="card shadow-lg rounded-4 border-0 mb-4">
-                            <div class="card-header bg-info text-white py-3">
-                                <h5 class="mb-0">Communication History</h5>
-                            </div>
-                            <div class="card-body p-4 message-history">
-                                @if (Model.Messages.Any())
-                                {
-                                    @foreach (var message in Model.Messages)
-                                    {
-                                        <div class="message-item mb-3 @(message.SenderUserId == Model.TenantRequest.SubmittedByUserId ? "tenant-message" : "manager-message")">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <small class="fw-semibold">
-                                                    @(message.SenderUserId == Model.TenantRequest.SubmittedByUserId ? Model.TenantRequest.SubmittedByUser?.Username ?? "Tenant" : "Manager")
-                                                </small>
-                                                <small class="text-muted">@message.Timestamp.ToString("MMM dd, yyyy hh:mm tt")</small>
-                                            </div>
-                                            <p class="mb-0">@message.Content</p>
-                                        </div>
-                                    }
-                                }
-                                else
-                                {
-                                    <div class="text-center text-muted">No communication for this request yet.</div>
-                                }
-                            </div>
-                        </div>
-
                         <!-- Reply Form -->
                         <div class="card shadow-lg rounded-4 border-0 mb-4">
                             <div class="card-header bg-success text-white py-3">

@@ -126,31 +126,46 @@
             if (form.dataset.enhanced === 'true') return;
 
             form.addEventListener('submit', function(e) {
+                // IMPORTANT: Check if another handler already prevented submission
+                // This prevents the button from being disabled when validation fails
+                if (e.defaultPrevented) {
+                    return;
+                }
+                
                 const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
                 
                 if (submitButton) {
-                    // Disable button
-                    submitButton.disabled = true;
-                    const originalText = submitButton.innerHTML || submitButton.value;
-                    
-                    // Add loading spinner
-                    if (submitButton.tagName === 'BUTTON') {
-                        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-                    }
-                    
-                    // Show loading overlay for important forms
-                    if (form.classList.contains('important-form') || form.querySelector('[name*="Delete"], [name*="delete"]')) {
-                        loadingOverlay.show('body', 'Processing your request...');
-                    }
-
-                    // Re-enable after timeout (fallback)
+                    // Small delay to allow other handlers to prevent submission
                     setTimeout(function() {
-                        submitButton.disabled = false;
-                        if (submitButton.tagName === 'BUTTON') {
-                            submitButton.innerHTML = originalText;
+                        // Double-check the event wasn't prevented
+                        if (e.defaultPrevented) {
+                            return;
                         }
-                        loadingOverlay.hide('body');
-                    }, 30000);
+                        
+                        // Disable button
+                        submitButton.disabled = true;
+                        const originalText = submitButton.innerHTML || submitButton.value;
+                        submitButton.dataset.originalText = originalText;
+                        
+                        // Add loading spinner
+                        if (submitButton.tagName === 'BUTTON') {
+                            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                        }
+                        
+                        // Show loading overlay for important forms
+                        if (form.classList.contains('important-form') || form.querySelector('[name*="Delete"], [name*="delete"]')) {
+                            loadingOverlay.show('body', 'Processing your request...');
+                        }
+
+                        // Re-enable after timeout (fallback)
+                        setTimeout(function() {
+                            submitButton.disabled = false;
+                            if (submitButton.tagName === 'BUTTON') {
+                                submitButton.innerHTML = originalText;
+                            }
+                            loadingOverlay.hide('body');
+                        }, 30000);
+                    }, 0);
                 }
             });
 
@@ -186,7 +201,7 @@
                     initSelect2(select, {
                         theme: 'bootstrap-5',
                         width: '100%',
-                        allowClear: select.hasAttribute('multiple') ? false : true
+                        allowClear: false
                     });
                 }
             });

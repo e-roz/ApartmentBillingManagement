@@ -3,30 +3,52 @@
    ======================================== */
 
 :root {
-    /* Light Theme with Matcha Accents */
+    /* ========================================
+       Light Theme with Matcha Latte Colors
+       ======================================== */
+    
+    /* Primary - Matcha Green */
     --matcha-primary: #9fbf9f;
     --matcha-secondary: #b8d4b3;
     --matcha-light: #e8f5e9;
     --matcha-dark: #7aa378;
+    --matcha-deep: #5a8a58;
     
+    /* Accent - Terracotta */
+    --accent-primary: #C9826E;
+    --accent-light: #FAE5E0;
+    
+    /* Secondary - Teal */
+    --teal-primary: #6B9E9E;
+    --teal-light: #E5F2F2;
+    
+    /* Warm Neutrals */
+    --cream: #FAF8F5;
+    --sand: #F0EBE3;
+    --warm-gray: #B5A99A;
+    --charcoal: #3D3D3D;
+    
+    /* Sidebar Theme Variables */
     --sidebar-bg: #ffffff;
     --sidebar-bg-solid: #ffffff;
-    --sidebar-text: #1a1a1a;
-    --sidebar-text-muted: #6c757d;
-    --sidebar-border: #e9ecef;
+    --sidebar-text: var(--charcoal);
+    --sidebar-text-muted: var(--warm-gray);
+    --sidebar-border: var(--sand);
     --sidebar-hover: var(--matcha-light);
     --sidebar-active: var(--matcha-primary);
     --sidebar-active-text: #ffffff;
-    --sidebar-active-indicator: var(--matcha-dark);
-    --sidebar-profile-bg: var(--matcha-light);
-    --sidebar-section-text: #868e96;
+    --sidebar-active-indicator: var(--matcha-deep);
+    --sidebar-profile-bg: var(--cream);
+    --sidebar-section-text: var(--warm-gray);
     --sidebar-shadow: rgba(159, 191, 159, 0.15);
     --sidebar-brand-bg: var(--matcha-primary);
     --sidebar-brand-text: #ffffff;
-    --main-bg: #f8f9fa;
+    
+    /* Main Content */
+    --main-bg: var(--cream);
     --main-content-bg: #ffffff;
-    --main-border: #e9ecef;
-    --main-text: #1a1a1a;
+    --main-border: var(--sand);
+    --main-text: var(--charcoal);
 }
 
 /* ========================================
@@ -389,8 +411,8 @@
 }
 
 .sidebar-footer .nav-item:hover {
-    background-color: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
+    background-color: rgba(201, 87, 78, 0.1);
+    color: #C9574E;
 }
 
 /* ========================================

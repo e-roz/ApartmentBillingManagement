@@ -203,12 +203,16 @@
                 </a>
 
                 <a asp-page="/Tenant/Messages" 
-                   class="nav-item @(isMessages ? "active" : "")"
+                   class="nav-item d-flex align-items-center @(isMessages ? "active" : "")"
                    aria-current="@(isMessages ? "page" : null)">
                     <span class="nav-icon">
                         <i class="bi bi-envelope"></i>
                     </span>
                     <span class="nav-label">Messages</span>
+                    @if (ViewData["UnreadMessagesCount"] is int unreadCount && unreadCount > 0)
+                    {
+                        <span class="badge bg-danger rounded-pill ms-auto me-3">@unreadCount</span>
+                    }
                     @if (isMessages)
                     {
                         <span class="nav-indicator"></span>
