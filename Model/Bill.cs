@@ -34,7 +34,7 @@ namespace Apartment.Model
         public BillingPeriod BillingPeriod { get; set; } = null!;
 
         [ForeignKey("TenantId")]
-        public User Tenant { get; set; } = null!;
+        public Tenant Tenant { get; set; } = null!;
 
 
 

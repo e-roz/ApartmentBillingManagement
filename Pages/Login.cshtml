@@ -2,7 +2,7 @@
 @model Apartment.Pages.LoginModel
 @{
     ViewData["Title"] = "Login - Apartment Management";
-    Layout = null; // Remove header and footer by using no layout
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -12,186 +12,696 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <!-- Bootstrap Icons CDN for beautiful icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    
+    <!-- UI Enhancement Libraries - CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ui-libraries.css" asp-append-version="true" />
     <style>
-        /* Custom styles for clean login page */
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .login-container {
-            min-height: 100vh;
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .auth-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Left Side - Form Container */
+        .form-container {
+            width: 50%;
+            height: 100vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem;
+            padding-top: 10rem;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .form-container.slide-right {
+            transform: translateX(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+
+        .form-wrapper {
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .form-wrapper form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-wrapper .mb-3,
+        .form-wrapper .mb-4 {
+            width: 100%;
+        }
+
+        .form-wrapper .form-label {
+            width: 100%;
+            text-align: left;
+        }
+
+        .form-wrapper .form-control {
+            width: 100%;
+        }
+
+        .register-form-container .form-wrapper {
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .register-form-container .form-title {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-container {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            z-index: 10;
+        }
+
+        .logo-container img {
+            height: 150px;
+            width: auto;
+        }
+
+        .form-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-subtitle {
+            color: #6c757d;
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #9fbf9f;
+            box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25);
+            outline: none;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            width: 100%;
+        }
+
+        .input-group .form-control {
+            flex: 1 1 auto;
+            width: 1%;
+            min-width: 0;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            z-index: 10;
+            padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+
+        .password-toggle:hover {
+            color: #9fbf9f;
         }
-        .form-control {
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
+
+        .form-check-label {
+            color: #6c757d;
+            font-size: 0.9rem;
         }
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+
+        .forgot-password {
+            color: #9fbf9f;
+            text-decoration: none;
+            font-size: 0.9rem;
         }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #b8d4b3 0%, #9fbf9f 50%, #7aa378 100%);
             border: none;
-            border-radius: 10px;
-            padding: 12px 24px;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
             font-weight: 600;
             transition: all 0.3s ease;
+            width: 100%;
+            color: #ffffff;
         }
+
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(159, 191, 159, 0.4);
+            background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 50%, #6a9370 100%);
+        }
+
+        .switch-form {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .switch-form p {
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .switch-link {
+            color: #9fbf9f;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .switch-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Right Side - Promotional Content */
+        .promo-container {
+            width: 50%;
+            height: 100vh;
+            background: linear-gradient(135deg, #c5dcc0 0%, #b8d4b3 30%, #9fbf9f 70%, #7aa378 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .promo-container.slide-left {
+            transform: translateX(-100%);
+        }
+
+        .promo-container.slide-right {
+            transform: translateX(100%);
+        }
+
+
+        .promo-content {
+            color: white;
+            max-width: 100%;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 2rem;
+        }
+
+        .promo-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+        }
+
+        .promo-card h2 {
+            color: #1a1a1a;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .promo-card p {
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .promo-card .btn {
+            background: linear-gradient(135deg, #b8d4b3 0%, #9fbf9f 50%, #7aa378 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .promo-card .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(159, 191, 159, 0.4);
+            background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 50%, #6a9370 100%);
+        }
+
+        .promo-image-wrapper {
+            position: relative;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+
+        .promo-image {
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            object-fit: contain;
+            image-rendering: auto;
+            -ms-interpolation-mode: bicubic;
+        }
+
+        .earnings-display {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .earnings-display i {
+            font-size: 1.5rem;
+            color: #9fbf9f;
+        }
+
+        .earnings-display .earnings-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .earnings-display .earnings-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            opacity: 0.9;
+        }
+
+        .earnings-display .earnings-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        /* Hidden Register Form */
+        .register-form-container {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 100vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem;
+            padding-top: 10rem;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 3;
+            opacity: 0;
+            pointer-events: none;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .register-form-container.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .register-form-container.slide-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .register-form-container.hidden {
+            display: none;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .form-container,
+            .promo-container,
+            .register-form-container {
+                width: 100%;
+            }
+
+            .form-container.slide-right {
+                transform: translateX(-100%);
+            }
+
+            .promo-container.slide-left {
+                transform: translateX(100%);
+            }
+        }
+
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
 <body>
-    <!-- 
-        CLEAN LOGIN PAGE - Minimal Design
-        This page creates a clean, minimal login form without header/footer.
-        The form syncs perfectly with your LoginModel logic.
-    -->
-    
-    <div class="login-container">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-6 col-lg-4">
-                    <!-- Clean Login Form Card -->
-                    <div class="card login-card border-0">
-                        <div class="card-body p-5">
-                            <!-- Simple Header -->
-                            <div class="text-center mb-4">
-                                <h3 class="fw-bold text-dark mb-2">Sign In</h3>
-                                <p class="text-muted small">Enter your credentials to continue</p>
-                            </div>
+    <div class="auth-container">
+        <!-- Left Side - Login Form -->
+        <div class="form-container" id="loginContainer">
+            <div class="logo-container">
+                <img src="~/images/Logo.png" alt="Logo" />
+            </div>
+            <div class="form-wrapper">
+                <h1 class="form-title">Sign in</h1>
+                <p class="form-subtitle">Don't have an account? <a href="#" class="switch-link" id="showRegister">Create now</a></p>
 
-                            <!-- Display Success/Error Messages -->
-                            <!-- These TempData properties sync with your LoginModel logic -->
-                            @if (!string.IsNullOrEmpty(Model.Message))
-                            {
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <i class="bi bi-check-circle me-2"></i>
-                                    @Model.Message
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            }
+                @if (!string.IsNullOrEmpty(Model.Message))
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>
+                        @Model.Message
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
 
-                            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                            {
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    @Model.ErrorMessage
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            }
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        @Model.ErrorMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
 
-                            <!-- Clean Login Form -->
-                            <!-- This form posts to OnPostAsync() method in your LoginModel -->
-                            <form method="post" novalidate>
-                                <!-- Username Field -->
-                                <!-- Uses Input.Username property from your Login model -->
-                                <div class="mb-3">
-                                    <label for="Input_Username" class="form-label fw-semibold text-dark">
-                                        Username
-                                    </label>
-                                    <input asp-for="Input.Username" 
-                                           class="form-control @(ViewData.ModelState["Input.Username"]?.Errors.Count > 0 ? "is-invalid" : "")" 
-                                           placeholder="Enter your username"
-                                           autocomplete="username" />
-                                    <!-- Display validation errors for username -->
-                                    <span asp-validation-for="Input.Username" class="invalid-feedback"></span>
-                                </div>
+                <form method="post" novalidate id="loginForm">
+                    <div class="mb-3">
+                        <label for="Input_Email" class="form-label">E-mail</label>
+                        <input asp-for="Input.Email" 
+                               type="email"
+                               class="form-control @(ViewData.ModelState["Input.Email"]?.Errors.Count > 0 ? "is-invalid" : "")" 
+                               placeholder="example@gmail.com"
+                               autocomplete="email" />
+                        <span asp-validation-for="Input.Email" class="invalid-feedback"></span>
+                    </div>
 
-                                <!-- Password Field -->
-                                <!-- Uses Input.Password property from your Login model -->
-                                <div class="mb-4">
-                                    <label for="Input_Password" class="form-label fw-semibold text-dark">
-                                        Password
-                                    </label>
-                                    <div class="input-group">
-                                        <input asp-for="Input.Password" 
-                                               class="form-control @(ViewData.ModelState["Input.Password"]?.Errors.Count > 0 ? "is-invalid" : "")" 
-                                               placeholder="Enter your password"
-                                               autocomplete="current-password" />
-                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                            <i class="bi bi-eye" id="toggleIcon"></i>
-                                        </button>
-                                    </div>
-                                    <!-- Display validation errors for password -->
-                                    <span asp-validation-for="Input.Password" class="invalid-feedback"></span>
-                                </div>
-
-                                <!-- Remember Me -->
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="rememberMe">
-                                        <label class="form-check-label text-muted" for="rememberMe">
-                                            Remember me
-                                        </label>
-                                    </div>
-                                    <a href="#" class="text-decoration-none text-primary small">Forgot password?</a>
-                                </div>
-
-                                <!-- Login Button -->
-                                <!-- This triggers the OnPostAsync() method in your LoginModel -->
-                                <button type="submit" class="btn btn-primary w-100 mb-3">
-                                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-                                </button>
-                            </form>
-
-                            <!-- Registration Link -->
-                            <!-- Links to your Register page -->
-                            <div class="text-center">
-                                <p class="text-muted mb-0 small">Don't have an account?</p>
-                                <a asp-page="/Register" class="btn btn-outline-primary btn-sm mt-2">
-                                    <i class="bi bi-person-plus me-1"></i>Create Account
-                                </a>
-                            </div>
+                    <div class="mb-3">
+                        <label for="Input_Password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <input asp-for="Input.Password" 
+                                   type="password"
+                                   class="form-control @(ViewData.ModelState["Input.Password"]?.Errors.Count > 0 ? "is-invalid" : "")" 
+                                   placeholder="Enter your password"
+                                   autocomplete="current-password"
+                                   id="loginPassword" />
+                            <button type="button" class="password-toggle" id="toggleLoginPassword">
+                                <i class="bi bi-eye" id="loginPasswordIcon"></i>
+                            </button>
                         </div>
+                        <span asp-validation-for="Input.Password" class="invalid-feedback"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+                        <a href="#" class="forgot-password">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Sign in</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Side - Promotional Content -->
+        <div class="promo-container" id="promoContainer">
+            <div class="promo-content">
+                <div class="promo-card">
+                    <h2>SUBO MO TITI KO</h2>
+                    <p>Managing your apartment shouldn't be stressful. Our system makes every payment and room update simpler and smarter.</p>
+                    <button class="btn">Learn more</button>
+                    <div class="promo-image-wrapper">
+                        <img src="~/images/Promotion.png" alt="Promotion" class="promo-image" />
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Hidden Register Form (slides in from left) -->
+        <div class="register-form-container" id="registerContainer">
+            <div class="logo-container">
+                <img src="~/images/Logo.png" alt="Logo" />
+            </div>
+            <div class="form-wrapper">
+                <h1 class="form-title">Create Account</h1>
+                <p class="form-subtitle">Already have an account? <a href="#" class="switch-link" id="showLogin">Sign in</a></p>
+
+                @if (!string.IsNullOrEmpty(TempData["Message"]?.ToString()))
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>
+                        @TempData["Message"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(TempData["ErrorMessage"]?.ToString()))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <form method="post" asp-page="/Register" novalidate id="registerForm">
+                    <div class="mb-3">
+                        <label for="Register_Input_Username" class="form-label">Username</label>
+                        <input name="Input.Username" 
+                               class="form-control" 
+                               placeholder="Choose a username"
+                               autocomplete="username" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="Register_Input_Email" class="form-label">E-mail</label>
+                        <input name="Input.Email" 
+                               type="email"
+                               class="form-control" 
+                               placeholder="example@gmail.com"
+                               autocomplete="email" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Register_Input_Password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <input name="Input.Password" 
+                                   type="password"
+                                   class="form-control" 
+                                   placeholder="Create a password"
+                                   autocomplete="new-password"
+                                   id="registerPassword" />
+                            <button type="button" class="password-toggle" id="toggleRegisterPassword">
+                                <i class="bi bi-eye" id="registerPasswordIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Register_Input_ConfirmPassword" class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <input name="Input.ConfirmPassword" 
+                                   type="password"
+                                   class="form-control" 
+                                   placeholder="Confirm your password"
+                                   autocomplete="new-password"
+                                   id="registerConfirmPassword" />
+                            <button type="button" class="password-toggle" id="toggleRegisterConfirmPassword">
+                                <i class="bi bi-eye" id="registerConfirmPasswordIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                            <label class="form-check-label" for="termsCheck">
+                                I agree to the <a href="#" class="forgot-password">Terms of Service</a> and <a href="#" class="forgot-password">Privacy Policy</a>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Core Libraries -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- UI Enhancement Libraries - JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="~/js/ui-utils.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 
-    <!-- 
-        JAVASCRIPT FOR ENHANCED UX
-        This script adds password visibility toggle and form validation feedback
-    -->
     <script>
-        // Password visibility toggle functionality
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const passwordInput = document.querySelector('input[name="Input.Password"]');
-            const toggleIcon = document.getElementById('toggleIcon');
+        // Toggle password visibility
+        function setupPasswordToggle(toggleId, inputId, iconId) {
+            const toggle = document.getElementById(toggleId);
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
             
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                toggleIcon.className = 'bi bi-eye-slash';
-            } else {
-                passwordInput.type = 'password';
-                toggleIcon.className = 'bi bi-eye';
+            if (toggle && input && icon) {
+                toggle.addEventListener('click', function() {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.className = 'bi bi-eye-slash';
+                    } else {
+                        input.type = 'password';
+                        icon.className = 'bi bi-eye';
+                    }
+                });
             }
+        }
+
+        // Setup password toggles
+        setupPasswordToggle('toggleLoginPassword', 'loginPassword', 'loginPasswordIcon');
+        setupPasswordToggle('toggleRegisterPassword', 'registerPassword', 'registerPasswordIcon');
+        setupPasswordToggle('toggleRegisterConfirmPassword', 'registerConfirmPassword', 'registerConfirmPasswordIcon');
+
+        // Check if we should show register form on page load (from Register page redirect)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('show') === 'register') {
+            const loginContainer = document.getElementById('loginContainer');
+            const promoContainer = document.getElementById('promoContainer');
+            const registerContainer = document.getElementById('registerContainer');
+            
+            // Swap panels: login goes right, promotion goes left, register appears instantly
+            loginContainer.classList.add('slide-right');
+            promoContainer.classList.add('slide-left');
+            registerContainer.classList.add('show');
+        }
+
+        // Show Register Form
+        document.getElementById('showRegister')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const loginContainer = document.getElementById('loginContainer');
+            const promoContainer = document.getElementById('promoContainer');
+            const registerContainer = document.getElementById('registerContainer');
+            
+            // Remove any previous animation classes
+            registerContainer.classList.remove('slide-out', 'hidden');
+            loginContainer.classList.remove('slide-in');
+            promoContainer.classList.remove('slide-back');
+            
+            // Swap panels: login slides right, promotion slides left, register appears instantly
+            loginContainer.classList.add('slide-right');
+            promoContainer.classList.add('slide-left');
+            registerContainer.classList.add('show');
         });
 
-        // Auto-dismiss alerts after 5 seconds
+        // Show Login Form
+        document.getElementById('showLogin')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const loginContainer = document.getElementById('loginContainer');
+            const promoContainer = document.getElementById('promoContainer');
+            const registerContainer = document.getElementById('registerContainer');
+            
+            // Reverse animation: register slides out to right, promo and login slide back to original positions
+            // This is the exact reverse of the forward animation
+            registerContainer.classList.remove('show');
+            registerContainer.classList.add('slide-out');
+            
+            // Promo and login slide back to their original positions (removing slide classes triggers reverse animation)
+            promoContainer.classList.remove('slide-left');
+            loginContainer.classList.remove('slide-right');
+            
+            // After animation completes, clean up
+            setTimeout(() => {
+                registerContainer.classList.remove('slide-out');
+            }, 600);
+        });
+
+        // Auto-dismiss alerts
         setTimeout(function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
@@ -199,18 +709,6 @@
                 bsAlert.close();
             });
         }, 5000);
-
-        // Form validation feedback
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const inputs = this.querySelectorAll('input[required]');
-            inputs.forEach(function(input) {
-                if (!input.value.trim()) {
-                    input.classList.add('is-invalid');
-                } else {
-                    input.classList.remove('is-invalid');
-                }
-            });
-        });
     </script>
 </body>
 </html>

@@ -1,0 +1,25 @@
+@* Standardized Empty State Partial *@
+@* Usage: @await Html.PartialAsync("_EmptyStatePartial", new { Icon = "bi-inbox", Title = "No Data", Message = "Get started by...", ActionText = "Add New", ActionUrl = "/Create" }) *@
+
+@{
+    var icon = ViewData["EmptyIcon"] as string ?? "bi-inbox";
+    var title = ViewData["EmptyTitle"] as string ?? "No Data Found";
+    var message = ViewData["EmptyMessage"] as string ?? "There are no items to display at this time.";
+    var actionText = ViewData["EmptyActionText"] as string;
+    var actionUrl = ViewData["EmptyActionUrl"] as string;
+}
+
+<div class="empty-state text-center py-5">
+    <div class="empty-state-icon mb-3">
+        <i class="bi @icon" style="font-size: 4rem; color: var(--bs-primary); opacity: 0.3;"></i>
+    </div>
+    <h4 class="text-muted mb-2">@title</h4>
+    <p class="text-muted mb-4">@message</p>
+    @if (!string.IsNullOrEmpty(actionText) && !string.IsNullOrEmpty(actionUrl))
+    {
+        <a href="@actionUrl" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>@actionText
+        </a>
+    }
+</div>
+

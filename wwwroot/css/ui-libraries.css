@@ -1,0 +1,284 @@
+/* ========================================
+   UI Libraries Custom Styling
+   Matcha Theme Integration
+   ======================================== */
+
+/* SweetAlert2 Matcha Theme */
+.swal2-popup {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #e8f5e9 !important;
+}
+
+.swal2-title {
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+}
+
+.swal2-content {
+    color: #6c757d !important;
+}
+
+.swal2-content strong {
+    color: #1a1a1a !important;
+}
+
+/* Confirm button - Matcha green for general confirmations */
+.swal2-confirm {
+    background-color: #9fbf9f !important;
+    border-color: #9fbf9f !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    padding: 0.625rem 1.5rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal2-confirm:hover {
+    background-color: #7aa378 !important;
+    border-color: #7aa378 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(122, 163, 120, 0.3) !important;
+}
+
+.swal2-confirm:active {
+    transform: translateY(0);
+}
+
+/* Delete button - Matcha-themed red for dangerous actions */
+.swal2-confirm.swal2-confirm-danger,
+.swal2-confirm[style*="background-color: rgb(220, 53, 69)"] {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    border-color: #c82333 !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    padding: 0.625rem 1.5rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal2-confirm.swal2-confirm-danger:hover,
+.swal2-confirm[style*="background-color: rgb(220, 53, 69)"]:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%) !important;
+    border-color: #bd2130 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3) !important;
+}
+
+/* Cancel button - Matcha-themed grey */
+.swal2-cancel {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    padding: 0.625rem 1.5rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal2-cancel:hover {
+    background-color: #5a6268 !important;
+    border-color: #5a6268 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3) !important;
+}
+
+.swal2-cancel:active {
+    transform: translateY(0);
+}
+
+/* Icon styling */
+.swal2-icon.swal2-warning {
+    border-color: #ffc107 !important;
+    color: #ffc107 !important;
+}
+
+.swal2-icon.swal2-error {
+    border-color: #dc3545 !important;
+    color: #dc3545 !important;
+}
+
+.swal2-icon.swal2-success {
+    border-color: #9fbf9f !important;
+    color: #9fbf9f !important;
+}
+
+.swal2-icon.swal2-info {
+    border-color: #17a2b8 !important;
+    color: #17a2b8 !important;
+}
+
+.swal2-icon.swal2-question {
+    border-color: #9fbf9f !important;
+    color: #9fbf9f !important;
+}
+
+/* Close button */
+.swal2-close {
+    color: #6c757d !important;
+    transition: color 0.3s ease !important;
+}
+
+.swal2-close:hover {
+    color: #1a1a1a !important;
+}
+
+/* Toastr Matcha Theme */
+.toast-success {
+    background-color: #9fbf9f !important;
+    border-left: 4px solid #7aa378 !important;
+}
+
+.toast-error {
+    background-color: #dc3545 !important;
+    border-left: 4px solid #c82333 !important;
+}
+
+.toast-warning {
+    background-color: #ffc107 !important;
+    border-left: 4px solid #e0a800 !important;
+}
+
+.toast-info {
+    background-color: #17a2b8 !important;
+    border-left: 4px solid #138496 !important;
+}
+
+/* DataTables Matcha Theme */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #9fbf9f !important;
+    border-color: #9fbf9f !important;
+    color: #ffffff !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: #7aa378 !important;
+    border-color: #7aa378 !important;
+    color: #ffffff !important;
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: #9fbf9f !important;
+    box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25) !important;
+}
+
+/* Select2 Matcha Theme */
+.select2-container--bootstrap-5 .select2-selection--single {
+    border-color: #e9ecef;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single:focus {
+    border-color: #9fbf9f;
+    box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25);
+}
+
+.select2-container--bootstrap-5 .select2-results__option--highlighted {
+    background-color: #9fbf9f !important;
+    color: #ffffff !important;
+}
+
+.select2-container--bootstrap-5 .select2-results__option[aria-selected="true"] {
+    background-color: #e8f5e9 !important;
+    color: #1a1a1a !important;
+}
+
+/* Flatpickr Matcha Theme */
+.flatpickr-calendar {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: #9fbf9f !important;
+    border-color: #9fbf9f !important;
+}
+
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+    background: #7aa378 !important;
+    border-color: #7aa378 !important;
+}
+
+.flatpickr-day.today {
+    border-color: #9fbf9f !important;
+}
+
+.flatpickr-day.today:hover {
+    background: #e8f5e9 !important;
+    border-color: #9fbf9f !important;
+}
+
+/* Loading Overlay Matcha Theme */
+.jquery-loading-overlay-spinner {
+    border-color: #9fbf9f !important;
+}
+
+/* Chart.js Matcha Color Palette */
+.chart-matcha-primary {
+    border-color: #9fbf9f;
+    background-color: rgba(159, 191, 159, 0.1);
+}
+
+.chart-matcha-secondary {
+    border-color: #b8d4b3;
+    background-color: rgba(184, 212, 179, 0.1);
+}
+
+.chart-matcha-dark {
+    border-color: #7aa378;
+    background-color: rgba(122, 163, 120, 0.1);
+}
+
+/* Animate.css Enhancements */
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Enhanced Form Styling */
+.enhanced-form .form-control:focus {
+    border-color: #9fbf9f;
+    box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25);
+}
+
+.enhanced-form .form-select:focus {
+    border-color: #9fbf9f;
+    box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25);
+}
+
+/* SortableJS Styling */
+.sortable-ghost {
+    opacity: 0.4;
+    background: #e8f5e9 !important;
+}
+
+.sortable-drag {
+    opacity: 0.8;
+}
+

@@ -1,0 +1,179 @@
+@page "/Manager/ManagerDashboard"
+@model Apartment.Pages.Manager.ManagerDashboardModel
+@{
+    ViewData["Title"] = "Manager Portal";
+    Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_ManagerSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">System Overview</h1>
+        <p class="text-muted mb-4">Welcome back, <strong>@Model.Username</strong>. This is your command center.</p>
+
+        <!-- Key Performance Indicators (KPIs) -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase small mb-2">Active Tenants</h6>
+                                <h2 class="mb-0">@Model.ActiveTenants</h2>
+                                <small class="text-muted">Currently active leases</small>
+                            </div>
+                            <div class="text-info" style="font-size: 2.5rem;">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase small mb-2">Occupied Units</h6>
+                                <h2 class="mb-0">@Model.OccupiedUnits</h2>
+                                <small class="text-muted">Units with active tenants</small>
+                            </div>
+                            <div class="text-success" style="font-size: 2.5rem;">
+                                <i class="bi bi-building"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase small mb-2">Pending Bills</h6>
+                                <h2 class="mb-0">@Model.PendingBills</h2>
+                                <small class="text-muted">Requires attention</small>
+                            </div>
+                            <div class="text-warning" style="font-size: 2.5rem;">
+                                <i class="bi bi-receipt"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase small mb-2">Total Revenue</h6>
+                                <h2 class="mb-0">@Model.TotalRevenue.ToString("C", pesoCulture)</h2>
+                                <small class="text-muted">Total payments received</small>
+                            </div>
+                            <div class="text-success" style="font-size: 2.5rem;">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core Management Actions -->
+        <h2 class="h4 mb-4">Core Management Actions</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Tenant Management</h5>
+                        <p class="card-text text-muted">
+                            Add, view, and update all tenant contact and status records.
+                        </p>
+                        <a asp-page="/Manager/ManageTenants" class="btn btn-primary">
+                            <i class="bi bi-person-lines-fill me-2"></i>Manage Tenants
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Apartment Unit Management</h5>
+                        <p class="card-text text-muted">
+                            Set unit details, monthly rent, and assign tenants to units.
+                        </p>
+                        <a asp-page="/Manager/ManageApartments" class="btn btn-primary">
+                            <i class="bi bi-house-door-fill me-2"></i>Manage Units
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Billing & Generation</h5>
+                        <p class="card-text text-muted">
+                            Start new billing periods and generate monthly invoices for all occupied units.
+                        </p>
+                        <a asp-page="/Manager/GenerateBills" class="btn btn-primary">
+                            <i class="bi bi-receipt me-2"></i>Generate Bills
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Payment Processing</h5>
+                        <p class="card-text text-muted">
+                            View outstanding balances and record payments made by tenants.
+                        </p>
+                        <a asp-page="/Manager/RecordPayments" class="btn btn-primary">
+                            <i class="bi bi-cash-stack me-2"></i>Record Payments
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Reporting & Summary</h5>
+                        <p class="card-text text-muted">
+                            Financial overview, tracking paid vs. outstanding amounts.
+                        </p>
+                        <a asp-page="/Manager/BillingSummary" class="btn btn-primary">
+                            <i class="bi bi-graph-up me-2"></i>View Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
+

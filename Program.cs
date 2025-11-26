@@ -1,4 +1,6 @@
 using Apartment.Data;
+using Apartment.Options;
+using Apartment.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 namespace Apartment
@@ -18,6 +20,13 @@ namespace Apartment
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
+            // Register application services
+            builder.Services.Configure<LogSnagOptions>(builder.Configuration.GetSection("LogSnag"));
+            builder.Services.AddHttpClient<ILogSnagClient, LogSnagClient>();
+            builder.Services.AddScoped<ITenantLinkingService, TenantLinkingService>();
+            builder.Services.AddScoped<InvoicePdfService>();
+            builder.Services.AddScoped<ManagerReportingService>();
+            builder.Services.AddScoped<ExcelExportService>();
 
             // Add Cookie Authentication Service
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -44,6 +53,7 @@ namespace Apartment
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
             app.UseRouting();
 
@@ -51,9 +61,7 @@ namespace Apartment
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapStaticAssets();
-            app.MapRazorPages()
-               .WithStaticAssets();
+            app.MapRazorPages();
 
             app.Run();
 

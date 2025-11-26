@@ -1,5 +1,7 @@
 using Apartment.Data;
 using Apartment.Model;
+using Apartment.ViewModels;
+using Apartment.Enums;
 using Apartment.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -40,15 +42,15 @@ namespace Apartment.Pages
                 return Page();
             }
 
-            //find the user in the database by the provided username
+            //find the user in the database by the provided email
             var user = await dbData.Users
-                .FirstOrDefaultAsync(u => u.Username == Input.Username);
+                .FirstOrDefaultAsync(u => u.Email == Input.Email);
 
 
             //c n check yung user existence at v n veriufy yung password gamit secure hasher
             if (user == null || !PasswordHasher.VerifyPassword(Input.Password, user.HasedPassword))
             {
-                ErrorMessage = "Invalid username or password.";
+                ErrorMessage = "Invalid email or password.";
                 return Page();
             }
 
@@ -57,8 +59,8 @@ namespace Apartment.Pages
                 //store unique user id 
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
 
-                //store the username
-                new Claim(ClaimTypes.Name, user.Username),
+                //store the email as the name (for display purposes)
+                new Claim(ClaimTypes.Name, user.Email),
 
                 //add the Role claim
                 new Claim(ClaimTypes.Role, user.Role.ToString())
@@ -85,19 +87,19 @@ namespace Apartment.Pages
 
 
 
-            // paghihiwalayain yung admim, user, and manager sa page na mapupuntahan nila
+            // Redirect users to their role-specific dashboards
 
             if (user.Role == UserRoles.Admin)
             {
-                return RedirectToPage("/AdminDashBoard");
+                return RedirectToPage("/Admin/AdminDashboard");
             }
             else if (user.Role == UserRoles.Manager)
             {
-                return RedirectToPage("/DashBoard");
+                return RedirectToPage("/Manager/ManagerDashboard");
             }
             else
             {
-                return RedirectToPage("/DashBoard");
+                return RedirectToPage("/TenantDashboard");
             }
         }
     }

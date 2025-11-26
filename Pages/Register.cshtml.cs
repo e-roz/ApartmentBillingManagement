@@ -1,9 +1,12 @@
 using Apartment.Data;
 using Apartment.Model;
+using Apartment.ViewModels;
+using Apartment.Enums;
 using Apartment.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Apartment.Pages
 {
@@ -32,14 +35,25 @@ namespace Apartment.Pages
         {
             if (!ModelState.IsValid)
             {
-                return Page();
+                // Collect validation errors and redirect to Login with register form shown
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value.Errors.Select(e => e.ErrorMessage))
+                    .ToList();
+                
+                if (errors.Any())
+                {
+                    ErrorMessage = string.Join(" ", errors);
+                }
+                
+                return RedirectToPage("/Login", new { show = "register" });
             }
 
-            //Check if the username already exist
-            if(await dbData.Users.AnyAsync(u => u.Username == Input.Username))
+            //Check if the email already exists
+            if(await dbData.Users.AnyAsync(u => u.Email == Input.Email))
             {
-                ModelState.AddModelError("Input.Username", "This username is already taken");
-                return Page();
+                ErrorMessage = "This email address is already registered";
+                return RedirectToPage("/Login", new { show = "register" });
             }
 
             //check if this is the very first user in users table
@@ -48,11 +62,11 @@ namespace Apartment.Pages
             UserRoles assignedRole = isFirstUser ? UserRoles.Admin : UserRoles.User;
 
 
-            //create user obj
+            //create user obj - Username is for display only, Email is the unique login identifier
             var newUser = new User
             {
-                Username = Input.Username,
-                Email = Input.Email,
+                Username = Input.Username, // Non-unique display name
+                Email = Input.Email, // Unique login identifier
                 // Hash muna password NO NO NO NO, before i store sa database. Tangina lagi nakakalimutan
                 HasedPassword = PasswordHasher.HashPassword(Input.Password),
                 Role = assignedRole,
@@ -61,20 +75,51 @@ namespace Apartment.Pages
 
             };
 
+            // Find a pre-existing Tenant created by the manager using the registration email
+            var existingTenant = await dbData.Tenants
+                .FirstOrDefaultAsync(t => t.PrimaryEmail == Input.Email);
+
+            if(existingTenant != null)
+            {
+                // Link the user to the tenant by setting TenantID BEFORE saving
+                newUser.TenantID = existingTenant.Id;
+            }
+
             dbData.Users.Add(newUser);
-            await dbData.SaveChangesAsync(); // -> saved in the database
+            await dbData.SaveChangesAsync(); // -> saved in the database with TenantID if tenant was found
 
+            if(existingTenant != null)
+            {
+                // Also create tenantLink to synchronize the records (for the linking table)
+                var tenantLink = new TenantLink
+                {
+                    // Id is NOT set - let the database auto-generate it
+                    UserId = newUser.Id.ToString(),
+                    ApartmentId = existingTenant.ApartmentId?.ToString() ?? string.Empty,
+                    LinkedDate = DateTime.UtcNow
+                };
 
-            TempData["Message"] = $"Registration successful! You can now log in. Your role is: {assignedRole}.";
-            return RedirectToPage();
+                dbData.TenantLinks.Add(tenantLink);
+                await dbData.SaveChangesAsync();
+
+                TempData["Message"] = $"Registration successful! You've been linked to tenant: {existingTenant.FullName}. Your role is: {assignedRole}.";
+            }
+            else
+            {
+                TempData["Message"] = $"Registration successful! You can now log in. Your role is: {assignedRole}.";
+            }
+
+            return RedirectToPage("/Login", new { show = "register" });
 
 
 
         }
 
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
+            // Redirect to Login page with register form shown
+            return RedirectToPage("/Login", new { show = "register" });
         }
 
 

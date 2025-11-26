@@ -1,5 +1,171 @@
 ﻿@page
-@model Apartment.Pages.DashBoardModel
+@model Apartment.Pages.DashboardModel
 @{
+    ViewData["Title"] = "Manager Dashboard";
 }
-<h1>DashBoard</h1>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4 text-center mb-5 text-primary">
+                <i class="bi bi-speedometer2 me-3"></i>Manager Dashboard
+            </h1>
+        </div>
+    </div>
+
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="text-center">
+                <h2 class="h3 text-dark mb-2">
+                    Welcome back, <span class="text-primary fw-bold">@Model.Username</span>!
+                </h2>
+                <p class="text-muted mb-3">You are logged in as a <span class="badge bg-info fs-6">@Model.UserRole</span></p>
+                
+                @if (Model.UserRole == "Admin")
+                {
+                    <div class="alert alert-warning alert-dismissible fade show d-inline-block" role="alert">
+                        <i class="bi bi-shield-exclamation me-2"></i>
+                        <strong>Admin Access:</strong> You have administrative privileges. 
+                        <a asp-page="/Admin/AdminDashboard" class="alert-link">Access Admin Dashboard</a>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Cards -->
+    <div class="row g-4">
+        <!-- Tenant Management Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg rounded-4 border-0 navigation-card">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-person-lines-fill text-info" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Tenant Management</h3>
+                    <p class="card-text text-muted mb-4">
+                        Add, view, and update all tenant contact and status records.
+                    </p>
+                    <a asp-page="/ManageTenants" class="btn btn-info w-100 mt-3 rounded-pill">
+                        <i class="bi bi-person-lines-fill me-2"></i>Manage Tenants
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unit Management Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg rounded-4 border-0 navigation-card">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-house-door-fill text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Apartment Unit Management</h3>
+                    <p class="card-text text-muted mb-4">
+                        Set unit details, monthly rent, and assign tenants to units.
+                    </p>
+                    <a asp-page="/ManageApartments" class="btn btn-primary w-100 mt-3 rounded-pill">
+                        <i class="bi bi-house-door-fill me-2"></i>Manage Units
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Generation Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg rounded-4 border-0 navigation-card">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-receipt text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Billing Cycle & Generation</h3>
+                    <p class="card-text text-muted mb-4">
+                        Start new billing periods and generate monthly invoices for all occupied units.
+                    </p>
+                    <a asp-page="/GenerateBills" class="btn btn-success w-100 mt-3 rounded-pill">
+                        <i class="bi bi-receipt me-2"></i>Generate Bills
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Processing Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg rounded-4 border-0 navigation-card">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-cash-stack text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Payment Processing</h3>
+                    <p class="card-text text-muted mb-4">
+                        View outstanding balances and record payments made by tenants.
+                    </p>
+                    <a asp-page="/RecordPayments" class="btn btn-warning text-dark w-100 mt-3 rounded-pill">
+                        <i class="bi bi-cash-stack me-2"></i>Record Payments
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporting Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-lg rounded-4 border-0 navigation-card">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-graph-up text-secondary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Reporting & Summary</h3>
+                    <p class="card-text text-muted mb-4">
+                        Financial overview, tracking paid vs. outstanding amounts.
+                    </p>
+                    <a asp-page="/BillingSummary" class="btn btn-secondary w-100 mt-3 rounded-pill">
+                        <i class="bi bi-graph-up me-2"></i>View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .navigation-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .navigation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .navigation-card .card-body {
+        transition: all 0.3s ease;
+    }
+    
+    .navigation-card:hover .card-body {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    }
+    
+    .btn {
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .alert-warning {
+        border: none;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-radius: 15px;
+    }
+    
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+</style>
