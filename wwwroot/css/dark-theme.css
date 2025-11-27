@@ -200,6 +200,7 @@ body.dark-mode .btn-primary {
 body.dark-mode .btn-primary:hover {
     background: linear-gradient(135deg, var(--dm-matcha-dark) 0%, var(--dm-matcha-deep) 50%, var(--dm-matcha-primary) 100%) !important;
     border-color: var(--dm-matcha-dark) !important;
+    box-shadow: 0 6px 12px rgba(0,0,0, 0.3) !important;
 }
 
 body.dark-mode .btn-success {
@@ -266,4 +267,39 @@ body.dark-mode .btn-teal {
 body.dark-mode .btn-teal:hover {
     background: linear-gradient(135deg, var(--dm-teal-dark) 0%, var(--dm-teal-primary) 100%) !important;
     border-color: var(--dm-teal-dark) !important;
+}
+
+body.dark-mode .bi {
+    color: var(--dark-text-primary) !important;
+}
+
+/* Chart.js Dark Mode Overrides */
+body.dark-mode .chart-matcha-primary {
+    border-color: var(--dm-matcha-primary);
+    background-color: rgba(143, 188, 143, 0.2);
+}
+
+body.dark-mode .chart-matcha-secondary {
+    border-color: var(--dm-matcha-secondary);
+    background-color: rgba(122, 163, 120, 0.2);
+}
+
+body.dark-mode .chart-matcha-dark {
+    border-color: var(--dm-matcha-dark);
+    background-color: rgba(168, 211, 168, 0.2);
+}
+
+body.dark-mode .chart-accent {
+    border-color: var(--dm-accent-primary);
+    background-color: rgba(216, 156, 138, 0.2);
+}
+
+body.dark-mode .chart-teal {
+    border-color: var(--dm-teal-primary);
+    background-color: rgba(122, 191, 191, 0.2);
+}
+
+body.dark-mode .chart-warning {
+    border-color: var(--dm-warning);
+    background-color: rgba(255, 215, 0, 0.2);
 }
