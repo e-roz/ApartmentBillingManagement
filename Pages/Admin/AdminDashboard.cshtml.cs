@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Linq;
+using Apartment.Enums;
 
 namespace Apartment.Pages.Admin
 {
@@ -27,6 +28,7 @@ namespace Apartment.Pages.Admin
         public int TotalUnits { get; set; }
         public int OpenServiceTickets { get; set; }
         public int OverdueBills { get; set; }
+        public List<AuditLog> RecentRegistrations { get; set; } = new List<AuditLog>();
 
         public async Task OnGetAsync()
         {
@@ -68,7 +70,13 @@ namespace Apartment.Pages.Admin
                     var paidAmount = invoiceSums.TryGetValue(b.Id, out var paid) ? paid : 0m;
                     return b.AmountDue > paidAmount;
                 });
+            
+            RecentRegistrations = await _context.AuditLogs
+                .Where(a => a.Action == AuditActionType.CreateUser)
+                .OrderByDescending(a => a.Timestamp)
+                .Take(5)
+                .Include(a => a.User)
+                .ToListAsync();
         }
     }
 }
-

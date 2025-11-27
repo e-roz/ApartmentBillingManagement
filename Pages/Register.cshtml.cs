@@ -7,12 +7,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Apartment.Services;
 
 namespace Apartment.Pages
 {
     public class RegisterModel : PageModel
     {
         private readonly ApplicationDbContext dbData; // Holds the connection object to database
+        private readonly IAuditService _auditService;
 
         //receives the data submitted from html form
         [BindProperty]
@@ -25,9 +27,10 @@ namespace Apartment.Pages
         [TempData]
         public string? Message { get; set; }
 
-        public RegisterModel(ApplicationDbContext context)
+        public RegisterModel(ApplicationDbContext context, IAuditService auditService)
         {
             dbData = context;
+            _auditService = auditService;
         }
 
          
@@ -87,6 +90,15 @@ namespace Apartment.Pages
 
             dbData.Users.Add(newUser);
             await dbData.SaveChangesAsync(); // -> saved in the database with TenantID if tenant was found
+            
+            await _auditService.LogAsync(
+                action: AuditActionType.CreateUser,
+                userId: newUser.Id,
+                details: $"New user registered: {newUser.Username} (ID: {newUser.Id}) with role {newUser.Role}.",
+                entityId: newUser.Id,
+                entityType: "User"
+            );
+            await dbData.SaveChangesAsync();
 
             if(existingTenant != null)
             {

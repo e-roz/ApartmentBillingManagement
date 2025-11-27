@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Apartment.Services;
 
 namespace Apartment.Pages.Admin
 {
@@ -14,6 +15,7 @@ namespace Apartment.Pages.Admin
     public class ManageUsersModel : PageModel
     {
         private readonly ApplicationDbContext dbData;
+        private readonly IAuditService _auditService;
 
         public List<UserList> Users { get; set; } = new List<UserList>();
 
@@ -27,9 +29,10 @@ namespace Apartment.Pages.Admin
         [TempData]
         public string? ErrorMessage { get; set; }
 
-        public ManageUsersModel(ApplicationDbContext dbData)
+        public ManageUsersModel(ApplicationDbContext dbData, IAuditService auditService)
         {
             this.dbData = dbData;
+            _auditService = auditService;
         }
         //Fetches and filters the list of users 
         public async Task OnGetAsync()
@@ -55,7 +58,7 @@ namespace Apartment.Pages.Admin
                 {
                     sanitizedTerm = sanitizedTerm.Substring(0, 100);
                 }
-                
+
                 query = query.Where(u =>
                     u.Username.Contains(sanitizedTerm) ||
                     u.Email.Contains(sanitizedTerm)
@@ -142,7 +145,7 @@ namespace Apartment.Pages.Admin
             if (userToDelete.TenantID.HasValue)
             {
                 var tenantId = userToDelete.TenantID.Value;
-                
+
                 // Check if tenant has unpaid bills (calculate from invoices, not Bill.AmountPaid)
                 var tenantBills = await dbData.Bills
                     .Where(b => b.TenantId == tenantId)
@@ -180,7 +183,22 @@ namespace Apartment.Pages.Admin
                     }
                 }
             }
-
+            var adminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(adminIdString) || !int.TryParse(adminIdString, out var adminId))
+            {
+                ErrorMessage = "Could not identify the administrator performing the action.";
+                // Decide if you want to stop the deletion or log it as a system action
+                // For now, we'll stop it.
+                return RedirectToPage();
+            }
+            // Log the deletion action
+            await _auditService.LogAsync(
+                action: AuditActionType.DeleteUser,
+                userId: adminId,
+                details: $"User {userToDelete.Username} (ID: {userToDelete.Id}) was deleted by admin (ID: {adminId}).",
+                entityId: userToDelete.Id,
+                entityType: "User"
+            );
             // Delete the user
             dbData.Users.Remove(userToDelete);
             await dbData.SaveChangesAsync();
@@ -191,4 +209,3 @@ namespace Apartment.Pages.Admin
 
     }
 }
-
