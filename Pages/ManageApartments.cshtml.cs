@@ -43,7 +43,7 @@ namespace Apartment.Pages
         public async Task OnGetAsync()
         {
             // fetch all apartments, including their tenants if available
-            var apartmentEntities = await dbData.
+            var apartmentEntities = await dbData.Apartments
                 .Include(a => a.Tenant)
                 .OrderBy(a => a.UnitNumber)
                 .ToListAsync();
