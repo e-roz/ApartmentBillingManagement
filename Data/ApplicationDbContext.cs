@@ -51,6 +51,12 @@ namespace Apartment.Data
                 .HasConversion<string>()
                 .HasMaxLength(50);
 
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull); // Set UserId to NULL if the User is deleted
+
             //Ensure the periodKey is unique in BillingPeriod
             modelBuilder.Entity<BillingPeriod>()
                 .HasIndex(bp => bp.PeriodKey)

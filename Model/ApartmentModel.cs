@@ -27,7 +27,7 @@ namespace Apartment.Model
         public int? TenantId { get; set; }
 
         [ForeignKey("TenantId")]
-        public User? Tenant { get; set; }
+        public Tenant? CurrentTenant { get; set; }
 
         public ICollection<Bill> Bills { get; set; } = new List<Bill>();
     }

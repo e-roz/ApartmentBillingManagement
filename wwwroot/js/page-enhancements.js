@@ -87,8 +87,8 @@
 
         // Initialize all tables with class 'data-table' or in table-responsive containers
         document.querySelectorAll('.table-responsive table, table.data-table').forEach(function(table) {
-            // Skip if already initialized
-            if (jQuery(table).hasClass('dataTable')) return;
+            // Skip if already initialized or if it's marked for manual initialization
+            if (jQuery(table).hasClass('dataTable') || jQuery(table).hasClass('data-table-manual-init')) return;
 
             // Get table ID or create one
             let tableId = table.id;

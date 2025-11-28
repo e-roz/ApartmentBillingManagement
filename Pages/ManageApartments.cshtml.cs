@@ -45,7 +45,8 @@ namespace Apartment.Pages
         {
             // fetch all apartments, including their tenants if available
             var apartmentEntities = await dbData.Apartments
-                .Include(a => a.Tenant)
+                .Include(a => a.CurrentTenant)
+                    .ThenInclude(t => t.UserAccount) // Eager load the UserAccount for the tenant
                 .OrderBy(a => a.UnitNumber)
                 .ToListAsync();
 
@@ -58,8 +59,8 @@ namespace Apartment.Pages
                 MonthlyRent = a.MonthlyRent,
                 StatusDisplay = a.IsOccupied ? "Occupied" : "Vacant",
                 //display the tenant name or N/A if no tenant assigned
-                TenantName = a.TenantId.HasValue && a.Tenant != null ? a.Tenant.Username : "N/A",
-                TenantId = a.TenantId
+                TenantName = a.CurrentTenant != null && a.CurrentTenant.UserAccount != null ? a.CurrentTenant.UserAccount.Username : "N/A",
+                TenantId = a.CurrentTenant != null ? a.CurrentTenant.Id : (int?)null
 
             }).ToList();
 
@@ -70,21 +71,20 @@ namespace Apartment.Pages
 
         private async Task LoadAvailableTenantsAsync()
         {
-            //Fetch users with 'User' role who are not currently assigned to any apartment
-            var unassignedTenants = await dbData.Users
-                .Where(u => u.Role == UserRoles.User)
-                //Exclude users who are already assigned to an apartment
-                .Where(u => !dbData.Apartments.Any(a => a.TenantId == u.Id))
-                .OrderBy(u => u.Username)
+            // Fetch tenants who are not currently assigned to any apartment
+            var unassignedTenants = await dbData.Tenants
+                .Include(t => t.UserAccount) // Eager load the UserAccount to get the Username
+                .Where(t => t.ApartmentId == null) // Exclude tenants already assigned to an apartment
+                .OrderBy(t => t.FullName)
                 .ToListAsync();
 
 
-            //create a select list for the dropdown
+            // Create a select list for the dropdown
             var selectListItems = unassignedTenants
-                .Select(u => new SelectListItem
+                .Select(t => new SelectListItem
                 {
-                    Value = u.Id.ToString(),
-                    Text = u.Username
+                    Value = t.Id.ToString(),
+                    Text = t.UserAccount != null ? t.UserAccount.Username : t.FullName // Use Username if available, otherwise FullName
                 })
                 .ToList();
 
@@ -127,6 +127,18 @@ namespace Apartment.Pages
                 }
                 dbData.Apartments.Add(ApartmentInput);
                 await dbData.SaveChangesAsync();
+
+                // If a tenant was assigned, update the tenant's ApartmentId
+                if (ApartmentInput.TenantId.HasValue && ApartmentInput.TenantId.Value != 0)
+                {
+                    var assignedTenant = await dbData.Tenants.FindAsync(ApartmentInput.TenantId.Value);
+                    if (assignedTenant != null)
+                    {
+                        assignedTenant.ApartmentId = ApartmentInput.Id;
+                        dbData.Tenants.Update(assignedTenant);
+                        await dbData.SaveChangesAsync();
+                    }
+                }
 
                 SuccessMessage = $"Apartment unit '{ApartmentInput.UnitNumber}' added successfully.";
                 return RedirectToPage();

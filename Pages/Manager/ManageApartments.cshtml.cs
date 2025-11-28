@@ -80,31 +80,19 @@ namespace Apartment.Pages.Manager
         public async Task OnGetAsync()
         {
             // Get all apartments
-            var apartmentQuery = dbData.Apartments.AsQueryable();
-
-            // Get all active tenants with their apartments
-            var activeTenants = await dbData.Tenants
-                .Where(t => t.Status == LeaseStatus.Active && t.ApartmentId.HasValue)
-                .Include(t => t.Apartment)
-                .ToListAsync();
-
-            // Create a dictionary for quick lookup: ApartmentId -> Tenant
-            var tenantByApartmentId = activeTenants
-                .Where(t => t.Apartment != null)
-                .ToDictionary(t => t.Apartment!.Id, t => t);
+            var apartmentQuery = dbData.Apartments
+                .Include(a => a.CurrentTenant) // Eager load the current tenant
+                    .ThenInclude(t => t.UserAccount) // Eager load the user account for the tenant
+                .AsQueryable();
 
             // search logic filter
             if (!string.IsNullOrWhiteSpace(SearchTerm))
             {
                 string term = SearchTerm.Trim();
-                var matchingApartmentIds = activeTenants
-                    .Where(t => t.Apartment != null && t.FullName.Contains(term))
-                    .Select(t => t.Apartment!.Id)
-                    .ToList();
-
                 apartmentQuery = apartmentQuery.Where(a =>
                     a.UnitNumber.Contains(term) ||
-                    matchingApartmentIds.Contains(a.Id)
+                    (a.CurrentTenant != null && a.CurrentTenant.FullName.Contains(term)) ||
+                    (a.CurrentTenant != null && a.CurrentTenant.UserAccount != null && a.CurrentTenant.UserAccount.Username.Contains(term))
                 );
             }
 
@@ -116,8 +104,7 @@ namespace Apartment.Pages.Manager
             //Map to ApartmentList for display and sync IsOccupied flag
             Apartments = apartmentEntities.Select(a =>
             {
-                var tenant = tenantByApartmentId.GetValueOrDefault(a.Id);
-                bool isOccupied = tenant != null;
+                bool isOccupied = a.CurrentTenant != null;
                 
                 // Sync IsOccupied flag with actual tenant status
                 if (a.IsOccupied != isOccupied)
@@ -132,8 +119,8 @@ namespace Apartment.Pages.Manager
                     UnitNumber = a.UnitNumber,
                     MonthlyRent = a.MonthlyRent,
                     StatusDisplay = isOccupied ? "Occupied" : "Vacant",
-                    TenantName = tenant?.FullName ?? "N/A",
-                    TenantId = tenant?.Id
+                    TenantName = a.CurrentTenant?.FullName ?? "N/A",
+                    TenantId = a.CurrentTenant?.Id
                 };
             }).ToList();
             
