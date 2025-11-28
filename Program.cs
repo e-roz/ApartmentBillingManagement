@@ -27,6 +27,7 @@ namespace Apartment
             builder.Services.AddScoped<InvoicePdfService>();
             builder.Services.AddScoped<ManagerReportingService>();
             builder.Services.AddScoped<ExcelExportService>();
+            builder.Services.AddScoped<AuditLogPdfService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAuditService, AuditService>();
 

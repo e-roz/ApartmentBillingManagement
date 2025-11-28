@@ -72,7 +72,114 @@
     </style>
 </head>
 <body>
+<<<<<<< Updated upstream
     @RenderBody()
+=======
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">Apartment</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+<<<<<<< Updated upstream
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+=======
+        </div>
+        
+        <!-- Search Section -->
+        <div class="search-container">
+            <div class="position-relative">
+                <input type="text" class="search-input" placeholder="Search" />
+                <i class="bi bi-search position-absolute" style="right: 1rem; top: 50%; transform: translateY(-50%); color: rgba(0, 0, 0, 0.6);"></i>
+            </div>
+        </div>
+        
+        <!-- Main Navigation -->
+        <div class="nav-section">
+            <div class="section-title">Main</div>
+            <a href="/AdminDashBoard" class="nav-link active">
+                <i class="bi bi-grid-3x3-gap"></i>
+                Dashboard
+            </a>
+            <a href="/ManageUsers" class="nav-link">
+                <i class="bi bi-people"></i>
+                My Property
+            </a>
+            <a href="/AuditLogs" class="nav-link">
+                <i class="bi bi-bar-chart"></i>
+                Analytics
+            </a>
+            <a href="/SystemTools" class="nav-link">
+                <i class="bi bi-arrow-left-right"></i>
+                Transactions
+            </a>
+            <a href="#" class="nav-link">
+                <i class="bi bi-wallet2"></i>
+                Cashflow
+            </a>
+            <a href="#" class="nav-link">
+                <i class="bi bi-person-lines-fill"></i>
+                Customers
+            </a>
+            <a href="Sample" class="nav-link">
+                <i class="bi bi-chat-dots"></i>
+                Messages
+            </a>
+        </div>
+        
+        <!-- Help & Support Section -->
+        <div class="nav-section">
+            <div class="section-title">Help & Support</div>
+            <a href="#" class="nav-link">
+                <i class="bi bi-question-circle"></i>
+                User Guide
+            </a>
+            <a href="#" class="nav-link">
+                <i class="bi bi-chat-square-text"></i>
+                FAQ
+            </a>
+            <a href="#" class="nav-link">
+                <i class="bi bi-headphones"></i>
+                Help Center
+            </a>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Content Header -->
+        <div class="content-header">
+            <div>
+                <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+            </div>
+            <div class="logo-placeholder">
+                <i class="bi bi-building"></i>
+            </div>
+        </div>
+        
+        <!-- Content Body -->
+        <div class="content-body">
+>>>>>>> Stashed changes
+            @RenderBody()
+        </main>
+    </div>
+>>>>>>> Stashed changes
 
     <footer class="border-top footer text-muted">
         <div class="container">

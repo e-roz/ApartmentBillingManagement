@@ -26,6 +26,8 @@ namespace Apartment.Enums
         UpdateApartment,
         DeleteApartment,
         AssignTenant,
-        UpdateTenant
+        UpdateTenant,
+        CreateTenant,
+        DeleteTenant
     }
 }

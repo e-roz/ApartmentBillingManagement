@@ -1,0 +1,68 @@
+﻿@page
+@model Apartment.Pages.AdminDashBoardModel
+@{
+    ViewData["Title"] = "Administrator Dashboard";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4 text-center mb-5 text-primary">
+                <i class="bi bi-shield-check me-3"></i>Administrator Dashboard
+            </h1>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-people-fill text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">System User & Role Control</h3>
+                    <p class="card-text text-muted mb-4">
+                        View all users and safely promote/demote users to the Manager role.
+                    </p>
+                    <a asp-page="/ManageUsers" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-people-fill me-2"></i>Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-clipboard-data text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Application Activity Tracking</h3>
+                    <p class="card-text text-muted mb-4">
+                        View history of critical actions (e.g., bill creation, role changes).
+                    </p>
+                    <a asp-page="/Sample" class="btn btn-success btn-lg w-100">
+                        <i class="bi bi-clipboard-data me-2"></i>View Audit Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-lg border-0">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="bi bi-gear-fill text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title text-dark mb-3">Database & System Utilities</h3>
+                    <p class="card-text text-muted mb-4">
+                        Access tools for database seeding, cleanup, or system maintenance.
+                    </p>
+                    <a asp-page="/SystemTools" class="btn btn-warning btn-lg w-100">
+                        <i class="bi bi-gear-fill me-2"></i>System Tools
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

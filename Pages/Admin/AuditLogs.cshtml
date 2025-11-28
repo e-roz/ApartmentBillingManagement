@@ -10,8 +10,20 @@
 
     <!-- Main Content -->
     <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">System Audit Logs</h1>
-        <p class="text-muted mb-4">A chronological record of significant events that have occurred in the system.</p>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0">System Audit Logs</h1>
+                <p class="text-muted mb-0">A chronological record of significant events in the system.</p>
+            </div>
+            <form method="post">
+                <button type="submit" asp-page-handler="ExportExcel" class="btn btn-sm btn-outline-primary" data-file-download="true">
+                    <i class="fas fa-file-excel"></i> Export to Excel
+                </button>
+                <button type="submit" asp-page-handler="ExportPdf" class="btn btn-sm btn-outline-danger" data-file-download="true">
+                    <i class="fas fa-file-pdf"></i> Export to PDF
+                </button>
+            </form>
+        </div>
 
         <div class="card shadow-sm">
             <div class="card-header">
@@ -27,18 +39,32 @@
                                 <th>Action</th>
                                 <th>Details</th>
                                 <th>IP Address</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var log in Model.AuditLogs)
+                            @if (Model.AuditLogs != null)
                             {
-                                <tr>
-                                    <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                    <td>@(log.User?.Username ?? "System")</td>
-                                    <td>@log.Action</td>
-                                    <td>@log.Details</td>
-                                    <td>@log.IpAddress</td>
-                                </tr>
+                                @foreach (var log in Model.AuditLogs)
+                                {
+                                    <tr>
+                                        <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>@(log.User?.Username ?? "System")</td>
+                                        <td>@log.Action</td>
+                                        <td>@log.Details</td>
+                                        <td>@log.IpAddress</td>
+                                        <td>
+                                            @if (log.Success)
+                                            {
+                                                <span class="badge bg-success">Success</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">Failure</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
                             }
                         </tbody>
                     </table>

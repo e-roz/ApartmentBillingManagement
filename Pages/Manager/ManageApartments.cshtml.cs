@@ -2,11 +2,17 @@ using Apartment.Data;
 using Apartment.Model;
 using Apartment.ViewModels;
 using Apartment.Enums;
+using Apartment.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System;
 
 namespace Apartment.Pages.Manager
 {
@@ -15,6 +21,7 @@ namespace Apartment.Pages.Manager
     public class ManageApartmentsModel : PageModel
     {
         private readonly ApplicationDbContext dbData;
+        private readonly IAuditService _auditService;
 
 
         // BindProperty for the form data (Used for Add/Edit)
@@ -43,9 +50,10 @@ namespace Apartment.Pages.Manager
         [TempData]
         public string ErrorMessage { get; set; }
 
-        public ManageApartmentsModel(ApplicationDbContext context)
+        public ManageApartmentsModel(ApplicationDbContext context, IAuditService auditService)
         {
             dbData = context;
+            _auditService = auditService;
         }
 
         private void AssignTenantToApartment(Apartment.Model.Tenant tenant, ApartmentModel apartment)
@@ -182,6 +190,11 @@ namespace Apartment.Pages.Manager
             ApartmentInput.IsOccupied = false;
 
             dbData.Apartments.Add(ApartmentInput);
+            
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var details = $"Created new apartment/unit: {ApartmentInput.UnitNumber}.";
+            await _auditService.LogAsync(AuditActionType.CreateApartment, userId, details, ApartmentInput.Id, nameof(ApartmentModel));
+            
             await dbData.SaveChangesAsync();
 
             // If SelectedTenantId was provided, assign the tenant
@@ -231,7 +244,13 @@ namespace Apartment.Pages.Manager
 
             try
             {
+                var apartmentUnitNumber = apartmentToDelete.UnitNumber;
                 dbData.Apartments.Remove(apartmentToDelete);
+                
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var details = $"Deleted apartment/unit: {apartmentUnitNumber}.";
+                await _auditService.LogAsync(AuditActionType.DeleteApartment, userId, details, ApartmentId, nameof(ApartmentModel));
+                
                 await dbData.SaveChangesAsync();
 
                 SuccessMessage = $"Apartment '{apartmentToDelete.UnitNumber}' deleted successfully.";

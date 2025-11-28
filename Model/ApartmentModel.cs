@@ -4,6 +4,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Apartment.Model
 {
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     [Index(nameof(UnitNumber), IsUnique = true)]
     public class ApartmentModel
     {
@@ -15,6 +19,7 @@ namespace Apartment.Model
         [Display(Name = "Unit Number")]
         public string UnitNumber { get; set; }
 
+<<<<<<< Updated upstream
         [Required]
         [Column(TypeName = "decimal(18, 2)")]
         [Display(Name = "Monthly Rent")]
@@ -23,6 +28,26 @@ namespace Apartment.Model
         [Display(Name = "Is Occupied")]
         public bool IsOccupied { get; set; }
 
+=======
+
+        [Required]
+        [Column(TypeName = "decimal(18, 2)")]
+        [Display(Name = "Monthly  Rent")]
+        public decimal MonthlyRent { get; set; }
+
+
+        [Display(Name = "Is Occupied")]
+        public bool IsOccupied { get; set; }
+
+
+
+        // Foreign Key to the User (Tenant) who occupies this apartment
+        public int? TenantId { get; set; }
+
+        [ForeignKey("TenantId")]
+        public User? Tenant { get; set; }
+
+>>>>>>> Stashed changes
         public ICollection<Bill> Bills { get; set; } = new List<Bill>();
     }
 }

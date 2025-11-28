@@ -2,6 +2,7 @@ using Apartment.Data;
 using Apartment.Model;
 using Apartment.ViewModels;
 using Apartment.Enums;
+using Apartment.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -11,6 +12,9 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Apartment.Pages.Manager
 {
@@ -18,10 +22,12 @@ namespace Apartment.Pages.Manager
     public class ManageTenantsModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly IAuditService _auditService;
 
-        public ManageTenantsModel(ApplicationDbContext context)
+        public ManageTenantsModel(ApplicationDbContext context, IAuditService auditService)
         {
             _context = context;
+            _auditService = auditService;
         }
 
         // Properties for Index (List View)
@@ -173,9 +179,17 @@ namespace Apartment.Pages.Manager
                 }
 
                 _context.Tenants.Add(Tenant);
-                await _context.SaveChangesAsync();
+                
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(userIdStr, out var userId))
+                {
+                    var details = $"Created new tenant: {Tenant.FullName}.";
+                    await _auditService.LogAsync(AuditActionType.CreateTenant, userId, details, Tenant.Id, nameof(Model.Tenant));
+                }
 
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
                 SuccessMessage = "Tenant created successfully.";
                 return RedirectToPage();
             }
@@ -415,7 +429,7 @@ namespace Apartment.Pages.Manager
                     await transaction.RollbackAsync();
                     return NotFound();
                 }
-
+                var tenantName = tenant.FullName;
                 var apartmentId = tenant.ApartmentId;
 
                 _context.Tenants.Remove(tenant);
@@ -429,6 +443,13 @@ namespace Apartment.Pages.Manager
                     {
                         apartment.IsOccupied = false;
                     }
+                }
+
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(userIdStr, out var userId))
+                {
+                    var details = $"Deleted tenant: {tenantName}.";
+                    await _auditService.LogAsync(AuditActionType.DeleteTenant, userId, details, id, nameof(Model.Tenant));
                 }
 
                 await _context.SaveChangesAsync();

@@ -11,6 +11,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Claims;
+using System;
 
 namespace Apartment.Pages.Manager
 {
@@ -20,11 +22,13 @@ namespace Apartment.Pages.Manager
     {
         private readonly ApplicationDbContext dbData;
         private readonly ILogSnagClient _logSnagClient;
+        private readonly IAuditService _auditService;
         private static readonly CultureInfo PhpCulture = CultureInfo.CreateSpecificCulture("en-PH");
-        public GenerateBillsModel(ApplicationDbContext context, ILogSnagClient logSnagClient)
+        public GenerateBillsModel(ApplicationDbContext context, ILogSnagClient logSnagClient, IAuditService auditService)
         {
             dbData = context;
             _logSnagClient = logSnagClient;
+            _auditService = auditService;
         }
 
         //Input model to hold the selected month/year for bill generation
@@ -236,22 +240,15 @@ namespace Apartment.Pages.Manager
                 if (billsCreate.Any())
                 {
                     dbData.Bills.AddRange(billsCreate);
-                    int savedCount = await dbData.SaveChangesAsync();
 
-                    // Verify bills were actually saved
-                    var savedBillsCount = await dbData.Bills
-                        .Where(b => b.BillingPeriodId == billingPeriod.Id && 
-                                    billsCreate.Select(bc => bc.TenantId).Contains(b.TenantId))
-                        .CountAsync();
-
-                    if (savedBillsCount == 0)
+                    var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    if (int.TryParse(userIdStr, out var userId))
                     {
-                        await transaction.RollbackAsync();
-                        ModelState.AddModelError(string.Empty, "Warning: Bills were created but may not have been saved to the database. Please verify the database connection.");
-                        await LoadOccupiedApartmentsAsync();
-                        return Page();
+                        var details = $"Generated {billsCreate.Count} bills for period {periodKey}.";
+                        await _auditService.LogAsync(AuditActionType.GenerateBills, userId, details, billingPeriod.Id, nameof(BillingPeriod));
                     }
-
+                    
+                    await dbData.SaveChangesAsync();
                     await transaction.CommitAsync();
                 }
 

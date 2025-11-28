@@ -7,6 +7,15 @@
     'use strict';
 
     // ========================================
+    // Helper to get cookie by name
+    // ========================================
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    // ========================================
     // Auto-convert Bootstrap alerts to Toastr
     // Only convert dismissible alerts (backend messages), not UI info alerts
     // ========================================
@@ -127,14 +136,16 @@
 
             form.addEventListener('submit', function(e) {
                 // IMPORTANT: Check if another handler already prevented submission
-                // This prevents the button from being disabled when validation fails
                 if (e.defaultPrevented) {
                     return;
                 }
                 
-                const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+                const submitButton = e.submitter; // Use the button that triggered the submit
                 
-                if (submitButton) {
+                if (submitButton && (submitButton.tagName === 'BUTTON' || (submitButton.tagName === 'INPUT' && submitButton.type === 'submit'))) {
+                    
+                    const isFileDownload = submitButton.hasAttribute('data-file-download');
+
                     // Small delay to allow other handlers to prevent submission
                     setTimeout(function() {
                         // Double-check the event wasn't prevented
@@ -154,17 +165,41 @@
                         
                         // Show loading overlay for important forms
                         if (form.classList.contains('important-form') || form.querySelector('[name*="Delete"], [name*="delete"]')) {
-                            loadingOverlay.show('body', 'Processing your request...');
+                            if (typeof loadingOverlay !== 'undefined') {
+                                loadingOverlay.show('body', 'Processing your request...');
+                            }
                         }
 
-                        // Re-enable after timeout (fallback)
-                        setTimeout(function() {
-                            submitButton.disabled = false;
-                            if (submitButton.tagName === 'BUTTON') {
-                                submitButton.innerHTML = originalText;
-                            }
-                            loadingOverlay.hide('body');
-                        }, 30000);
+                        if (isFileDownload) {
+                            const interval = setInterval(function() {
+                                if (getCookie('fileDownload')) {
+                                    // Re-enable button
+                                    submitButton.disabled = false;
+                                    if (submitButton.tagName === 'BUTTON') {
+                                        submitButton.innerHTML = originalText;
+                                    }
+                                    if (typeof loadingOverlay !== 'undefined') {
+                                        loadingOverlay.hide('body');
+                                    }
+                                    
+                                    // Clear the cookie
+                                    document.cookie = "fileDownload=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                                    
+                                    clearInterval(interval);
+                                }
+                            }, 1000);
+                        } else {
+                            // Re-enable after timeout (fallback)
+                            setTimeout(function() {
+                                submitButton.disabled = false;
+                                if (submitButton.tagName === 'BUTTON') {
+                                    submitButton.innerHTML = originalText;
+                                }
+                                if (typeof loadingOverlay !== 'undefined') {
+                                    loadingOverlay.hide('body');
+                                }
+                            }, 30000);
+                        }
                     }, 0);
                 }
             });

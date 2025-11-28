@@ -1,10 +1,44 @@
 using Apartment.ViewModels;
 using ClosedXML.Excel;
+using Apartment.Model;
+using System.Collections.Generic;
+using System;
+using System.Linq;
 
 namespace Apartment.Services
 {
     public class ExcelExportService
     {
+        public XLWorkbook BuildAuditLogWorkbook(IEnumerable<AuditLog> auditLogs)
+        {
+            var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Audit Logs");
+            var currentRow = 1;
+
+            worksheet.Cell(currentRow, 1).Value = "Timestamp";
+            worksheet.Cell(currentRow, 2).Value = "User";
+            worksheet.Cell(currentRow, 3).Value = "Action";
+            worksheet.Cell(currentRow, 4).Value = "Details";
+            worksheet.Cell(currentRow, 5).Value = "IP Address";
+            worksheet.Cell(currentRow, 6).Value = "Success";
+            worksheet.Range(currentRow, 1, currentRow, 6).Style.Font.Bold = true;
+
+            foreach (var log in auditLogs)
+            {
+                currentRow++;
+                worksheet.Cell(currentRow, 1).Value = log.Timestamp;
+                worksheet.Cell(currentRow, 1).Style.DateFormat.Format = "yyyy-MM-dd HH:mm:ss";
+                worksheet.Cell(currentRow, 2).Value = log.User?.Username ?? "System";
+                worksheet.Cell(currentRow, 3).Value = log.Action.ToString();
+                worksheet.Cell(currentRow, 4).Value = log.Details;
+                worksheet.Cell(currentRow, 5).Value = log.IpAddress;
+                worksheet.Cell(currentRow, 6).Value = log.Success;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            return workbook;
+        }
         public XLWorkbook BuildBillingSummaryWorkbook(BillingSummaryViewModel summary)
         {
             var workbook = new XLWorkbook();
