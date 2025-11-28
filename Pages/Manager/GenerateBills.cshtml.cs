@@ -35,7 +35,7 @@ namespace Apartment.Pages.Manager
         [BindProperty]
         public BillingInput Input { get; set; } = new BillingInput();
 
-        public List<ApartmentList> OccupiedApartments { get; set; } = new List<ApartmentList>();
+        public List<ViewModels.ApartmentList> OccupiedApartments { get; set; } = new List<ViewModels.ApartmentList>();
 
         // Using regular properties instead of TempData since we return Page() not Redirect
         // TempData would persist to the next page visit if not consumed
@@ -83,7 +83,7 @@ namespace Apartment.Pages.Manager
 
             OccupiedApartments = activeTenants
                 .Where(t => t.Apartment != null)
-                .Select(t => new ApartmentList
+                .Select(t => new ViewModels.ApartmentList
                 {
                     Id = t.Apartment!.Id,
                     UnitNumber = t.Apartment.UnitNumber,

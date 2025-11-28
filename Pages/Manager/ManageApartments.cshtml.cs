@@ -38,7 +38,7 @@ namespace Apartment.Pages.Manager
 
 
         //holding the list of available apartments for the main table view
-        public List<ApartmentList> Apartments { get; set; } = new List<ApartmentList>();
+        public List<ViewModels.ApartmentList> Apartments { get; set; } = new List<ViewModels.ApartmentList>();
 
         //hold the list of available tenants for the dropdown
         public SelectList AvailableTenants { get; set; }
@@ -126,7 +126,7 @@ namespace Apartment.Pages.Manager
                     dbData.Apartments.Update(a);
                 }
                 
-                return new ApartmentList
+                return new ViewModels.ApartmentList
                 {
                     Id = a.Id,
                     UnitNumber = a.UnitNumber,
