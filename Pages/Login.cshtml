@@ -439,7 +439,7 @@
             </div>
             <div class="form-wrapper">
                 <h1 class="form-title">Sign in</h1>
-                <p class="form-subtitle">Don't have an account? <a href="#" class="switch-link" id="showRegister">Create now</a></p>
+                <p class="form-subtitle text-muted">Account creation is managed by administrators only.</p>
 
                 @if (!string.IsNullOrEmpty(Model.Message))
                 {
@@ -513,8 +513,8 @@
             </div>
         </div>
 
-        <!-- Hidden Register Form (slides in from left) -->
-        <div class="register-form-container" id="registerContainer">
+        <!-- Register Form Removed - Public registration disabled. Only Admin can create accounts. -->
+        <div class="register-form-container" id="registerContainer" style="display: none !important;">
             <div class="logo-container">
                 <img src="~/images/Logo.png" alt="Logo" />
             </div>
@@ -661,22 +661,11 @@
             registerContainer.classList.add('show');
         }
 
-        // Show Register Form
+        // Register Form disabled - Public registration is not available
+        // Only administrators can create new accounts
         document.getElementById('showRegister')?.addEventListener('click', function(e) {
             e.preventDefault();
-            const loginContainer = document.getElementById('loginContainer');
-            const promoContainer = document.getElementById('promoContainer');
-            const registerContainer = document.getElementById('registerContainer');
-            
-            // Remove any previous animation classes
-            registerContainer.classList.remove('slide-out', 'hidden');
-            loginContainer.classList.remove('slide-in');
-            promoContainer.classList.remove('slide-back');
-            
-            // Swap panels: login slides right, promotion slides left, register appears instantly
-            loginContainer.classList.add('slide-right');
-            promoContainer.classList.add('slide-left');
-            registerContainer.classList.add('show');
+            alert('Public registration is disabled. Please contact an administrator to create an account.');
         });
 
         // Show Login Form

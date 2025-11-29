@@ -10,7 +10,7 @@ using System.Security.Claims;
 
 namespace Apartment.Pages.Tenant
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Tenant")]
     public class MakePaymentModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -25,7 +25,7 @@ namespace Apartment.Pages.Tenant
         public PaymentInputModel Input { get; set; } = new();
 
         public decimal OutstandingBalance { get; set; }
-        public Model.Tenant? TenantInfo { get; set; }
+        public Model.User? UserInfo { get; set; }
         public List<Bill> PendingBills { get; set; } = new();
 
         public class PaymentInputModel
@@ -54,10 +54,10 @@ namespace Apartment.Pages.Tenant
         {
             NormalizePaymentInput();
 
-            var tenant = await GetTenantFromClaimsAsync();
-            if (tenant == null)
+            var user = await GetUserFromClaimsAsync();
+            if (user == null)
             {
-                ModelState.AddModelError(string.Empty, "Unable to find your tenant profile. Please contact support.");
+                ModelState.AddModelError(string.Empty, "Unable to find your user profile. Please contact support.");
                 await LoadDataAsync();
                 return Page();
             }
@@ -70,19 +70,19 @@ namespace Apartment.Pages.Tenant
             
             if (!ModelState.IsValid)
             {
-                await LoadDataAsync(tenant.Id);
+                await LoadDataAsync(user.Id);
                 return Page();
             }
 
             var outstandingBills = await _context.Bills
-                .Where(b => b.TenantId == tenant.Id && b.AmountDue > b.AmountPaid)
+                .Where(b => b.TenantUserId == user.Id && b.AmountDue > b.AmountPaid)
                 .OrderBy(b => b.DueDate).ThenBy(b => b.Id)
                 .ToListAsync();
 
             if (!outstandingBills.Any())
             {
                 ModelState.AddModelError(string.Empty, "You have no outstanding bills to pay.");
-                await LoadDataAsync(tenant.Id);
+                await LoadDataAsync(user.Id);
                 return Page();
             }
 
@@ -94,7 +94,7 @@ namespace Apartment.Pages.Tenant
                 if (!paymentPlan.Any())
                 {
                     ModelState.AddModelError(nameof(Input.BillId), "The selected bill is already paid or does not exist.");
-                    await LoadDataAsync(tenant.Id);
+                    await LoadDataAsync(user.Id);
                     return Page();
                 }
             }
@@ -107,16 +107,16 @@ namespace Apartment.Pages.Tenant
                     ? $"Payment exceeds the remaining balance of {formattedBalance} for this bill."
                     : $"Payment exceeds your total outstanding balance of {formattedBalance}.";
                 ModelState.AddModelError(nameof(Input.Amount), message);
-                await LoadDataAsync(tenant.Id);
+                await LoadDataAsync(user.Id);
                 return Page();
             }
 
-            var (success, errorMessage) = await ExecutePaymentAsync(tenant.Id, paymentPlan, Input.Amount, Input.PaymentMethod);
+            var (success, errorMessage) = await ExecutePaymentAsync(user.Id, paymentPlan, Input.Amount, Input.PaymentMethod);
 
             if (!success)
             {
                 ModelState.AddModelError(string.Empty, errorMessage ?? "An unexpected error occurred during payment.");
-                await LoadDataAsync(tenant.Id);
+                await LoadDataAsync(user.Id);
                 return Page();
             }
 
@@ -124,27 +124,30 @@ namespace Apartment.Pages.Tenant
             return RedirectToPage("/Tenant/PaymentHistory");
         }
 
-        private async Task LoadDataAsync(int? tenantId = null)
+        private async Task LoadDataAsync(int? userId = null)
         {
-            var targetTenantId = tenantId;
-            if (!targetTenantId.HasValue)
+            var targetUserId = userId;
+            if (!targetUserId.HasValue)
             {
-                var tenant = await GetTenantFromClaimsAsync();
-                if (tenant == null) return;
-                targetTenantId = tenant.Id;
-                TenantInfo = tenant;
+                var user = await GetUserFromClaimsAsync();
+                if (user == null) return;
+                targetUserId = user.Id;
+                UserInfo = user;
             }
 
-            if (TenantInfo == null && targetTenantId.HasValue)
+            if (UserInfo == null && targetUserId.HasValue)
             {
-                TenantInfo = await _context.Tenants.FindAsync(targetTenantId.Value);
+                UserInfo = await _context.Users
+                    .Include(u => u.Apartment)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == targetUserId.Value);
             }
 
-            if (targetTenantId.HasValue)
+            if (targetUserId.HasValue)
             {
                 PendingBills = await _context.Bills
                     .Include(b => b.BillingPeriod)
-                    .Where(b => b.TenantId == targetTenantId.Value && b.AmountDue > b.AmountPaid)
+                    .Where(b => b.TenantUserId == targetUserId.Value && b.AmountDue > b.AmountPaid)
                     .OrderBy(b => b.DueDate).ThenBy(b => b.Id)
                     .AsNoTracking()
                     .ToListAsync();
@@ -153,16 +156,16 @@ namespace Apartment.Pages.Tenant
             }
         }
         
-        private async Task<Model.Tenant?> GetTenantFromClaimsAsync()
+        private async Task<Model.User?> GetUserFromClaimsAsync()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Tenant)
+                    .Include(u => u.Apartment)
                     .AsNoTracking()
                     .FirstOrDefaultAsync(u => u.Id == userId);
-                return user?.Tenant;
+                return user;
             }
             return null;
         }
@@ -178,7 +181,7 @@ namespace Apartment.Pages.Tenant
         }
 
         private async Task<(bool Success, string? ErrorMessage)> ExecutePaymentAsync(
-            int tenantId,
+            int userId,
             List<Bill> paymentPlan,
             decimal paymentAmount,
             string paymentMethod)
@@ -199,7 +202,7 @@ namespace Apartment.Pages.Tenant
                 // Lock the specific bills we are about to work on to prevent concurrent modifications
                 var billsToUpdate = await _context.Bills
                     .Include(b => b.BillingPeriod) // Ensure BillingPeriod is loaded
-                    .Where(b => b.TenantId == tenantId && billIds.Contains(b.Id))
+                    .Where(b => b.TenantUserId == userId && billIds.Contains(b.Id))
                     .OrderBy(b => b.DueDate).ThenBy(b => b.Id)
                     .ToListAsync();
 
@@ -222,7 +225,7 @@ namespace Apartment.Pages.Tenant
                     // 2. Create a corresponding Invoice record for this part of the payment
                     var invoice = new Invoice
                     {
-                        TenantId = bill.TenantId,
+                        TenantUserId = bill.TenantUserId,
                         ApartmentId = bill.ApartmentId,
                         BillId = bill.Id,
                         Title = $"Payment for {bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}",

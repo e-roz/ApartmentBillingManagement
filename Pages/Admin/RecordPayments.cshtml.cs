@@ -36,7 +36,7 @@ namespace Apartment.Pages.Admin
 
         // Filter properties
         [BindProperty(SupportsGet = true)]
-        public int? SelectedTenantId { get; set; }
+        public int? SelectedTenantUserId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string? FilterStatus { get; set; }
@@ -102,7 +102,7 @@ namespace Apartment.Pages.Admin
 
         public class PaymentInputModel
         {
-            public int TenantId { get; set; }
+            public int TenantUserId { get; set; }
             public int BillId { get; set; }
             public decimal AmountPaid { get; set; }
             public DateTime PaymentDate { get; set; } = DateTime.Now;
@@ -117,10 +117,10 @@ namespace Apartment.Pages.Admin
             await PopulateFilterOptionsAsync();
             await LoadTenantSummariesAsync();
             
-            if (SelectedTenantId.HasValue)
+            if (SelectedTenantUserId.HasValue)
             {
-                SelectedTenantSummary = await ComputePaymentSummaryAsync(SelectedTenantId.Value);
-                await LoadMonthlyBreakdownAsync(SelectedTenantId.Value);
+                SelectedTenantSummary = await ComputePaymentSummaryAsync(SelectedTenantUserId.Value);
+                await LoadMonthlyBreakdownAsync(SelectedTenantUserId.Value);
             }
         }
 
@@ -155,11 +155,11 @@ namespace Apartment.Pages.Admin
                 // Handle outstanding balance payment (BillId = 0 means auto-select oldest unpaid bill)
                 if (AddPaymentInput.BillId == 0)
                 {
-                    // Find the oldest unpaid bill for this tenant
+                    // Find the oldest unpaid bill for this tenant user
                     var allBillsForTenant = await _context.Bills
                         .Include(b => b.BillingPeriod)
-                        .Include(b => b.Tenant)
-                        .Where(b => b.TenantId == AddPaymentInput.TenantId)
+                        .Include(b => b.TenantUser)
+                        .Where(b => b.TenantUserId == AddPaymentInput.TenantUserId)
                         .OrderBy(b => b.DueDate)
                         .ToListAsync();
 
@@ -188,7 +188,7 @@ namespace Apartment.Pages.Admin
 
                     if (bill == null)
                     {
-                        ErrorMessage = "No unpaid bills found for this tenant.";
+                        ErrorMessage = "No unpaid bills found for this tenant user.";
                         await OnGetAsync();
                         return Page();
                     }
@@ -208,8 +208,8 @@ namespace Apartment.Pages.Admin
                     // Refetch the bill from context to ensure it's tracked and has latest state
                     bill = await _context.Bills
                         .Include(b => b.BillingPeriod)
-                        .Include(b => b.Tenant)
-                        .FirstOrDefaultAsync(b => b.Id == bill.Id && b.TenantId == AddPaymentInput.TenantId);
+                        .Include(b => b.TenantUser)
+                        .FirstOrDefaultAsync(b => b.Id == bill.Id && b.TenantUserId == AddPaymentInput.TenantUserId);
                     
                     if (bill == null)
                     {
@@ -222,8 +222,8 @@ namespace Apartment.Pages.Admin
                 {
                     bill = await _context.Bills
                         .Include(b => b.BillingPeriod)
-                        .Include(b => b.Tenant)
-                        .FirstOrDefaultAsync(b => b.Id == AddPaymentInput.BillId && b.TenantId == AddPaymentInput.TenantId);
+                        .Include(b => b.TenantUser)
+                        .FirstOrDefaultAsync(b => b.Id == AddPaymentInput.BillId && b.TenantUserId == AddPaymentInput.TenantUserId);
                 }
 
                 if (bill == null)
@@ -271,7 +271,7 @@ namespace Apartment.Pages.Admin
                 var paymentInvoice = new Invoice
                 {
                     BillId = bill.Id,
-                    TenantId = bill.TenantId,
+                    TenantUserId = bill.TenantUserId,
                     ApartmentId = bill.ApartmentId,
                     Title = bill.BillingPeriod != null
                         ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year} - Payment"
@@ -302,19 +302,19 @@ namespace Apartment.Pages.Admin
                 await _logSnagClient.PublishAsync(new LogSnagEvent
                 {
                     Event = "Payment Recorded",
-                    Description = $"{bill.Tenant.FullName} paid {AddPaymentInput.AmountPaid:C} for Bill #{bill.Id}",
+                    Description = $"{bill.TenantUser?.Username ?? "Unknown"} paid {AddPaymentInput.AmountPaid:C} for Bill #{bill.Id}",
                     Icon = "💰",
                     Tags = new Dictionary<string, string>
                     {
-                        { "tenant", bill.Tenant.FullName },
+                        { "tenant", bill.TenantUser?.Username ?? "Unknown" },
                         { "billId", bill.Id.ToString() },
                         { "amount", AddPaymentInput.AmountPaid.ToString("0.##") }
                     }
                 });
 
                 SuccessMessage = $"Payment of {AddPaymentInput.AmountPaid:C} has been successfully recorded.";
-                SelectedTenantId = AddPaymentInput.TenantId;
-                return RedirectToPage("/Admin/RecordPayments", new { SelectedTenantId = AddPaymentInput.TenantId });
+                SelectedTenantUserId = AddPaymentInput.TenantUserId;
+                return RedirectToPage("/Admin/RecordPayments", new { SelectedTenantUserId = AddPaymentInput.TenantUserId });
             }
             catch (Exception ex)
             {
@@ -327,7 +327,7 @@ namespace Apartment.Pages.Admin
         public async Task<IActionResult> OnGetReceiptAsync(int invoiceId)
         {
             var invoice = await _context.Invoices
-                .Include(i => i.Tenant)
+                .Include(i => i.TenantUser)
                 .FirstOrDefaultAsync(i => i.Id == invoiceId);
 
             if (invoice == null || string.IsNullOrEmpty(invoice.ReceiptImagePath))
@@ -352,20 +352,21 @@ namespace Apartment.Pages.Admin
         }
 
         // Helper Methods
-        private async Task<PaymentSummaryViewModel> ComputePaymentSummaryAsync(int tenantId)
+        private async Task<PaymentSummaryViewModel> ComputePaymentSummaryAsync(int tenantUserId)
         {
-            var tenant = await _context.Tenants
-                .FirstOrDefaultAsync(t => t.Id == tenantId);
+            var tenantUser = await _context.Users
+                .Include(u => u.Apartment)
+                .FirstOrDefaultAsync(u => u.Id == tenantUserId && u.Role == UserRoles.Tenant);
 
-            if (tenant == null)
+            if (tenantUser == null)
             {
-                return new PaymentSummaryViewModel { TenantId = tenantId };
+                return new PaymentSummaryViewModel { TenantId = tenantUserId };
             }
 
-            // Get all bills for this tenant
+            // Get all bills for this tenant user
             var bills = await _context.Bills
                 .Include(b => b.BillingPeriod)
-                .Where(b => b.TenantId == tenantId)
+                .Where(b => b.TenantUserId == tenantUserId)
                 .ToListAsync();
 
             var billIds = bills.Select(b => b.Id).ToList();
@@ -393,7 +394,7 @@ namespace Apartment.Pages.Admin
 
             // Get all payment invoices
             var paymentInvoices = await _context.Invoices
-                .Where(i => i.TenantId == tenantId && i.PaymentDate != null)
+                .Where(i => i.TenantUserId == tenantUserId && i.PaymentDate != null)
                 .OrderByDescending(i => i.PaymentDate)
                 .ToListAsync();
 
@@ -408,9 +409,9 @@ namespace Apartment.Pages.Admin
 
             return new PaymentSummaryViewModel
             {
-                TenantId = tenantId,
-                TenantName = tenant.FullName,
-                UnitNumber = tenant.UnitNumber,
+                TenantId = tenantUserId,
+                TenantName = tenantUser.Username,
+                UnitNumber = tenantUser.Apartment?.UnitNumber ?? "Unassigned",
                 TotalRent = totalRent,
                 AmountPaid = totalPaid,
                 RemainingBalance = remainingBalance,
@@ -467,7 +468,9 @@ namespace Apartment.Pages.Admin
 
         private async Task LoadTenantSummariesAsync()
         {
-            var query = _context.Tenants
+            var query = _context.Users
+                .Include(u => u.Apartment)
+                .Where(u => u.Role == UserRoles.Tenant)
                 .AsQueryable();
 
             // Apply search filter with sanitization
@@ -480,18 +483,18 @@ namespace Apartment.Pages.Admin
                     sanitizedTerm = sanitizedTerm.Substring(0, 100);
                 }
                 
-                query = query.Where(t => 
-                    t.FullName.Contains(sanitizedTerm) || 
-                    t.UnitNumber.Contains(sanitizedTerm) ||
-                    t.PrimaryEmail.Contains(sanitizedTerm));
+                query = query.Where(u => 
+                    u.Username.Contains(sanitizedTerm) || 
+                    (u.Apartment != null && u.Apartment.UnitNumber.Contains(sanitizedTerm)) ||
+                    u.Email.Contains(sanitizedTerm));
             }
 
-            var tenants = await query.ToListAsync();
-            var tenantIds = tenants.Select(t => t.Id).ToList();
+            var tenantUsers = await query.ToListAsync();
+            var tenantUserIds = tenantUsers.Select(u => u.Id).ToList();
 
-            // Get all bills for these tenants
+            // Get all bills for these tenant users
             var allBills = await _context.Bills
-                .Where(b => tenantIds.Contains(b.TenantId))
+                .Where(b => tenantUserIds.Contains(b.TenantUserId))
                 .ToListAsync();
 
             var billIds = allBills.Select(b => b.Id).ToList();
@@ -517,20 +520,20 @@ namespace Apartment.Pages.Admin
                 }
             }
 
-            // Get last payments for each tenant
+            // Get last payments for each tenant user
             var lastPayments = await _context.Invoices
-                .Where(i => tenantIds.Contains(i.TenantId) && i.PaymentDate != null)
-                .GroupBy(i => i.TenantId)
+                .Where(i => tenantUserIds.Contains(i.TenantUserId) && i.PaymentDate != null)
+                .GroupBy(i => i.TenantUserId)
                 .Select(g => new
                 {
-                    TenantId = g.Key,
+                    TenantUserId = g.Key,
                     LastPayment = g.OrderByDescending(i => i.PaymentDate).FirstOrDefault()
                 })
-                .ToDictionaryAsync(k => k.TenantId, v => v.LastPayment);
+                .ToDictionaryAsync(k => k.TenantUserId, v => v.LastPayment);
 
-            TenantSummaries = tenants.Select(t =>
+            TenantSummaries = tenantUsers.Select(u =>
             {
-                var bills = allBills.Where(b => b.TenantId == t.Id).ToList();
+                var bills = allBills.Where(b => b.TenantUserId == u.Id).ToList();
                 
                 // Calculate totals for ALL bills (not just unpaid) for accurate TotalPaid display
                 var totalRentAllBills = bills.Sum(b => b.AmountDue);
@@ -553,14 +556,14 @@ namespace Apartment.Pages.Admin
                 });
                 var remainingBalance = totalRentUnpaid - totalPaidUnpaid;
 
-                lastPayments.TryGetValue(t.Id, out var lastPayment);
+                lastPayments.TryGetValue(u.Id, out var lastPayment);
 
                 return new TenantPaymentSummary
                 {
-                    TenantId = t.Id,
-                    TenantName = t.FullName,
-                    UnitNumber = t.UnitNumber,
-                    MonthlyRent = t.MonthlyRent,
+                    TenantId = u.Id,
+                    TenantName = u.Username,
+                    UnitNumber = u.Apartment?.UnitNumber ?? "Unassigned",
+                    MonthlyRent = u.Apartment?.MonthlyRent ?? 0m,
                     TotalPaid = totalPaidAllBills, // Total paid across ALL bills for accurate display
                     RemainingBalance = remainingBalance,
                     PaymentStatus = DetermineOverallStatus(totalRentAllBills, totalPaidAllBills, bills),
@@ -577,11 +580,11 @@ namespace Apartment.Pages.Admin
             }
         }
 
-        private async Task LoadMonthlyBreakdownAsync(int tenantId)
+        private async Task LoadMonthlyBreakdownAsync(int tenantUserId)
         {
             var bills = await _context.Bills
                 .Include(b => b.BillingPeriod)
-                .Where(b => b.TenantId == tenantId)
+                .Where(b => b.TenantUserId == tenantUserId)
                 .OrderByDescending(b => b.BillingPeriod.Year)
                 .ThenByDescending(b => b.BillingPeriod.MonthName)
                 .ToListAsync();
@@ -658,20 +661,22 @@ namespace Apartment.Pages.Admin
 
         private async Task PopulateFilterOptionsAsync()
         {
-            // Tenant options
-            var tenants = await _context.Tenants
-                .OrderBy(t => t.FullName)
-                .Select(t => new { t.Id, t.FullName, t.UnitNumber })
+            // Tenant user options
+            var tenantUsers = await _context.Users
+                .Include(u => u.Apartment)
+                .Where(u => u.Role == UserRoles.Tenant)
+                .OrderBy(u => u.Username)
+                .Select(u => new { u.Id, u.Username, UnitNumber = u.Apartment != null ? u.Apartment.UnitNumber : "Unassigned" })
                 .ToListAsync();
 
-            TenantOptions = tenants.Select(t => new SelectListItem
+            TenantOptions = tenantUsers.Select(u => new SelectListItem
             {
-                Value = t.Id.ToString(),
-                Text = $"{t.FullName} - {t.UnitNumber}",
-                Selected = SelectedTenantId == t.Id
+                Value = u.Id.ToString(),
+                Text = $"{u.Username} - {u.UnitNumber}",
+                Selected = SelectedTenantUserId == u.Id
             }).ToList();
 
-            TenantOptions.Insert(0, new SelectListItem("All Tenants", "", !SelectedTenantId.HasValue));
+            TenantOptions.Insert(0, new SelectListItem("All Tenants", "", !SelectedTenantUserId.HasValue));
 
             // Status options
             StatusOptions = new List<SelectListItem>

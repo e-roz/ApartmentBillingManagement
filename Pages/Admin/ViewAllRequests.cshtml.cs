@@ -19,7 +19,7 @@ namespace Apartment.Pages.Admin
             _context = context;
         }
 
-        public IList<Request> Requests { get; set; }
+        public IList<Request> Requests { get; set; } = new List<Request>();
 
         public async Task OnGetAsync()
         {

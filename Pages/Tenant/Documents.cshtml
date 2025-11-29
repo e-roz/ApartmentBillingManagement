@@ -27,12 +27,22 @@
                                 <small class="text-muted">Your personalized lease document</small>
                             </div>
                         </div>
-                        @if (Model.TenantInfo != null)
+                        @if (Model.UserInfo != null)
                         {
                             <p class="text-muted">
-                                <strong>Unit:</strong> @(Model.TenantInfo.UnitNumber ?? "Not Assigned")<br />
-                                <strong>Lease Period:</strong> @Model.TenantInfo.LeaseStartDate.ToString("MM/dd/yyyy") - @Model.TenantInfo.LeaseEndDate.ToString("MM/dd/yyyy")<br />
-                                <strong>Monthly Rent:</strong> @Model.TenantInfo.MonthlyRent.ToString("C", pesoCulture)
+                                <strong>Unit:</strong> @(Model.UserInfo.Apartment?.UnitNumber ?? "Not Assigned")<br />
+                                @{
+                                    if (Model.UserInfo.LeaseStart.HasValue && Model.UserInfo.LeaseEnd.HasValue)
+                                    {
+                                        var leaseStart = Model.UserInfo.LeaseStart.Value.ToString("MM/dd/yyyy");
+                                        var leaseEnd = Model.UserInfo.LeaseEnd.Value.ToString("MM/dd/yyyy");
+                                        <text><strong>Lease Period:</strong> @leaseStart - @leaseEnd<br /></text>
+                                    }
+                                    if (Model.UserInfo.Apartment != null)
+                                    {
+                                        <text><strong>Monthly Rent:</strong> @Model.UserInfo.Apartment.MonthlyRent.ToString("C", pesoCulture)</text>
+                                    }
+                                }
                             </p>
                         }
                         <button class="btn btn-primary" onclick="alert('In production, this would open or download your lease agreement PDF.')">

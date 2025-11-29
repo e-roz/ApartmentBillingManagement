@@ -10,7 +10,7 @@ using System.Security.Claims;
 
 namespace Apartment.Pages.Tenant
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Tenant")]
     public class ProfileModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -26,7 +26,6 @@ namespace Apartment.Pages.Tenant
         [BindProperty]
         public PasswordChangeModel PasswordInput { get; set; } = new();
 
-        public Model.Tenant? TenantInfo { get; set; }
         public Model.User? UserInfo { get; set; }
 
         public class ProfileInputModel
@@ -69,20 +68,14 @@ namespace Apartment.Pages.Tenant
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Tenant)
+                    .Include(u => u.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
-                if (user?.Tenant != null)
+                if (user != null)
                 {
-                    if (!string.IsNullOrWhiteSpace(Input.PhoneNumber))
-                    {
-                        user.Tenant.PrimaryPhone = Input.PhoneNumber;
-                    }
-
                     if (!string.IsNullOrWhiteSpace(Input.Email))
                     {
                         user.Email = Input.Email;
-                        user.Tenant.PrimaryEmail = Input.Email;
                     }
 
                     user.UpdatedAt = DateTime.UtcNow;
@@ -142,19 +135,13 @@ namespace Apartment.Pages.Tenant
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Tenant)
+                    .Include(u => u.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user != null)
                 {
                     UserInfo = user;
-                    TenantInfo = user.Tenant;
-
-                    if (TenantInfo != null)
-                    {
-                        Input.PhoneNumber = TenantInfo.PrimaryPhone;
-                        Input.Email = user.Email;
-                    }
+                    Input.Email = user.Email;
                 }
             }
         }

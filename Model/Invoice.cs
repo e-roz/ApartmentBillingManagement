@@ -12,10 +12,6 @@ namespace Apartment.Model
         [Required]
         public int TenantUserId { get; set; }
 
-        // Obsolete: Kept for migration compatibility - remove after final cleanup
-        [Obsolete("Use TenantUserId instead - kept for migration")]
-        public int TenantId { get; set; }
-
         public int ApartmentId { get; set; }
 
         // Link to the Bill that generated this invoice
@@ -55,11 +51,6 @@ namespace Apartment.Model
 
         [ForeignKey("TenantUserId")]
         public User? TenantUser { get; set; }
-
-        // Obsolete: Kept for migration compatibility
-        [Obsolete("Use TenantUser instead - kept for migration")]
-        [ForeignKey("TenantId")]
-        public Tenant? Tenant { get; set; }
 
         [ForeignKey("ApartmentId")]
         public ApartmentModel? Apartment { get; set; }

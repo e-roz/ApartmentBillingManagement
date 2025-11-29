@@ -96,21 +96,6 @@
                                 <input type="email" asp-for="NewUser.Email" class="form-control" />
                                 <span asp-validation-for="NewUser.Email" class="text-danger"></span>
                             </div>
-                            <div class="col-md-4">
-                                <label asp-for="NewUser.Password" class="form-label">Password</label>
-                                <input type="password" asp-for="NewUser.Password" class="form-control" />
-                                <span asp-validation-for="NewUser.Password" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="SelectedRole" class="form-label">Role</label>
-                                <select asp-for="SelectedRole" class="form-select">
-                                    @foreach (var roleName in Enum.GetNames(typeof(UserRoles)))
-                                    {
-                                        <option value="@roleName">@roleName</option>
-                                    }
-                                </select>
-                                <span asp-validation-for="SelectedRole" class="text-danger"></span>
-                            </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-success">
                                     <i class="bi bi-plus-circle me-1"></i>Add User
@@ -187,7 +172,7 @@
                                                     {
                                                         UserRoles.Admin => "bg-danger",
                                                         // Manager role removed
-                                                        UserRoles.User => "bg-info",
+                                                        UserRoles.Tenant => "bg-info",
                                                         _ => "bg-secondary"
                                                     };
                                                 }
@@ -207,7 +192,7 @@
                                                 <div class="btn-group" role="group">
                                                     @if (user.Role != UserRoles.Admin)
                                                     {
-                                                        @if (user.Role == UserRoles.User)
+                                                        @if (user.Role == UserRoles.Tenant)
                                                         {
                                                             <form method="post" asp-page-handler="UpdateRole" class="d-inline" id="promoteForm_@user.Id">
                                                                 <input type="hidden" name="userId" value="@user.Id" />
@@ -286,7 +271,7 @@
             <div class="card border-0 bg-info text-white">
                 <div class="card-body text-center">
                     <i class="bi bi-person display-6"></i>
-                    <h5 class="mt-2">@Model.Users.Count(u => u.Role == UserRoles.User)</h5>
+                    <h5 class="mt-2">@Model.Users.Count(u => u.Role == UserRoles.Tenant)</h5>
                     <small>Regular Users</small>
                 </div>
             </div>

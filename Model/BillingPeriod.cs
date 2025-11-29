@@ -10,12 +10,12 @@ namespace Apartment.Model
         // format: yyyy-mm (e.g., 2023-09)
         [Required]
         [StringLength(7)]
-        public string PeriodKey { get; set; }
+        public string PeriodKey { get; set; } = string.Empty;
 
 
         [Required]
         [StringLength(50)]
-        public string MonthName { get; set; }
+        public string MonthName { get; set; } = string.Empty;
 
         [Required]
         public int Year { get; set; }

@@ -21,8 +21,8 @@ namespace Apartment.Model
         [StringLength(255)]
         public string HasedPassword { get; set; } = string.Empty;
 
-        // Uses the UserRole enum. Defaults to the lowest level (User)
-        public UserRoles Role { get; set; } = UserRoles.User;
+        // Uses the UserRole enum. Defaults to Tenant
+        public UserRoles Role { get; set; } = UserRoles.Tenant;
 
         [Required]
         public string Email { get; set; } = string.Empty;
@@ -38,21 +38,22 @@ namespace Apartment.Model
 
         public DateTime? LeaseEnd { get; set; }
 
+        [StringLength(10)]
+        public string? UnitNumber { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal? MonthlyRent { get; set; }
+
         [StringLength(32)]
-        public string? LeaseStatus { get; set; }
+        public string? Status { get; set; }
 
         // Navigation properties
         [ForeignKey(nameof(ApartmentId))]
         public ApartmentModel? Apartment { get; set; }
 
-        // Obsolete: Kept for migration compatibility - remove after final cleanup
-        [Obsolete("Kept for migration - remove later")]
-        public int? TenantID { get; set; }
+        public ICollection<Bill>? Bills { get; set; } // Added for User-Bills relationship
 
-        [Obsolete("Kept for migration - remove later")]
-        [ForeignKey(nameof(TenantID))]
-        public Tenant? Tenant { get; set; }
-
+        public bool MustChangePassword { get; set; } = false;
     }
 
 }

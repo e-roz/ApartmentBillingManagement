@@ -29,16 +29,16 @@ namespace Apartment.Pages.Admin
         [BindProperty(SupportsGet = true)]
         public int Id { get; set; } // Request ID from URL
 
-        public Request TenantRequest { get; set; }
-        public IList<Message> Messages { get; set; }
+        public Request? TenantRequest { get; set; }
+        public IList<Message> Messages { get; set; } = new List<Message>();
 
         [BindProperty]
-        public string ReplyContent { get; set; }
+        public string ReplyContent { get; set; } = string.Empty;
 
         [TempData]
-        public string SuccessMessage { get; set; }
+        public string? SuccessMessage { get; set; }
         [TempData]
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -89,8 +89,18 @@ namespace Apartment.Pages.Admin
                 return Page();
             }
 
-            var managerUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var managerUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(managerUserIdStr, out var managerUserId))
+            {
+                ErrorMessage = "Could not identify the administrator performing the action.";
+                return RedirectToPage();
+            }
 
+            if (!requestToDelete.SubmittedByUserId.HasValue)
+            {
+                ErrorMessage = "The request does not have a valid submitter.";
+                return RedirectToPage();
+            }
             // 1. Create the new message for the tenant, but do not associate it with the request
             var newMessage = new Message
             {
@@ -125,7 +135,7 @@ namespace Apartment.Pages.Admin
                 await _auditService.LogAsync(
                     Enums.AuditActionType.CloseRequest,
                     managerUserId,
-                    $"Manager replied to and closed request '{requestToDelete.Title}' from user {requestToDelete.SubmittedByUser.Username}.",
+                    $"Manager replied to and closed request '{requestToDelete.Title}' from user {requestToDelete.SubmittedByUser?.Username ?? "Unknown"}.",
                     requestToDelete.Id,
                     nameof(Request)
                 );

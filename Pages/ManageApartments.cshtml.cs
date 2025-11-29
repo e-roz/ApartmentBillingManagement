@@ -25,14 +25,14 @@ namespace Apartment.Pages
         public List<ApartmentList> Apartments { get; set; } = new List<ApartmentList>();
 
         //hold the list of available tenants for the dropdown
-        public SelectList AvailableTenants { get; set; }
+        public SelectList AvailableTenants { get; set; } = new SelectList(new List<SelectListItem>());
 
 
         [TempData]
-        public string SuccessMessage { get; set; }
+        public string? SuccessMessage { get; set; }
 
         [TempData]
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
 
         public ManageApartmentsModel(ApplicationDbContext context)
         {
@@ -45,7 +45,7 @@ namespace Apartment.Pages
         {
             // fetch all apartments, including their tenants if available
             var apartmentEntities = await dbData.Apartments
-                .Include(a => a.CurrentTenant) // CurrentTenant is now a User
+                .Include(a => a.Tenant) // Tenant is now a User
                 .OrderBy(a => a.UnitNumber)
                 .ToListAsync();
 
@@ -58,8 +58,8 @@ namespace Apartment.Pages
                 MonthlyRent = a.MonthlyRent,
                 StatusDisplay = a.IsOccupied ? "Occupied" : "Vacant",
                 //display the tenant name or N/A if no tenant assigned
-                TenantName = a.CurrentTenant != null ? a.CurrentTenant.Username : "N/A",
-                TenantId = a.CurrentTenant != null ? a.CurrentTenant.Id : (int?)null
+                TenantName = a.Tenant != null ? a.Tenant.Username : "N/A",
+                TenantId = a.Tenant != null ? a.Tenant.Id : (int?)null
 
             }).ToList();
 
@@ -72,7 +72,7 @@ namespace Apartment.Pages
         {
             // Fetch users (tenants) who are not currently assigned to any apartment
             var unassignedUsers = await dbData.Users
-                .Where(u => u.Role == UserRoles.User && u.ApartmentId == null) // Only User role, not assigned to apartment
+                .Where(u => u.Role == UserRoles.Tenant && u.ApartmentId == null) // Only Tenant role, not assigned to apartment
                 .OrderBy(u => u.Username)
                 .ToListAsync();
 

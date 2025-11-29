@@ -17,6 +17,7 @@ namespace Apartment.Pages.Admin
     {
         private readonly ApplicationDbContext dbData;
         private readonly IAuditService _auditService;
+        private readonly IEmailService _emailService;
 
                 public List<UserList> Users { get; set; } = new List<UserList>();
 
@@ -29,11 +30,7 @@ namespace Apartment.Pages.Admin
         
 
                 [BindProperty]
-
-                public RegisterUser NewUser { get; set; } = new RegisterUser();
-
-        [BindProperty]
-        public string SelectedRole { get; set; } = UserRoles.User.ToString();
+        public RegisterUser NewUser { get; set; } = new RegisterUser();
 
         [TempData]
         public string? SuccessMessage { get; set; }
@@ -41,10 +38,19 @@ namespace Apartment.Pages.Admin
         [TempData]
         public string? ErrorMessage { get; set; }
 
-        public ManageUsersModel(ApplicationDbContext dbData, IAuditService auditService)
+        public ManageUsersModel(ApplicationDbContext dbData, IAuditService auditService, IEmailService emailService)
         {
             this.dbData = dbData;
             _auditService = auditService;
+            _emailService = emailService;
+        }
+
+        private string GenerateTemporaryPassword()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, 12)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
         }
         //Fetches and filters the list of users 
         public async Task OnGetAsync()
@@ -96,46 +102,40 @@ namespace Apartment.Pages.Admin
 
         public async Task<IActionResult> OnPostAddUserAsync()
         {
+            // Since we are auto-generating the password, we can remove the password validation from the model state.
+            ModelState.Remove("NewUser.Password");
+            ModelState.Remove("NewUser.ConfirmPassword");
+
             if (!ModelState.IsValid)
             {
-                ErrorMessage = "Validation failed. Please check your input.";
+                ErrorMessage = "Validation failed. Please check your input for username and email.";
                 await OnGetAsync(); // Re-populate the list of users
                 return Page();
             }
 
-            // Check if username or email already exists
             if (await dbData.Users.AnyAsync(u => u.Username == NewUser.Username))
             {
-                ModelState.AddModelError("NewUser.Username", "Username already taken.");
                 ErrorMessage = "Validation failed: Username already taken.";
                 await OnGetAsync();
                 return Page();
             }
             if (await dbData.Users.AnyAsync(u => u.Email == NewUser.Email))
             {
-                ModelState.AddModelError("NewUser.Email", "Email already registered.");
                 ErrorMessage = "Validation failed: Email already registered.";
                 await OnGetAsync();
                 return Page();
             }
 
-            // Hash password
-            var hashedPassword = PasswordHasher.HashPassword(NewUser.Password);
+            var temporaryPassword = GenerateTemporaryPassword();
+            var hashedPassword = PasswordHasher.HashPassword(temporaryPassword);
 
-            // Determine the role
-            if (!Enum.TryParse(SelectedRole, true, out UserRoles roleToAssign))
-            {
-                roleToAssign = UserRoles.User; // Default to User if parsing fails
-                ErrorMessage = "Invalid role selected. Defaulting to User.";
-            }
-
-            // Create new user
             var newUser = new User
             {
                 Username = NewUser.Username,
                 Email = NewUser.Email,
-                HasedPassword = hashedPassword, // Corrected property name
-                Role = roleToAssign,
+                HasedPassword = hashedPassword,
+                Role = UserRoles.Tenant,
+                MustChangePassword = true, // Force password change on first login
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -143,22 +143,35 @@ namespace Apartment.Pages.Admin
             dbData.Users.Add(newUser);
             await dbData.SaveChangesAsync();
 
-            // Log audit action
-            var adminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            int adminId = -1; 
-            if (string.IsNullOrEmpty(adminIdString) || !int.TryParse(adminIdString, out adminId))
-            {
-                adminId = -1; // Or handle this error more gracefully
-            }
+            // Log the user creation
+            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             await _auditService.LogAsync(
                 action: AuditActionType.CreateUser,
                 userId: adminId,
-                details: $"Admin added new user: {newUser.Username} (ID: {newUser.Id}, Role: {newUser.Role})",
+                details: $"Admin created new user: {newUser.Username} (ID: {newUser.Id})",
                 entityId: newUser.Id,
                 entityType: "User"
             );
 
-            SuccessMessage = $"User {newUser.Username} created successfully with role {newUser.Role}.";
+            // Send welcome email
+            try
+            {
+                await _emailService.SendNewAccountEmailAsync(newUser.Email, newUser.Username, temporaryPassword);
+                SuccessMessage = $"User {newUser.Username} created successfully. An email with a temporary password has been sent.";
+            }
+            catch (Exception ex)
+            {
+                // Log the email error but don't block the user creation
+                await _auditService.LogAsync(
+                    action: AuditActionType.SystemError,
+                    userId: adminId,
+                    details: $"Failed to send welcome email to {newUser.Email}. Error: {ex.ToString()}",
+                    entityId: newUser.Id,
+                    entityType: "Email"
+                );
+                ErrorMessage = $"User {newUser.Username} was created, but the welcome email could not be sent. Please check the email configuration and logs.";
+            }
+
             return RedirectToPage();
         }
 
@@ -222,7 +235,7 @@ namespace Apartment.Pages.Admin
         public async Task<IActionResult> OnPostDeleteUserAsync(int userId)
         {
             var userToDelete = await dbData.Users
-                .Include(u => u.Tenant)
+                .Include(u => u.Apartment)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (userToDelete == null)
@@ -240,13 +253,13 @@ namespace Apartment.Pages.Admin
             }
 
             // Check for dependencies before deletion
-            if (userToDelete.TenantID.HasValue)
+            if (userToDelete.ApartmentId.HasValue)
             {
-                var tenantId = userToDelete.TenantID.Value;
+                var tenantId = userToDelete.Id;
 
                 // Check if tenant has unpaid bills (calculate from invoices, not Bill.AmountPaid)
                 var tenantBills = await dbData.Bills
-                    .Where(b => b.TenantId == tenantId)
+                    .Where(b => b.TenantUserId == tenantId)
                     .Select(b => b.Id)
                     .ToListAsync();
 
@@ -264,7 +277,7 @@ namespace Apartment.Pages.Admin
                         .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
 
                     var billsWithAmounts = await dbData.Bills
-                        .Where(b => b.TenantId == tenantId)
+                        .Where(b => b.TenantUserId == tenantId)
                         .Select(b => new { b.Id, b.AmountDue })
                         .ToListAsync();
 

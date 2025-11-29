@@ -13,7 +13,7 @@ namespace Apartment.Model
         [Required]
         [StringLength(10)]
         [Display(Name = "Unit Number")]
-        public string UnitNumber { get; set; }
+        public string UnitNumber { get; set; } = string.Empty;
 
         [Required]
         [Column(TypeName = "decimal(18, 2)")]
@@ -24,11 +24,10 @@ namespace Apartment.Model
         public bool IsOccupied { get; set; }
 
         // Foreign Key to the User (Tenant) who occupies this apartment
-        // Note: This should reference Users.Id, but keeping TenantId name for now
-        // TODO: Update FK to point to Users table in future migration
         public int? TenantId { get; set; }
 
-        public User? CurrentTenant { get; set; }
+        [ForeignKey(nameof(TenantId))]
+        public User? Tenant { get; set; }
 
         public ICollection<Bill> Bills { get; set; } = new List<Bill>();
     }

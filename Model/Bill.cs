@@ -23,7 +23,7 @@ namespace Apartment.Model
 
         //  Link this bill to the user/tenant responsible for payment
         [Required]
-        public int TenantId { get; set; }
+        public int TenantUserId { get; set; }
 
         // 
         [ForeignKey("ApartmentId")]
@@ -32,8 +32,8 @@ namespace Apartment.Model
         [ForeignKey("BillingPeriodId")]
         public BillingPeriod BillingPeriod { get; set; } = null!;
 
-        [ForeignKey("TenantId")]
-        public Tenant? Tenant { get; set; }
+        [ForeignKey("TenantUserId")]
+        public User? TenantUser { get; set; }
 
 
 

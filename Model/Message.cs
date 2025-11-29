@@ -10,19 +10,19 @@ namespace Apartment.Model
         public int Id { get; set; }
 
         [Required]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
 
         [Required]
         public int SenderUserId { get; set; }
 
         [ForeignKey("SenderUserId")]
-        public virtual User Sender { get; set; }
+        public virtual User? Sender { get; set; }
 
         [Required]
         public int ReceiverUserId { get; set; }
 
         [ForeignKey("ReceiverUserId")]
-        public virtual User Receiver { get; set; }
+        public virtual User? Receiver { get; set; }
 
         public int? AssociatedRequestId { get; set; }
 

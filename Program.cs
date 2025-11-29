@@ -31,6 +31,10 @@ namespace Apartment
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAuditService, AuditService>();
 
+            // Register EmailSettings
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddScoped<IEmailService, EmailService>();
+
             // Add Cookie Authentication Service
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>

@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Apartment.Pages.Tenant
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Tenant")]
     public class SubmitRequestModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -22,7 +22,7 @@ namespace Apartment.Pages.Tenant
         [BindProperty]
         public RequestInputModel Input { get; set; } = new();
 
-        public Model.Tenant? TenantInfo { get; set; }
+        public Model.User? UserInfo { get; set; }
 
         public class RequestInputModel
         {
@@ -45,12 +45,12 @@ namespace Apartment.Pages.Tenant
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Tenant)
+                    .Include(u => u.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
-                if (user?.Tenant != null)
+                if (user != null)
                 {
-                    TenantInfo = user.Tenant;
+                    UserInfo = user;
                 }
             }
         }
@@ -72,12 +72,12 @@ namespace Apartment.Pages.Tenant
             }
 
             var user = await _context.Users
-                .Include(u => u.Tenant)
+                .Include(u => u.Apartment)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user?.Tenant == null)
+            if (user == null)
             {
-                ModelState.AddModelError("", "No tenant profile found for the current user.");
+                ModelState.AddModelError("", "User account not found.");
                 await OnGetAsync();
                 return Page();
             }
@@ -91,7 +91,7 @@ namespace Apartment.Pages.Tenant
                 Status = Enums.RequestStatus.Submitted,
                 DateSubmitted = DateTime.UtcNow,
                 SubmittedByUserId = user.Id,
-                ApartmentId = user.Tenant.ApartmentId
+                ApartmentId = user.ApartmentId
             };
 
             try

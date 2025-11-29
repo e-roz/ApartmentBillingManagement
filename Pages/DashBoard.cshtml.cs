@@ -5,7 +5,7 @@ using System.Security.Claims;
 
 namespace Apartment.Pages
 {
-    [Authorize(Roles = "Manager,User")]
+    [Authorize(Roles = "Admin,Tenant")]
     public class DashboardModel : PageModel
     {
         public string Username { get; set; } = string.Empty;

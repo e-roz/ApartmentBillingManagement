@@ -27,7 +27,7 @@ namespace Apartment.Services
             var billsQuery = _context.Bills
                 .AsNoTracking()
                 .Include(b => b.BillingPeriod)
-                .Include(b => b.Tenant)
+                .Include(b => b.TenantUser)
                 .Include(b => b.Apartment)
                 .AsQueryable();
 
@@ -52,8 +52,8 @@ namespace Apartment.Services
                     b.BillingPeriod.MonthName,
                     b.BillingPeriod.Year,
                     b.Id,
-                    TenantName = b.Tenant.FullName ?? $"Tenant #{b.TenantId}",
-                    b.TenantId,
+                    TenantName = b.TenantUser != null ? b.TenantUser.Username : $"User #{b.TenantUserId}",
+                    TenantUserId = b.TenantUserId,
                     UnitNumber = b.Apartment.UnitNumber ?? $"Unit #{b.ApartmentId}"
                 })
                 .ToListAsync(cancellationToken);
@@ -113,10 +113,10 @@ namespace Apartment.Services
 
             var overdueTenants = bills
                 .Where(b => b.AmountPaid < b.AmountDue && b.DueDate < today)
-                .GroupBy(b => new { b.TenantId, b.TenantName, b.UnitNumber })
+                .GroupBy(b => new { b.TenantUserId, b.TenantName, b.UnitNumber })
                 .Select(g => new OverdueTenant
                 {
-                    TenantId = g.Key.TenantId,
+                    TenantId = g.Key.TenantUserId,
                     TenantName = g.Key.TenantName,
                     UnitNumber = g.Key.UnitNumber,
                     OutstandingAmount = g.Sum(x => x.AmountDue - x.AmountPaid),

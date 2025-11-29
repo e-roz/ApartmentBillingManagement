@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Apartment.Pages.Tenant
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Tenant")]
     public class MessagesModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -21,14 +21,14 @@ namespace Apartment.Pages.Tenant
             _context = context;
         }
 
-        public Model.Tenant? TenantInfo { get; set; }
+        public Model.User? UserInfo { get; set; }
 
         public IList<Model.Message> Messages { get; set; } = new List<Model.Message>();
 
         [TempData]
-        public string SuccessMessage { get; set; }
+        public string? SuccessMessage { get; set; }
         [TempData]
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
         public int CurrentUserId { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
@@ -41,16 +41,15 @@ namespace Apartment.Pages.Tenant
             CurrentUserId = userId; // Set CurrentUserId
 
             var user = await _context.Users
-                .Include(u => u.Tenant)
+                .Include(u => u.Apartment)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user?.Tenant != null)
+            if (user != null)
             {
-                TenantInfo = user.Tenant;
+                UserInfo = user;
             } else {
-                // If a user is logged in but has no tenant profile, it's an inconsistent state.
-                // Log an error and prevent further access.
-                ErrorMessage = "Your user account is not linked to a tenant profile. Please contact support.";
+                // If a user is logged in but account not found, it's an inconsistent state.
+                ErrorMessage = "Your user account was not found. Please contact support.";
                 return RedirectToPage("/TenantDashboard"); // Redirect to a safe page
             }
 

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Apartment.Pages.Tenant
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Tenant")]
     public class ViewRequestsModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -24,7 +24,7 @@ namespace Apartment.Pages.Tenant
         public IList<Request> RequestList { get; set; } = new List<Request>();
 
         [TempData]
-        public string SuccessMessage { get; set; }
+        public string? SuccessMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {

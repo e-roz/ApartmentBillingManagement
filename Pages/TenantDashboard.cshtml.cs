@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Apartment.Pages
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Tenant")]
     public class TenantDashboardModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -19,7 +19,7 @@ namespace Apartment.Pages
         }
 
         public string Username { get; set; } = string.Empty;
-        public Model.Tenant? TenantInfo { get; set; }
+        public Model.User? UserInfo { get; set; }
         public decimal OutstandingBalance { get; set; }
         public int PendingBills { get; set; }
         public decimal TotalPaid { get; set; }
@@ -48,19 +48,18 @@ namespace Apartment.Pages
                     .CountAsync(m => m.ReceiverUserId == userId && !m.IsRead);
                 ViewData["UnreadMessagesCount"] = unreadMessagesCount;
 
-                // Find tenant linked to this user via User.TenantID
+                // Get user with apartment information
                 var user = await _context.Users
-                    .Include(u => u.Tenant)
-                    .ThenInclude(t => t!.Apartment)
+                    .Include(u => u.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
-                if (user?.Tenant != null)
+                if (user != null)
                 {
-                    TenantInfo = user.Tenant;
-                    // Get bills for this tenant
+                    UserInfo = user;
+                    // Get bills for this user
                     var bills = await _context.Bills
                         .Include(b => b.BillingPeriod)
-                        .Where(b => b.TenantId == TenantInfo.Id)
+                        .Where(b => b.TenantUserId == user.Id)
                         .OrderByDescending(b => b.DueDate)
                         .Take(10)
                         .ToListAsync();

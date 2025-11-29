@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Apartment.Pages.Tenant
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Tenant")]
     public class InvoiceDownloadModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -34,24 +34,22 @@ namespace Apartment.Pages.Tenant
             }
 
             var user = await _context.Users
-                .Include(u => u.Tenant)
+                .Include(u => u.Apartment)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user?.Tenant == null)
+            if (user == null)
             {
                 return NotFound();
             }
 
-            var tenantId = user.Tenant.Id;
-
             var invoice = await _context.Invoices
-                .Include(i => i.Tenant)
+                .Include(i => i.TenantUser)
                 .Include(i => i.Apartment)
-                .Include(i => i.Bill)
+                .Include(i => i.Bill!)
                     .ThenInclude(b => b.BillingPeriod)
-                .Include(i => i.Bill)
+                .Include(i => i.Bill!)
                     .ThenInclude(b => b.Apartment)
-                .FirstOrDefaultAsync(i => i.Id == invoiceId && i.TenantId == tenantId);
+                .FirstOrDefaultAsync(i => i.Id == invoiceId && i.TenantUserId == userId);
 
             if (invoice == null)
             {

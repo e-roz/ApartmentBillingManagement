@@ -96,6 +96,12 @@ namespace Apartment.Pages
                 authProperties
             );
 
+            // After signing in, check if the user must change their password
+            if (user.MustChangePassword)
+            {
+                return RedirectToPage("/ChangePassword");
+            }
+
             // Redirect users to their role-specific dashboards
             if (user.Role == UserRoles.Admin)
             {

@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace Apartment.Pages.Tenant
 {
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Tenant")]
     public class DocumentsModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -17,7 +17,7 @@ namespace Apartment.Pages.Tenant
             _context = context;
         }
 
-        public Model.Tenant? TenantInfo { get; set; }
+        public Model.User? UserInfo { get; set; }
 
         public async Task OnGetAsync()
         {
@@ -25,13 +25,12 @@ namespace Apartment.Pages.Tenant
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Tenant)
-                    .ThenInclude(t => t!.Apartment)
+                    .Include(u => u.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
-                if (user?.Tenant != null)
+                if (user != null)
                 {
-                    TenantInfo = user.Tenant;
+                    UserInfo = user;
                 }
             }
         }

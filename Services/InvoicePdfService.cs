@@ -62,10 +62,10 @@ namespace Apartment.Services
                 AddSectionHeader(document, "Tenant Information", sectionFont);
                 document.Add(CreateTwoColumnTable(new (string Label, string Value)[]
                 {
-                    ("Name", invoice.Tenant?.FullName ?? "Not available"),
+                    ("Name", invoice.TenantUser?.Username ?? "Not available"),
                     ("Address", ResolveTenantAddress(invoice)),
-                    ("Email", invoice.Tenant?.PrimaryEmail ?? "Not available"),
-                    ("Phone", invoice.Tenant?.PrimaryPhone ?? "Not available")
+                    ("Email", invoice.TenantUser?.Email ?? "Not available"),
+                    ("Phone", "Not available")
                 }, labelFont, valueFont));
 
                 AddSectionHeader(document, "Apartment Details", sectionFont);
@@ -84,13 +84,13 @@ namespace Apartment.Services
 
                 // Calculate overall remaining balance across all bills for this tenant
                 decimal overallRemainingBalance = 0m;
-                if (invoice.TenantId > 0)
+                if (invoice.TenantUserId > 0)
                 {
                     try
                     {
                         var allBills = await _context.Bills
                             .Include(b => b.BillingPeriod)
-                            .Where(b => b.TenantId == invoice.TenantId)
+                            .Where(b => b.TenantUserId == invoice.TenantUserId)
                             .ToListAsync();
 
                         var allBillIds = allBills.Select(b => b.Id).ToList();
@@ -117,7 +117,7 @@ namespace Apartment.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to calculate overall remaining balance for tenant {TenantId}", invoice.TenantId);
+                        _logger.LogWarning(ex, "Failed to calculate overall remaining balance for tenant user {TenantUserId}", invoice.TenantUserId);
                     }
                 }
 
@@ -191,7 +191,7 @@ namespace Apartment.Services
 
             var right = new PdfPTable(1) { WidthPercentage = 100 };
             AddKeyValueRow(right, "Status", invoice.Status.ToString(), labelFont, valueFont);
-            AddKeyValueRow(right, "Tenant", invoice.Tenant?.FullName ?? "Not available", labelFont, valueFont);
+            AddKeyValueRow(right, "Tenant", invoice.TenantUser?.Username ?? "Not available", labelFont, valueFont);
             AddKeyValueRow(right, "Bill Reference", ResolveBillReference(invoice), labelFont, valueFont);
 
             var container = new PdfPTable(2) { WidthPercentage = 100 };
@@ -240,14 +240,14 @@ namespace Apartment.Services
 
         private static string ResolveTenantAddress(Invoice invoice)
         {
-            if (!string.IsNullOrWhiteSpace(invoice.Tenant?.UnitNumber))
-            {
-                return $"Unit {invoice.Tenant.UnitNumber}";
-            }
-
             if (!string.IsNullOrWhiteSpace(invoice.Apartment?.UnitNumber))
             {
                 return $"Apartment {invoice.Apartment.UnitNumber}";
+            }
+
+            if (invoice.TenantUser?.Apartment != null && !string.IsNullOrWhiteSpace(invoice.TenantUser.Apartment.UnitNumber))
+            {
+                return $"Apartment {invoice.TenantUser.Apartment.UnitNumber}";
             }
 
             return "Not available";

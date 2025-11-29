@@ -41,14 +41,14 @@ namespace Apartment.Pages.Admin
         public List<ViewModels.ApartmentList> Apartments { get; set; } = new List<ViewModels.ApartmentList>();
 
         //hold the list of available tenants for the dropdown
-        public SelectList AvailableTenants { get; set; }
+        public SelectList AvailableTenants { get; set; } = new SelectList(new List<SelectListItem>());
 
 
         [TempData]
-        public string SuccessMessage { get; set; }
+        public string? SuccessMessage { get; set; }
 
         [TempData]
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
 
         public ManageApartmentsModel(ApplicationDbContext context, IAuditService auditService)
         {
@@ -78,7 +78,7 @@ namespace Apartment.Pages.Admin
         {
             // Get all apartments
             var apartmentQuery = dbData.Apartments
-                .Include(a => a.CurrentTenant) // CurrentTenant is now a User
+                .Include(a => a.Tenant) // Tenant is now a User
                 .AsQueryable();
 
             // search logic filter
@@ -87,8 +87,8 @@ namespace Apartment.Pages.Admin
                 string term = SearchTerm.Trim();
                 apartmentQuery = apartmentQuery.Where(a =>
                     a.UnitNumber.Contains(term) ||
-                    (a.CurrentTenant != null && a.CurrentTenant.Username.Contains(term)) ||
-                    (a.CurrentTenant != null && a.CurrentTenant.Email.Contains(term))
+                    (a.Tenant != null && a.Tenant.Username.Contains(term)) ||
+                    (a.Tenant != null && a.Tenant.Email.Contains(term))
                 );
             }
 
@@ -100,7 +100,7 @@ namespace Apartment.Pages.Admin
             //Map to ApartmentList for display and sync IsOccupied flag
             Apartments = apartmentEntities.Select(a =>
             {
-                bool isOccupied = a.CurrentTenant != null;
+                bool isOccupied = a.Tenant != null;
                 
                 // Sync IsOccupied flag with actual tenant status
                 if (a.IsOccupied != isOccupied)
@@ -115,8 +115,8 @@ namespace Apartment.Pages.Admin
                     UnitNumber = a.UnitNumber,
                     MonthlyRent = a.MonthlyRent,
                     StatusDisplay = isOccupied ? "Occupied" : "Vacant",
-                    TenantName = a.CurrentTenant != null ? (a.CurrentTenant.Username ?? a.CurrentTenant.Email) : "N/A",
-                    TenantId = a.CurrentTenant?.Id
+                    TenantName = a.Tenant != null ? (a.Tenant.Username ?? a.Tenant.Email) : "N/A",
+                    TenantId = a.Tenant?.Id
                 };
             }).ToList();
             
@@ -131,8 +131,8 @@ namespace Apartment.Pages.Admin
         {
             //Fetch users (tenants) who are not currently assigned to any apartment or have inactive lease
             var unassignedUsers = await dbData.Users
-                .Where(u => u.Role == UserRoles.User && 
-                           (u.ApartmentId == null || u.LeaseStatus != "Active"))
+                .Where(u => u.Role == UserRoles.Tenant && 
+                           (u.ApartmentId == null || u.Status != "Active"))
                 .OrderBy(u => u.Username)
                 .ToListAsync();
 
@@ -175,7 +175,12 @@ namespace Apartment.Pages.Admin
 
             dbData.Apartments.Add(ApartmentInput);
             
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out var userId))
+            {
+                ErrorMessage = "Could not identify the administrator performing the action.";
+                return RedirectToPage();
+            }
             var details = $"Created new apartment/unit: {ApartmentInput.UnitNumber}.";
             await _auditService.LogAsync(AuditActionType.CreateApartment, userId, details, ApartmentInput.Id, nameof(ApartmentModel));
             
@@ -211,7 +216,7 @@ namespace Apartment.Pages.Admin
 
             // Check if apartment is occupied by an active user (tenant)
             var activeUser = await dbData.Users
-                .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.LeaseStatus == "Active");
+                .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.Status == "Active");
 
             if (activeUser != null)
             {
@@ -231,7 +236,12 @@ namespace Apartment.Pages.Admin
                 var apartmentUnitNumber = apartmentToDelete.UnitNumber;
                 dbData.Apartments.Remove(apartmentToDelete);
                 
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdStr, out var userId))
+                {
+                    ErrorMessage = "Could not identify the administrator performing the action.";
+                    return RedirectToPage();
+                }
                 var details = $"Deleted apartment/unit: {apartmentUnitNumber}.";
                 await _auditService.LogAsync(AuditActionType.DeleteApartment, userId, details, ApartmentId, nameof(ApartmentModel));
                 
@@ -261,7 +271,7 @@ namespace Apartment.Pages.Admin
 
             // Check if the apartment is already occupied by a different active user
             var existingUser = await dbData.Users
-                .FirstOrDefaultAsync(u => u.ApartmentId == apartmentId && u.LeaseStatus == "Active" && u.Id != tenantId);
+                .FirstOrDefaultAsync(u => u.ApartmentId == apartmentId && u.Status == "Active" && u.Id != tenantId);
 
             if (existingUser != null)
             {
@@ -292,7 +302,7 @@ namespace Apartment.Pages.Admin
 
             // Find and unassign any active user (tenant) from this apartment
             var user = await dbData.Users
-                .FirstOrDefaultAsync(u => u.ApartmentId == id && u.LeaseStatus == "Active");
+                .FirstOrDefaultAsync(u => u.ApartmentId == id && u.Status == "Active");
 
             if (user != null)
             {
@@ -343,7 +353,7 @@ namespace Apartment.Pages.Admin
                 {
                     // Unassign any existing user from this apartment
                     var existingUser = await dbData.Users
-                        .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.LeaseStatus == "Active" && u.Id != TenantId.Value);
+                        .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.Status == "Active" && u.Id != TenantId.Value);
                     if (existingUser != null)
                     {
                         DetachUserFromApartment(existingUser);
@@ -362,7 +372,7 @@ namespace Apartment.Pages.Admin
             {
                 // Unassign any existing user
                 var existingUser = await dbData.Users
-                    .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.LeaseStatus == "Active");
+                    .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.Status == "Active");
                 if (existingUser != null)
                 {
                     DetachUserFromApartment(existingUser);

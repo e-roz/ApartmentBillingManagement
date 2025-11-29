@@ -34,7 +34,7 @@ namespace Apartment.Pages
         }
 
          
-        public async Task<IActionResult> OnPostAsync()
+        public IActionResult OnPost()
         {
             // Public registration disabled - only Admin can create users via Admin area
             return RedirectToPage("/AccessDenied");

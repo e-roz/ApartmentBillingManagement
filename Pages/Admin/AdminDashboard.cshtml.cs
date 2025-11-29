@@ -37,8 +37,8 @@ namespace Apartment.Pages.Admin
             UserRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown Role";
 
             // Fetch manager dashboard KPI data
-            ActiveTenants = await _context.Tenants
-                .Where(t => t.Status == LeaseStatus.Active)
+            ActiveTenants = await _context.Users
+                .Where(u => u.Role == UserRoles.Tenant && (u.Status == "Active" || u.Status == null))
                 .CountAsync();
 
             OccupiedUnits = await _context.Apartments

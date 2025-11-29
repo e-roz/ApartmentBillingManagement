@@ -31,8 +31,8 @@ namespace Apartment.Pages.Admin
             Username = User.Identity?.Name ?? "Unknown User";
 
             // Fetch manager-specific stats
-            ActiveTenants = await _context.Tenants
-                .Where(t => t.Status == LeaseStatus.Active)
+            ActiveTenants = await _context.Users
+                .Where(u => u.Role == UserRoles.Tenant && (u.Status == "Active" || u.Status == null))
                 .CountAsync();
 
             OccupiedUnits = await _context.Apartments

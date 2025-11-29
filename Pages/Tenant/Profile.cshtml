@@ -82,21 +82,27 @@
             </div>
         </div>
 
-        @if (Model.TenantInfo != null)
+        @if (Model.UserInfo != null)
         {
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title mb-3">Account Information</h5>
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Name:</strong> @Model.TenantInfo.FullName</p>
-                            <p><strong>Unit Number:</strong> @(Model.TenantInfo.UnitNumber ?? "Not Assigned")</p>
-                            <p><strong>Lease Status:</strong> <span class="badge bg-info">@Model.TenantInfo.Status</span></p>
+                            <p><strong>Name:</strong> @Model.UserInfo.Username</p>
+                            <p><strong>Unit Number:</strong> @(Model.UserInfo.UnitNumber ?? "Not Assigned")</p>
+                            <p><strong>Status:</strong> <span class="badge bg-info">@(Model.UserInfo.Status ?? "Not Set")</span></p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Lease Start:</strong> @Model.TenantInfo.LeaseStartDate.ToString("MM/dd/yyyy")</p>
-                            <p><strong>Lease End:</strong> @Model.TenantInfo.LeaseEndDate.ToString("MM/dd/yyyy")</p>
-                            <p><strong>Monthly Rent:</strong> @Model.TenantInfo.MonthlyRent.ToString("C", pesoCulture)</p>
+                            @if (Model.UserInfo.LeaseStart.HasValue)
+                            {
+                                <p><strong>Lease Start:</strong> @Model.UserInfo.LeaseStart.Value.ToString("MM/dd/yyyy")</p>
+                            }
+                            @if (Model.UserInfo.LeaseEnd.HasValue)
+                            {
+                                <p><strong>Lease End:</strong> @Model.UserInfo.LeaseEnd.Value.ToString("MM/dd/yyyy")</p>
+                            }
+                            <p><strong>Monthly Rent:</strong> @(Model.UserInfo.MonthlyRent?.ToString("C", pesoCulture) ?? "N/A")</p>
                         </div>
                     </div>
                 </div>

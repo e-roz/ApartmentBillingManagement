@@ -28,6 +28,10 @@ namespace Apartment.Enums
         AssignTenant,
         UpdateTenant,
         CreateTenant,
-        DeleteTenant
+        DeleteTenant,
+
+        // System Actions
+        SystemAction,
+        SystemError
     }
 }

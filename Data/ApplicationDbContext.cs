@@ -14,19 +14,12 @@ namespace Apartment.Data
         // User Table
         public DbSet<User> Users { get; set; }
 
-        // Tenant Table - Obsolete: Kept for migration compatibility
-        [Obsolete("Kept for migration - remove later")]
-        public DbSet<Tenant> Tenants { get; set; }
-
         // Core Application Tables. (Apartment, Bill, Bill Period)
         public DbSet<ApartmentModel> Apartments { get; set; } = null!;
         public DbSet<Bill> Bills { get; set; } = null!;
         public DbSet<BillingPeriod> BillingPeriods { get; set; } = null!;
         public DbSet<Invoice> Invoices { get; set; } = null!;
         public DbSet<PaymentReceipt> PaymentReceipts { get; set; } = null!;
-
-        // Tenant Link Table
-        public DbSet<TenantLink> TenantLinks { get; set; }
 
         // Request Table
         public DbSet<Request> Requests { get; set; }
@@ -45,11 +38,6 @@ namespace Apartment.Data
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)
                 .HasConversion<int>();
-
-            // Configure User tenant properties
-            modelBuilder.Entity<User>()
-                .Property(u => u.LeaseStatus)
-                .HasMaxLength(32);
 
             // Configure User-Apartment relationship
             modelBuilder.Entity<User>()
@@ -82,17 +70,19 @@ namespace Apartment.Data
                 .HasForeignKey(b => b.ApartmentId)
                 .OnDelete(DeleteBehavior.Cascade); // prevents deleting an apartment if it has associated bills
 
-            // Configure Tenant-Bill relationship - This is the current and correct relationship.
-            modelBuilder.Entity<Tenant>()
-                .HasMany(t => t.Bills)
-                .WithOne(b => b.Tenant)
-                .HasForeignKey(b => b.TenantId)
+            // Configure User-Bill relationship
+            modelBuilder.Entity<User>()
+                .HasMany<Bill>(u => u.Bills)
+                .WithOne(b => b.TenantUser)
+                .HasForeignKey(b => b.TenantUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Tenant>()
-                .Property(t => t.Status)
-                .HasConversion<string>()
-                .HasMaxLength(32);
+            // Configure ApartmentModel-User relationship
+            modelBuilder.Entity<ApartmentModel>()
+                .HasOne(a => a.Tenant)
+                .WithMany()
+                .HasForeignKey(a => a.TenantId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.Status)
@@ -121,21 +111,10 @@ namespace Apartment.Data
                 .HasForeignKey(m => m.SenderUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Message>()
-                .HasOne(m => m.Receiver)
-                .WithMany()
-                .HasForeignKey(m => m.ReceiverUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Configure TenantLink Id as auto-incrementing identity column
-            modelBuilder.Entity<TenantLink>()
-                .Property(tl => tl.Id)
-                .ValueGeneratedOnAdd();
-
             // Performance indexes for frequently queried columns
             modelBuilder.Entity<Bill>()
-                .HasIndex(b => b.TenantId)
-                .HasDatabaseName("IX_Bills_TenantId");
+                .HasIndex(b => b.TenantUserId)
+                .HasDatabaseName("IX_Bills_TenantUserId");
 
             modelBuilder.Entity<Bill>()
                 .HasIndex(b => b.BillingPeriodId)
@@ -150,8 +129,8 @@ namespace Apartment.Data
                 .HasDatabaseName("IX_Invoices_BillId");
 
             modelBuilder.Entity<Invoice>()
-                .HasIndex(i => i.TenantId)
-                .HasDatabaseName("IX_Invoices_TenantId");
+                .HasIndex(i => i.TenantUserId)
+                .HasDatabaseName("IX_Invoices_TenantUserId");
 
             modelBuilder.Entity<Invoice>()
                 .HasIndex(i => i.PaymentDate)
@@ -162,18 +141,10 @@ namespace Apartment.Data
                 .HasIndex(u => u.ApartmentId)
                 .HasDatabaseName("IX_Users_ApartmentId");
 
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.LeaseStatus)
-                .HasDatabaseName("IX_Users_LeaseStatus");
-
-            // Obsolete: Keep Tenant indexes for migration compatibility
-            modelBuilder.Entity<Tenant>()
-                .HasIndex(t => t.ApartmentId)
-                .HasDatabaseName("IX_Tenants_ApartmentId");
-
-            modelBuilder.Entity<Tenant>()
-                .HasIndex(t => t.Status)
-                .HasDatabaseName("IX_Tenants_Status");
+            // Index for ApartmentModel-User relationship
+            modelBuilder.Entity<ApartmentModel>()
+                .HasIndex(a => a.TenantId)
+                .HasDatabaseName("IX_Apartments_TenantId");
 
         }
 
