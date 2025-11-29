@@ -17,7 +17,7 @@ using System;
 namespace Apartment.Pages.Manager
 {
 
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin")]
     public class ManageApartmentsModel : PageModel
     {
         private readonly ApplicationDbContext dbData;
@@ -81,8 +81,7 @@ namespace Apartment.Pages.Manager
         {
             // Get all apartments
             var apartmentQuery = dbData.Apartments
-                .Include(a => a.CurrentTenant) // Eager load the current tenant
-                    .ThenInclude(t => t.UserAccount) // Eager load the user account for the tenant
+                .Include(a => a.CurrentTenant) // CurrentTenant is now a User
                 .AsQueryable();
 
             // search logic filter

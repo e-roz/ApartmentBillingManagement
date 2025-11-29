@@ -137,7 +137,7 @@
                                                     var roleClass = user.Role switch
                                                     {
                                                         UserRoles.Admin => "bg-danger",
-                                                        UserRoles.Manager => "bg-warning",
+                                                        // Manager role removed
                                                         UserRoles.User => "bg-info",
                                                         _ => "bg-secondary"
                                                     };
@@ -162,28 +162,16 @@
                                                         {
                                                             <form method="post" asp-page-handler="UpdateRole" class="d-inline" id="promoteForm_@user.Id">
                                                                 <input type="hidden" name="userId" value="@user.Id" />
-                                                                <input type="hidden" name="newRole" value="Manager" />
+                                                                <input type="hidden" name="newRole" value="Admin" />
                                                                 <button type="button" 
-                                                                        class="btn btn-warning btn-sm" 
-                                                                        title="Promote to Manager"
+                                                                        class="btn btn-danger btn-sm" 
+                                                                        title="Promote to Admin"
                                                                         onclick="confirmPromote('@user.Username', '@user.Id')">
                                                                     <i class="bi bi-arrow-up"></i>
                                                                 </button>
                                                             </form>
                                                         }
-                                                        else if (user.Role == UserRoles.Manager)
-                                                        {
-                                                            <form method="post" asp-page-handler="UpdateRole" class="d-inline" id="demoteForm_@user.Id">
-                                                                <input type="hidden" name="userId" value="@user.Id" />
-                                                                <input type="hidden" name="newRole" value="User" />
-                                                                <button type="button" 
-                                                                        class="btn btn-info btn-sm" 
-                                                                        title="Demote to User"
-                                                                        onclick="confirmDemote('@user.Username', '@user.Id')">
-                                                                    <i class="bi bi-arrow-down"></i>
-                                                                </button>
-                                                            </form>
-                                                        }
+                                                        // Manager role removed - no longer supported
 
                                                         <form method="post" asp-page-handler="DeleteUser" class="d-inline" id="deleteForm_@user.Id">
                                                             <input type="hidden" name="userId" value="@user.Id" />
@@ -239,7 +227,8 @@
             <div class="card border-0 bg-warning text-white">
                 <div class="card-body text-center">
                     <i class="bi bi-shield-check display-6"></i>
-                    <h5 class="mt-2">@Model.Users.Count(u => u.Role == UserRoles.Manager)</h5>
+                    @* Manager role removed *@
+                    <h5 class="mt-2">0</h5>
                     <small>Managers</small>
                 </div>
             </div>

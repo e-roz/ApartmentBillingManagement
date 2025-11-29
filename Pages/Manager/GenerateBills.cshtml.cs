@@ -17,7 +17,7 @@ using System;
 namespace Apartment.Pages.Manager
 {
 
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Admin")]
     public class GenerateBillsModel : PageModel
     {
         private readonly ApplicationDbContext dbData;

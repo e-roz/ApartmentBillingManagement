@@ -18,7 +18,7 @@ using System.Collections.Generic;
 
 namespace Apartment.Pages.Manager
 {
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Admin")]
     public class ManageTenantsModel : PageModel
     {
         private readonly ApplicationDbContext _context;

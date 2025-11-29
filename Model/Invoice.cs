@@ -8,6 +8,12 @@ namespace Apartment.Model
     {
         [Key]
         public int Id { get; set; }
+        
+        [Required]
+        public int TenantUserId { get; set; }
+
+        // Obsolete: Kept for migration compatibility - remove after final cleanup
+        [Obsolete("Use TenantUserId instead - kept for migration")]
         public int TenantId { get; set; }
 
         public int ApartmentId { get; set; }
@@ -47,6 +53,11 @@ namespace Apartment.Model
         [StringLength(100)]
         public string? ReferenceNumber { get; set; }
 
+        [ForeignKey("TenantUserId")]
+        public User? TenantUser { get; set; }
+
+        // Obsolete: Kept for migration compatibility
+        [Obsolete("Use TenantUser instead - kept for migration")]
         [ForeignKey("TenantId")]
         public Tenant? Tenant { get; set; }
 

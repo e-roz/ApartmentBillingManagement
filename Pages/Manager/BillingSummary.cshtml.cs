@@ -10,14 +10,14 @@ using System.IO;
 
 namespace Apartment.Pages.Manager
 {
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Admin")]
     public class BillingSummaryModel : PageModel
     {
         private readonly ApplicationDbContext _context;
-        private readonly ManagerReportingService _reportingService;
+        private readonly AdminReportingService _reportingService;
         private readonly ExcelExportService _excelExportService;
 
-        public BillingSummaryModel(ApplicationDbContext context, ManagerReportingService reportingService, ExcelExportService excelExportService)
+        public BillingSummaryModel(ApplicationDbContext context, AdminReportingService reportingService, ExcelExportService excelExportService)
         {
             _context = context;
             _reportingService = reportingService;

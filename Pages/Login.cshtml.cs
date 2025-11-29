@@ -101,10 +101,8 @@ namespace Apartment.Pages
             {
                 return RedirectToPage("/Admin/AdminDashboard");
             }
-            else if (user.Role == UserRoles.Manager)
-            {
-                return RedirectToPage("/Manager/ManagerDashboard");
-            }
+            // Manager role removed - all Manager users should be migrated to Admin
+            // else if (user.Role == UserRoles.Manager) - Obsolete
             else
             {
                 return RedirectToPage("/TenantDashboard");

@@ -31,10 +31,27 @@ namespace Apartment.Model
 
         public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        // Tenant properties merged from Tenants table
+        public int? ApartmentId { get; set; }
 
+        public DateTime? LeaseStart { get; set; }
 
+        public DateTime? LeaseEnd { get; set; }
+
+        [StringLength(32)]
+        public string? LeaseStatus { get; set; }
+
+        // Navigation properties
+        [ForeignKey(nameof(ApartmentId))]
+        public ApartmentModel? Apartment { get; set; }
+
+        public ICollection<Bill>? Bills { get; set; }
+
+        // Obsolete: Kept for migration compatibility - remove after final cleanup
+        [Obsolete("Kept for migration - remove later")]
         public int? TenantID { get; set; }
 
+        [Obsolete("Kept for migration - remove later")]
         [ForeignKey(nameof(TenantID))]
         public Tenant? Tenant { get; set; }
 

@@ -14,7 +14,8 @@ namespace Apartment.Data
         // User Table
         public DbSet<User> Users { get; set; }
 
-        // Tenant Table
+        // Tenant Table - Obsolete: Kept for migration compatibility
+        [Obsolete("Kept for migration - remove later")]
         public DbSet<Tenant> Tenants { get; set; }
 
         // Core Application Tables. (Apartment, Bill, Bill Period)
@@ -45,6 +46,25 @@ namespace Apartment.Data
                 .Property(u => u.Role)
                 .HasConversion<int>();
 
+            // Configure User tenant properties
+            modelBuilder.Entity<User>()
+                .Property(u => u.LeaseStatus)
+                .HasMaxLength(32);
+
+            // Configure User-Apartment relationship
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Apartment)
+                .WithMany()
+                .HasForeignKey(u => u.ApartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure User-Bills relationship
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.Bills)
+                .WithOne(b => b.TenantUser)
+                .HasForeignKey(b => b.TenantUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Configure the AuditActionType enum to be stored as a string
             modelBuilder.Entity<AuditLog>()
                 .Property(a => a.Action)
@@ -69,12 +89,13 @@ namespace Apartment.Data
                 .HasForeignKey(b => b.ApartmentId)
                 .OnDelete(DeleteBehavior.Cascade); // prevents deleting an apartment if it has associated bills
 
-            // Configure the one to many relationship between Tenant and Bill
+            // Obsolete: Tenant-Bill relationship - kept for migration compatibility
+            // New relationship is User-Bills via TenantUserId
             modelBuilder.Entity<Tenant>()
                 .HasMany(t => t.Bills)
                 .WithOne(b => b.Tenant)
                 .HasForeignKey(b => b.TenantId)
-                .OnDelete(DeleteBehavior.Restrict); // prevents deleting a tenant if they have associated bills
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Tenant>()
                 .Property(t => t.Status)
@@ -120,6 +141,12 @@ namespace Apartment.Data
                 .ValueGeneratedOnAdd();
 
             // Performance indexes for frequently queried columns
+            // New index for TenantUserId
+            modelBuilder.Entity<Bill>()
+                .HasIndex(b => b.TenantUserId)
+                .HasDatabaseName("IX_Bills_TenantUserId");
+
+            // Obsolete: Keep old index for migration compatibility
             modelBuilder.Entity<Bill>()
                 .HasIndex(b => b.TenantId)
                 .HasDatabaseName("IX_Bills_TenantId");
@@ -136,6 +163,12 @@ namespace Apartment.Data
                 .HasIndex(i => i.BillId)
                 .HasDatabaseName("IX_Invoices_BillId");
 
+            // New index for TenantUserId
+            modelBuilder.Entity<Invoice>()
+                .HasIndex(i => i.TenantUserId)
+                .HasDatabaseName("IX_Invoices_TenantUserId");
+
+            // Obsolete: Keep old index for migration compatibility
             modelBuilder.Entity<Invoice>()
                 .HasIndex(i => i.TenantId)
                 .HasDatabaseName("IX_Invoices_TenantId");
@@ -144,6 +177,16 @@ namespace Apartment.Data
                 .HasIndex(i => i.PaymentDate)
                 .HasDatabaseName("IX_Invoices_PaymentDate");
 
+            // Indexes for User tenant properties
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.ApartmentId)
+                .HasDatabaseName("IX_Users_ApartmentId");
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.LeaseStatus)
+                .HasDatabaseName("IX_Users_LeaseStatus");
+
+            // Obsolete: Keep Tenant indexes for migration compatibility
             modelBuilder.Entity<Tenant>()
                 .HasIndex(t => t.ApartmentId)
                 .HasDatabaseName("IX_Tenants_ApartmentId");

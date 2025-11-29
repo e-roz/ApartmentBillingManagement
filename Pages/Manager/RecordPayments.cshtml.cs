@@ -12,7 +12,7 @@ using System.Globalization;
 
 namespace Apartment.Pages.Manager
 {
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Admin")]
     public class RecordPaymentsModel : PageModel
     {
         private readonly ApplicationDbContext _context;

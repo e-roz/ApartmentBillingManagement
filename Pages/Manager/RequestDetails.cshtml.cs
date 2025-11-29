@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace Apartment.Pages.Manager
 {
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Admin")]
     public class RequestDetailsModel : PageModel
     {
         private readonly ApplicationDbContext _context;

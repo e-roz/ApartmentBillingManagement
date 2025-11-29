@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Apartment.Pages.Manager
 {
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Admin")]
     public class ViewAllRequestsModel : PageModel
     {
         private readonly ApplicationDbContext _context;

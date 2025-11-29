@@ -23,9 +23,9 @@ namespace Apartment
             // Register application services
             builder.Services.Configure<LogSnagOptions>(builder.Configuration.GetSection("LogSnag"));
             builder.Services.AddHttpClient<ILogSnagClient, LogSnagClient>();
-            builder.Services.AddScoped<ITenantLinkingService, TenantLinkingService>();
+            // TenantLinkingService removed - functionality merged into User model
             builder.Services.AddScoped<InvoicePdfService>();
-            builder.Services.AddScoped<ManagerReportingService>();
+            builder.Services.AddScoped<AdminReportingService>();
             builder.Services.AddScoped<ExcelExportService>();
             builder.Services.AddScoped<AuditLogPdfService>();
             builder.Services.AddHttpContextAccessor();

@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Apartment.Pages
 {
 
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin")]
     public class ManageApartmentsModel : PageModel
     {
         private readonly ApplicationDbContext dbData;
@@ -45,8 +45,7 @@ namespace Apartment.Pages
         {
             // fetch all apartments, including their tenants if available
             var apartmentEntities = await dbData.Apartments
-                .Include(a => a.CurrentTenant)
-                    .ThenInclude(t => t.UserAccount) // Eager load the UserAccount for the tenant
+                .Include(a => a.CurrentTenant) // CurrentTenant is now a User
                 .OrderBy(a => a.UnitNumber)
                 .ToListAsync();
 

@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Apartment.Pages.Manager
 {
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Admin")]
     public class ManagerDashboardModel : PageModel
     {
         private readonly ApplicationDbContext _context;

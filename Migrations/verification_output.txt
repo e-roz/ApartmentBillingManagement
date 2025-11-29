@@ -1,0 +1,94 @@
+Changed database context to 'apartmentDB'.
+========================================
+CRITICAL VERIFICATION CHECKS
+========================================
+ 
+1. Bills with NULL TenantUserId (MUST BE 0):
+NullCount  
+-----------
+          0
+
+(1 rows affected)
+2. Invoices with NULL TenantUserId (MUST BE 0):
+NullCount  
+-----------
+          0
+
+(1 rows affected)
+3. Requests with NULL SubmittedByUserId (informational):
+NullCount  
+-----------
+          0
+
+(1 rows affected)
+4. Bills with invalid TenantUserId (MUST BE 0):
+InvalidCount
+------------
+           0
+
+(1 rows affected)
+5. Invoices with invalid TenantUserId (MUST BE 0):
+InvalidCount
+------------
+           0
+
+(1 rows affected)
+ 
+========================================
+DATA INTEGRITY CHECKS
+========================================
+ 
+6. Users with tenant data populated:
+TotalUsers  UsersWithApartmentId UsersWithLeaseStart UsersWithLeaseEnd UsersWithLeaseStatus
+----------- -------------------- ------------------- ----------------- --------------------
+          3                    1                   1                 1                    1
+
+(1 rows affected)
+7. Tenant vs User comparison:
+TotalTenants UsersWithTenantData
+------------ -------------------
+           1                   1
+
+(1 rows affected)
+ 
+========================================
+SAMPLE VERIFICATION - 10 TENANTS
+========================================
+ 
+TenantId    TenantName                                                                                           TenantEmail                                                                                          TenantApartmentId TenantStatus                     UserId      UserEmail                                                                                                                                                                                                                                                                                                                                                                                                                                                          UserApartmentId UserLeaseStatus                  BillCount   InvoiceCount DataMatchStatus
+----------- ---------------------------------------------------------------------------------------------------- ---------------------------------------------------------------------------------------------------- ----------------- -------------------------------- ----------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ --------------- -------------------------------- ----------- ------------ ---------------
+          9 Andrei                                                                                               andrei@gmail.com                                                                                                    26 Active                                    20 andrei@gmail.com                                                                                                                                                                                                                                                                                                                                                                                                                                                                26 Active                                     9           11 MATCH          
+
+(1 rows affected)
+ 
+========================================
+FOREIGN KEY VERIFICATION
+========================================
+ 
+TableName                                                                                                                        ForeignKeyName                                                                                                                   ReferencedTable                                                                                                                 
+-------------------------------------------------------------------------------------------------------------------------------- -------------------------------------------------------------------------------------------------------------------------------- --------------------------------------------------------------------------------------------------------------------------------
+Bills                                                                                                                            FK_Bills_Users_TenantUserId                                                                                                      Users                                                                                                                           
+Invoices                                                                                                                         FK_Invoices_Users_TenantUserId                                                                                                   Users                                                                                                                           
+
+(2 rows affected)
+ 
+========================================
+MIGRATION SUMMARY STATISTICS
+========================================
+ 
+Metric                     Count      
+-------------------------- -----------
+Users with tenant data               1
+Bills with TenantUserId              9
+Invoices with TenantUserId          11
+Total Tenants (original)             1
+Total Users                          3
+
+(5 rows affected)
+ 
+========================================
+VERIFICATION COMPLETE
+========================================
+Review all results above.
+All critical checks (1-5) must return 0.
+========================================

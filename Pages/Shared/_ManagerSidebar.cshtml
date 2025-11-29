@@ -1,7 +1,7 @@
 @using System.Security.Claims
 @{
     var username = User.Identity?.Name ?? "Unknown User";
-    var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Manager";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Admin";
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
     var isDashboard = currentPage.Contains("ManagerDashboard");
     var isManageTenants = currentPage.Contains("ManageTenants");
