@@ -56,23 +56,20 @@ namespace Apartment.Pages.Manager
             _auditService = auditService;
         }
 
-        private void AssignTenantToApartment(Apartment.Model.Tenant tenant, ApartmentModel apartment)
+        private void AssignUserToApartment(User user, ApartmentModel apartment)
         {
-            tenant.ApartmentId = apartment.Id;
-            tenant.UnitNumber = apartment.UnitNumber;
-            tenant.MonthlyRent = apartment.MonthlyRent;
-            dbData.Tenants.Update(tenant);
+            user.ApartmentId = apartment.Id;
+            dbData.Users.Update(user);
 
             apartment.IsOccupied = true;
+            apartment.TenantId = user.Id;
             dbData.Apartments.Update(apartment);
         }
 
-        private void DetachTenantFromApartment(Apartment.Model.Tenant tenant)
+        private void DetachUserFromApartment(User user)
         {
-            tenant.ApartmentId = null;
-            tenant.UnitNumber = string.Empty;
-            tenant.MonthlyRent = 0m;
-            dbData.Tenants.Update(tenant);
+            user.ApartmentId = null;
+            dbData.Users.Update(user);
         }
 
         // -- Core Logic for the Manage Apartments Page will go here --
@@ -90,8 +87,8 @@ namespace Apartment.Pages.Manager
                 string term = SearchTerm.Trim();
                 apartmentQuery = apartmentQuery.Where(a =>
                     a.UnitNumber.Contains(term) ||
-                    (a.CurrentTenant != null && a.CurrentTenant.FullName.Contains(term)) ||
-                    (a.CurrentTenant != null && a.CurrentTenant.UserAccount != null && a.CurrentTenant.UserAccount.Username.Contains(term))
+                    (a.CurrentTenant != null && a.CurrentTenant.Username.Contains(term)) ||
+                    (a.CurrentTenant != null && a.CurrentTenant.Email.Contains(term))
                 );
             }
 
@@ -118,7 +115,7 @@ namespace Apartment.Pages.Manager
                     UnitNumber = a.UnitNumber,
                     MonthlyRent = a.MonthlyRent,
                     StatusDisplay = isOccupied ? "Occupied" : "Vacant",
-                    TenantName = a.CurrentTenant?.FullName ?? "N/A",
+                    TenantName = a.CurrentTenant != null ? (a.CurrentTenant.Username ?? a.CurrentTenant.Email) : "N/A",
                     TenantId = a.CurrentTenant?.Id
                 };
             }).ToList();
@@ -132,18 +129,19 @@ namespace Apartment.Pages.Manager
 
         private async Task LoadAvailableTenantsAsync()
         {
-            //Fetch tenants who are not currently assigned to any apartment (or are inactive)
-            var unassignedTenants = await dbData.Tenants
-                .Where(t => !t.ApartmentId.HasValue || t.Status != LeaseStatus.Active)
-                .OrderBy(t => t.FullName)
+            //Fetch users (tenants) who are not currently assigned to any apartment or have inactive lease
+            var unassignedUsers = await dbData.Users
+                .Where(u => u.Role == UserRoles.User && 
+                           (u.ApartmentId == null || u.LeaseStatus != "Active"))
+                .OrderBy(u => u.Username)
                 .ToListAsync();
 
             //create a select list for the dropdown
-            var selectListItems = unassignedTenants
-                .Select(t => new SelectListItem
+            var selectListItems = unassignedUsers
+                .Select(u => new SelectListItem
                 {
-                    Value = t.Id.ToString(),
-                    Text = t.FullName
+                    Value = u.Id.ToString(),
+                    Text = u.Username ?? u.Email
                 })
                 .ToList();
 
@@ -183,13 +181,13 @@ namespace Apartment.Pages.Manager
             
             await dbData.SaveChangesAsync();
 
-            // If SelectedTenantId was provided, assign the tenant
+            // If SelectedTenantId was provided, assign the user (tenant)
             if (SelectedTenantId.HasValue && SelectedTenantId.Value > 0)
             {
-                var tenant = await dbData.Tenants.FindAsync(SelectedTenantId.Value);
-                if (tenant != null)
+                var user = await dbData.Users.FindAsync(SelectedTenantId.Value);
+                if (user != null)
                 {
-                    AssignTenantToApartment(tenant, ApartmentInput);
+                    AssignUserToApartment(user, ApartmentInput);
                     await dbData.SaveChangesAsync();
                 }
             }
@@ -211,13 +209,13 @@ namespace Apartment.Pages.Manager
                 return RedirectToPage();
             }
 
-            // Check if apartment is occupied by an active tenant
-            var activeTenant = await dbData.Tenants
-                .FirstOrDefaultAsync(t => t.ApartmentId == ApartmentId && t.Status == LeaseStatus.Active);
+            // Check if apartment is occupied by an active user (tenant)
+            var activeUser = await dbData.Users
+                .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.LeaseStatus == "Active");
 
-            if (activeTenant != null)
+            if (activeUser != null)
             {
-                ErrorMessage = $"Cannot delete unit '{apartmentToDelete.UnitNumber}' because it is currently occupied by {activeTenant.FullName}. Please vacate the unit first.";
+                ErrorMessage = $"Cannot delete unit '{apartmentToDelete.UnitNumber}' because it is currently occupied by {activeUser.Username ?? activeUser.Email}. Please vacate the unit first.";
                 return RedirectToPage();
             }
 
@@ -249,35 +247,35 @@ namespace Apartment.Pages.Manager
             }              
         }
 
-        //Post handler for assigning a tenant to an apartment unit
+        //Post handler for assigning a user (tenant) to an apartment unit
         public async Task<IActionResult> OnPostAssignTenantAsync(int apartmentId, int tenantId)
         {
             var apartment = await dbData.Apartments.FindAsync(apartmentId);
-            var tenant = await dbData.Tenants.FindAsync(tenantId);
+            var user = await dbData.Users.FindAsync(tenantId);
 
-            if (apartment == null || tenant == null)
+            if (apartment == null || user == null)
             {
-                ErrorMessage = "Apartment or Tenant not found.";
+                ErrorMessage = "Apartment or User not found.";
                 return RedirectToPage();
             }
 
-            // Check if the apartment is already occupied by a different active tenant
-            var existingTenant = await dbData.Tenants
-                .FirstOrDefaultAsync(t => t.ApartmentId == apartmentId && t.Status == LeaseStatus.Active && t.Id != tenantId);
+            // Check if the apartment is already occupied by a different active user
+            var existingUser = await dbData.Users
+                .FirstOrDefaultAsync(u => u.ApartmentId == apartmentId && u.LeaseStatus == "Active" && u.Id != tenantId);
 
-            if (existingTenant != null)
+            if (existingUser != null)
             {
-                // Unassign the previous tenant
-                DetachTenantFromApartment(existingTenant);
-                SuccessMessage = $"Apartment {apartment.UnitNumber} was previously occupied by {existingTenant.FullName}. Tenant has been updated.";
+                // Unassign the previous user
+                DetachUserFromApartment(existingUser);
+                SuccessMessage = $"Apartment {apartment.UnitNumber} was previously occupied by {existingUser.Username ?? existingUser.Email}. User has been updated.";
             }
             else
             {
-                SuccessMessage = $"Tenant '{tenant.FullName}' assigned to apartment '{apartment.UnitNumber}' successfully.";
+                SuccessMessage = $"User '{user.Username ?? user.Email}' assigned to apartment '{apartment.UnitNumber}' successfully.";
             }
 
-            // Assign the new tenant
-            AssignTenantToApartment(tenant, apartment);
+            // Assign the new user
+            AssignUserToApartment(user, apartment);
             await dbData.SaveChangesAsync();
             return RedirectToPage();
         }
@@ -292,13 +290,13 @@ namespace Apartment.Pages.Manager
                 return RedirectToPage();
             }
 
-            // Find and unassign any active tenant from this apartment
-            var tenant = await dbData.Tenants
-                .FirstOrDefaultAsync(t => t.ApartmentId == id && t.Status == LeaseStatus.Active);
+            // Find and unassign any active user (tenant) from this apartment
+            var user = await dbData.Users
+                .FirstOrDefaultAsync(u => u.ApartmentId == id && u.LeaseStatus == "Active");
 
-            if (tenant != null)
+            if (user != null)
             {
-                DetachTenantFromApartment(tenant);
+                DetachUserFromApartment(user);
             }
 
             apartment.IsOccupied = false;
@@ -337,38 +335,40 @@ namespace Apartment.Pages.Manager
             apartment.UnitNumber = UnitNumber;
             apartment.MonthlyRent = MonthlyRent;
 
-            // Handle tenant assignment/unassignment
+            // Handle user (tenant) assignment/unassignment
             if (TenantId.HasValue && TenantId.Value > 0)
             {
-                var tenant = await dbData.Tenants.FindAsync(TenantId.Value);
-                if (tenant != null)
+                var user = await dbData.Users.FindAsync(TenantId.Value);
+                if (user != null)
                 {
-                    // Unassign any existing tenant from this apartment
-                    var existingTenant = await dbData.Tenants
-                        .FirstOrDefaultAsync(t => t.ApartmentId == ApartmentId && t.Status == LeaseStatus.Active && t.Id != TenantId.Value);
-                    if (existingTenant != null)
+                    // Unassign any existing user from this apartment
+                    var existingUser = await dbData.Users
+                        .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.LeaseStatus == "Active" && u.Id != TenantId.Value);
+                    if (existingUser != null)
                     {
-                        DetachTenantFromApartment(existingTenant);
+                        DetachUserFromApartment(existingUser);
                     }
 
-                    // Assign the new tenant
-                    AssignTenantToApartment(tenant, apartment);
+                    // Assign the new user
+                    AssignUserToApartment(user, apartment);
                 }
                 else
                 {
                     apartment.IsOccupied = false;
+                    apartment.TenantId = null;
                 }
             }
             else
             {
-                // Unassign any existing tenant
-                var existingTenant = await dbData.Tenants
-                    .FirstOrDefaultAsync(t => t.ApartmentId == ApartmentId && t.Status == LeaseStatus.Active);
-                if (existingTenant != null)
+                // Unassign any existing user
+                var existingUser = await dbData.Users
+                    .FirstOrDefaultAsync(u => u.ApartmentId == ApartmentId && u.LeaseStatus == "Active");
+                if (existingUser != null)
                 {
-                    DetachTenantFromApartment(existingTenant);
+                    DetachUserFromApartment(existingUser);
                 }
                 apartment.IsOccupied = false;
+                apartment.TenantId = null;
             }
 
             dbData.Apartments.Update(apartment);

@@ -58,7 +58,7 @@ namespace Apartment.Pages
                 MonthlyRent = a.MonthlyRent,
                 StatusDisplay = a.IsOccupied ? "Occupied" : "Vacant",
                 //display the tenant name or N/A if no tenant assigned
-                TenantName = a.CurrentTenant != null && a.CurrentTenant.UserAccount != null ? a.CurrentTenant.UserAccount.Username : "N/A",
+                TenantName = a.CurrentTenant != null ? a.CurrentTenant.Username : "N/A",
                 TenantId = a.CurrentTenant != null ? a.CurrentTenant.Id : (int?)null
 
             }).ToList();
@@ -70,20 +70,19 @@ namespace Apartment.Pages
 
         private async Task LoadAvailableTenantsAsync()
         {
-            // Fetch tenants who are not currently assigned to any apartment
-            var unassignedTenants = await dbData.Tenants
-                .Include(t => t.UserAccount) // Eager load the UserAccount to get the Username
-                .Where(t => t.ApartmentId == null) // Exclude tenants already assigned to an apartment
-                .OrderBy(t => t.FullName)
+            // Fetch users (tenants) who are not currently assigned to any apartment
+            var unassignedUsers = await dbData.Users
+                .Where(u => u.Role == UserRoles.User && u.ApartmentId == null) // Only User role, not assigned to apartment
+                .OrderBy(u => u.Username)
                 .ToListAsync();
 
 
             // Create a select list for the dropdown
-            var selectListItems = unassignedTenants
-                .Select(t => new SelectListItem
+            var selectListItems = unassignedUsers
+                .Select(u => new SelectListItem
                 {
-                    Value = t.Id.ToString(),
-                    Text = t.UserAccount != null ? t.UserAccount.Username : t.FullName // Use Username if available, otherwise FullName
+                    Value = u.Id.ToString(),
+                    Text = u.Username ?? u.Email // Use Username, fallback to Email
                 })
                 .ToList();
 
@@ -127,14 +126,14 @@ namespace Apartment.Pages
                 dbData.Apartments.Add(ApartmentInput);
                 await dbData.SaveChangesAsync();
 
-                // If a tenant was assigned, update the tenant's ApartmentId
+                // If a tenant was assigned, update the user's ApartmentId
                 if (ApartmentInput.TenantId.HasValue && ApartmentInput.TenantId.Value != 0)
                 {
-                    var assignedTenant = await dbData.Tenants.FindAsync(ApartmentInput.TenantId.Value);
-                    if (assignedTenant != null)
+                    var assignedUser = await dbData.Users.FindAsync(ApartmentInput.TenantId.Value);
+                    if (assignedUser != null)
                     {
-                        assignedTenant.ApartmentId = ApartmentInput.Id;
-                        dbData.Tenants.Update(assignedTenant);
+                        assignedUser.ApartmentId = ApartmentInput.Id;
+                        dbData.Users.Update(assignedUser);
                         await dbData.SaveChangesAsync();
                     }
                 }
