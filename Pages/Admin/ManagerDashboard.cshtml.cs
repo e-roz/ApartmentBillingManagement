@@ -1,29 +1,25 @@
 using Apartment.Data;
 using Apartment.Model;
+using Apartment.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using System.Linq;
-using Apartment.Enums;
 
 namespace Apartment.Pages.Admin
 {
     [Authorize(Roles = "Admin")]
-    public class AdminDashboardModel : PageModel
+    public class ManagerDashboardModel : PageModel
     {
         private readonly ApplicationDbContext _context;
 
-        public AdminDashboardModel(ApplicationDbContext context)
+        public ManagerDashboardModel(ApplicationDbContext context)
         {
             _context = context;
         }
 
         public string Username { get; set; } = string.Empty;
-        public string UserRole { get; set; } = string.Empty;
-        
-        // Manager Dashboard KPI Data
         public int ActiveTenants { get; set; }
         public int OccupiedUnits { get; set; }
         public int OpenServiceTickets { get; set; }
@@ -32,11 +28,9 @@ namespace Apartment.Pages.Admin
 
         public async Task OnGetAsync()
         {
-            // Get user information from claims
             Username = User.Identity?.Name ?? "Unknown User";
-            UserRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Unknown Role";
 
-            // Fetch manager dashboard KPI data
+            // Fetch manager-specific stats
             ActiveTenants = await _context.Tenants
                 .Where(t => t.Status == LeaseStatus.Active)
                 .CountAsync();
@@ -57,3 +51,4 @@ namespace Apartment.Pages.Admin
         }
     }
 }
+

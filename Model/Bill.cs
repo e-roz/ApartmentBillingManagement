@@ -23,10 +23,6 @@ namespace Apartment.Model
 
         //  Link this bill to the user/tenant responsible for payment
         [Required]
-        public int TenantUserId { get; set; }
-
-        // Obsolete: Kept for migration compatibility - remove after final cleanup
-        [Obsolete("Use TenantUserId instead - kept for migration")]
         public int TenantId { get; set; }
 
         // 
@@ -36,11 +32,6 @@ namespace Apartment.Model
         [ForeignKey("BillingPeriodId")]
         public BillingPeriod BillingPeriod { get; set; } = null!;
 
-        [ForeignKey("TenantUserId")]
-        public User TenantUser { get; set; } = null!;
-
-        // Obsolete: Kept for migration compatibility
-        [Obsolete("Use TenantUser instead - kept for migration")]
         [ForeignKey("TenantId")]
         public Tenant? Tenant { get; set; }
 

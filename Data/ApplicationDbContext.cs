@@ -58,13 +58,6 @@ namespace Apartment.Data
                 .HasForeignKey(u => u.ApartmentId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Configure User-Bills relationship
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.Bills)
-                .WithOne(b => b.TenantUser)
-                .HasForeignKey(b => b.TenantUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             // Configure the AuditActionType enum to be stored as a string
             modelBuilder.Entity<AuditLog>()
                 .Property(a => a.Action)
@@ -89,8 +82,7 @@ namespace Apartment.Data
                 .HasForeignKey(b => b.ApartmentId)
                 .OnDelete(DeleteBehavior.Cascade); // prevents deleting an apartment if it has associated bills
 
-            // Obsolete: Tenant-Bill relationship - kept for migration compatibility
-            // New relationship is User-Bills via TenantUserId
+            // Configure Tenant-Bill relationship - This is the current and correct relationship.
             modelBuilder.Entity<Tenant>()
                 .HasMany(t => t.Bills)
                 .WithOne(b => b.Tenant)
@@ -141,12 +133,6 @@ namespace Apartment.Data
                 .ValueGeneratedOnAdd();
 
             // Performance indexes for frequently queried columns
-            // New index for TenantUserId
-            modelBuilder.Entity<Bill>()
-                .HasIndex(b => b.TenantUserId)
-                .HasDatabaseName("IX_Bills_TenantUserId");
-
-            // Obsolete: Keep old index for migration compatibility
             modelBuilder.Entity<Bill>()
                 .HasIndex(b => b.TenantId)
                 .HasDatabaseName("IX_Bills_TenantId");
@@ -163,12 +149,6 @@ namespace Apartment.Data
                 .HasIndex(i => i.BillId)
                 .HasDatabaseName("IX_Invoices_BillId");
 
-            // New index for TenantUserId
-            modelBuilder.Entity<Invoice>()
-                .HasIndex(i => i.TenantUserId)
-                .HasDatabaseName("IX_Invoices_TenantUserId");
-
-            // Obsolete: Keep old index for migration compatibility
             modelBuilder.Entity<Invoice>()
                 .HasIndex(i => i.TenantId)
                 .HasDatabaseName("IX_Invoices_TenantId");

@@ -56,6 +56,24 @@ namespace Apartment
                     var context = services.GetRequiredService<ApplicationDbContext>();
                     // Ensure the database is created and all pending migrations are applied.
                     context.Database.Migrate();
+
+                    // Seed an admin user if one doesn't exist
+                    if (!context.Users.Any(u => u.Role == Apartment.Enums.UserRoles.Admin))
+                    {
+                        var adminUser = new Apartment.Model.User
+                        {
+                            Username = "Admin",
+                            Email = "admin@example.com",
+                            HasedPassword = BCrypt.Net.BCrypt.HashPassword("AdminPassword123!"),
+                            Role = Apartment.Enums.UserRoles.Admin,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        context.Users.Add(adminUser);
+                        context.SaveChanges();
+                        Console.WriteLine("Admin user seeded successfully!");
+                    }
+
                 }
                 catch (Exception ex)
                 {

@@ -28,7 +28,6 @@ namespace Apartment.Model
         // TODO: Update FK to point to Users table in future migration
         public int? TenantId { get; set; }
 
-        [ForeignKey("TenantId")]
         public User? CurrentTenant { get; set; }
 
         public ICollection<Bill> Bills { get; set; } = new List<Bill>();

@@ -45,8 +45,6 @@ namespace Apartment.Model
         [ForeignKey(nameof(ApartmentId))]
         public ApartmentModel? Apartment { get; set; }
 
-        public ICollection<Bill>? Bills { get; set; }
-
         // Obsolete: Kept for migration compatibility - remove after final cleanup
         [Obsolete("Kept for migration - remove later")]
         public int? TenantID { get; set; }

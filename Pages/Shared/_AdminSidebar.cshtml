@@ -6,6 +6,16 @@
     var isDashboard = currentPage.Contains("AdminDashboard");
     var isManageUsers = currentPage.Contains("ManageUsers");
     var isAuditLogs = currentPage.Contains("AuditLogs");
+    var isManageTenants = currentPage.Contains("ManageTenants");
+    var isManageApartments = currentPage.Contains("ManageApartments");
+    var isGenerateBills = currentPage.Contains("GenerateBills");
+    var isRecordPayments = currentPage.Contains("RecordPayments");
+    var isBillingSummary = currentPage.Contains("BillingSummary");
+    var isViewAllRequests = currentPage.Contains("ViewAllRequests");
+    var isRequestDetails = currentPage.Contains("RequestDetails");
+
+    // Determine if billing section should be expanded
+    var isBillingSection = isGenerateBills || isRecordPayments || isBillingSummary;
 }
 
 <!-- Mobile Sidebar Overlay -->
@@ -63,31 +73,145 @@
                 }
             </a>
 
-            <a asp-page="/Admin/ManageUsers" 
-               class="nav-item @(isManageUsers ? "active" : "")"
-               aria-current="@(isManageUsers ? "page" : null)">
-                <span class="nav-icon">
-                    <i class="bi bi-people-fill"></i>
-                </span>
-                <span class="nav-label">User Management</span>
-                @if (isManageUsers)
-                {
-                    <span class="nav-indicator"></span>
-                }
-            </a>
+            <!-- Administrative Section -->
+            <div class="nav-section mt-3">
+                <div class="nav-section-header">
+                    <small class="text-uppercase">Administration</small>
+                </div>
+                
+                <a asp-page="/Admin/ManageUsers" 
+                   class="nav-item @(isManageUsers ? "active" : "")"
+                   aria-current="@(isManageUsers ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </span>
+                    <span class="nav-label">User Management</span>
+                    @if (isManageUsers)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
 
-            <a asp-page="/Admin/AuditLogs" 
-               class="nav-item @(isAuditLogs ? "active" : "")"
-               aria-current="@(isAuditLogs ? "page" : null)">
-                <span class="nav-icon">
-                    <i class="bi bi-clipboard-data"></i>
-                </span>
-                <span class="nav-label">Audit Logs</span>
-                @if (isAuditLogs)
-                {
-                    <span class="nav-indicator"></span>
-                }
-            </a>
+                <a asp-page="/Admin/AuditLogs" 
+                   class="nav-item @(isAuditLogs ? "active" : "")"
+                   aria-current="@(isAuditLogs ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-clipboard-data"></i>
+                    </span>
+                    <span class="nav-label">Audit Logs</span>
+                    @if (isAuditLogs)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+            </div>
+
+            <!-- Management Section -->
+            <div class="nav-section mt-3">
+                <div class="nav-section-header">
+                    <small class="text-uppercase">Management</small>
+                </div>
+                
+                <a asp-page="/Admin/ManageTenants" 
+                   class="nav-item @(isManageTenants ? "active" : "")"
+                   aria-current="@(isManageTenants ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-person-lines-fill"></i>
+                    </span>
+                    <span class="nav-label">Tenant Management</span>
+                    @if (isManageTenants)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+
+                <a asp-page="/Admin/ManageApartments" 
+                   class="nav-item @(isManageApartments ? "active" : "")"
+                   aria-current="@(isManageApartments ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-house-door-fill"></i>
+                    </span>
+                    <span class="nav-label">Unit Management</span>
+                    @if (isManageApartments)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+
+                <a asp-page="/Admin/ViewAllRequests" 
+                   class="nav-item @(isViewAllRequests || isRequestDetails ? "active" : "")"
+                   aria-current="@(isViewAllRequests || isRequestDetails ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-card-list"></i>
+                    </span>
+                    <span class="nav-label">Tenant Requests</span>
+                    @if (isViewAllRequests || isRequestDetails)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+            </div>
+
+            <!-- Billing Section (Collapsible) -->
+            <div class="nav-section mt-3">
+                <button class="nav-section-toggle" 
+                        type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#billingCollapse"
+                        aria-expanded="@(isBillingSection ? "true" : "false")"
+                        aria-controls="billingCollapse">
+                    <div class="d-flex align-items-center w-100">
+                        <span class="nav-icon">
+                            <i class="bi bi-cash-stack"></i>
+                        </span>
+                        <span class="nav-label flex-grow-1">Billing & Payments</span>
+                        <i class="bi bi-chevron-down collapse-icon"></i>
+                    </div>
+                </button>
+                
+                <div class="collapse @(isBillingSection ? "show" : "")" id="billingCollapse">
+                    <div class="nav-submenu">
+                        <a asp-page="/Admin/GenerateBills" 
+                           class="nav-item @(isGenerateBills ? "active" : "")"
+                           aria-current="@(isGenerateBills ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-receipt"></i>
+                            </span>
+                            <span class="nav-label">Generate Bills</span>
+                            @if (isGenerateBills)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+
+                        <a asp-page="/Admin/RecordPayments" 
+                           class="nav-item @(isRecordPayments ? "active" : "")"
+                           aria-current="@(isRecordPayments ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-credit-card"></i>
+                            </span>
+                            <span class="nav-label">Record Payments</span>
+                            @if (isRecordPayments)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+
+                        <a asp-page="/Admin/BillingSummary" 
+                           class="nav-item @(isBillingSummary ? "active" : "")"
+                           aria-current="@(isBillingSummary ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </span>
+                            <span class="nav-label">Billing Summary</span>
+                            @if (isBillingSummary)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 

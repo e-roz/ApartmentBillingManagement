@@ -1,3 +1,4 @@
+using Apartment.Utilities;
 using Apartment.Data;
 using Apartment.Model;
 using Apartment.ViewModels;
@@ -17,11 +18,22 @@ namespace Apartment.Pages.Admin
         private readonly ApplicationDbContext dbData;
         private readonly IAuditService _auditService;
 
-        public List<UserList> Users { get; set; } = new List<UserList>();
+                public List<UserList> Users { get; set; } = new List<UserList>();
 
+        
 
-        [BindProperty(SupportsGet = true)]
-        public string? SearchTerm { get; set; }
+                [BindProperty(SupportsGet = true)]
+
+                public string? SearchTerm { get; set; }
+
+        
+
+                [BindProperty]
+
+                public RegisterUser NewUser { get; set; } = new RegisterUser();
+
+        [BindProperty]
+        public string SelectedRole { get; set; } = UserRoles.User.ToString();
 
         [TempData]
         public string? SuccessMessage { get; set; }
@@ -82,11 +94,86 @@ namespace Apartment.Pages.Admin
                 .ToList();
         }
 
+        public async Task<IActionResult> OnPostAddUserAsync()
+        {
+            if (!ModelState.IsValid)
+            {
+                ErrorMessage = "Validation failed. Please check your input.";
+                await OnGetAsync(); // Re-populate the list of users
+                return Page();
+            }
+
+            // Check if username or email already exists
+            if (await dbData.Users.AnyAsync(u => u.Username == NewUser.Username))
+            {
+                ModelState.AddModelError("NewUser.Username", "Username already taken.");
+                ErrorMessage = "Validation failed: Username already taken.";
+                await OnGetAsync();
+                return Page();
+            }
+            if (await dbData.Users.AnyAsync(u => u.Email == NewUser.Email))
+            {
+                ModelState.AddModelError("NewUser.Email", "Email already registered.");
+                ErrorMessage = "Validation failed: Email already registered.";
+                await OnGetAsync();
+                return Page();
+            }
+
+            // Hash password
+            var hashedPassword = PasswordHasher.HashPassword(NewUser.Password);
+
+            // Determine the role
+            if (!Enum.TryParse(SelectedRole, true, out UserRoles roleToAssign))
+            {
+                roleToAssign = UserRoles.User; // Default to User if parsing fails
+                ErrorMessage = "Invalid role selected. Defaulting to User.";
+            }
+
+            // Create new user
+            var newUser = new User
+            {
+                Username = NewUser.Username,
+                Email = NewUser.Email,
+                HasedPassword = hashedPassword, // Corrected property name
+                Role = roleToAssign,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            dbData.Users.Add(newUser);
+            await dbData.SaveChangesAsync();
+
+            // Log audit action
+            var adminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int adminId = -1; 
+            if (string.IsNullOrEmpty(adminIdString) || !int.TryParse(adminIdString, out adminId))
+            {
+                adminId = -1; // Or handle this error more gracefully
+            }
+            await _auditService.LogAsync(
+                action: AuditActionType.CreateUser,
+                userId: adminId,
+                details: $"Admin added new user: {newUser.Username} (ID: {newUser.Id}, Role: {newUser.Role})",
+                entityId: newUser.Id,
+                entityType: "User"
+            );
+
+            SuccessMessage = $"User {newUser.Username} created successfully with role {newUser.Role}.";
+            return RedirectToPage();
+        }
+
 
         // POST Method: Update user role
         public async Task<IActionResult> OnPostUpdateRoleAsync(int userId, string newRole)
         {
             var userToUpdate = await dbData.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var adminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int currentAdminIdInt = -1;
+            if (string.IsNullOrEmpty(adminIdString) || !int.TryParse(adminIdString, out currentAdminIdInt))
+            {
+                ErrorMessage = "Could not identify the administrator performing the action.";
+                return RedirectToPage();
+            }
 
             if (userToUpdate == null)
             {
@@ -95,8 +182,7 @@ namespace Apartment.Pages.Admin
             }
 
             // Security: Prevent admin from changing their own role
-            var currentAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (currentAdminId != null && int.TryParse(currentAdminId, out int adminId) && userToUpdate.Id == adminId)
+            if (userToUpdate.Id == currentAdminIdInt)
             {
                 ErrorMessage = "You cannot change your own role. Please ask another administrator to do this.";
                 return RedirectToPage();
@@ -105,11 +191,23 @@ namespace Apartment.Pages.Admin
             // Validate the new role and update 
             if (Enum.TryParse(newRole, true, out UserRoles role))
             {
+                // Log the old role before changing
+                var oldRole = userToUpdate.Role;
+
                 userToUpdate.Role = role;
                 userToUpdate.UpdatedAt = System.DateTime.UtcNow;
 
                 dbData.Users.Update(userToUpdate);
                 await dbData.SaveChangesAsync();
+
+                // Log audit action
+                await _auditService.LogAsync(
+                    action: AuditActionType.UpdateUserRole,
+                    userId: currentAdminIdInt,
+                    details: $"Admin changed role for user {userToUpdate.Username} (ID: {userToUpdate.Id}) from {oldRole} to {userToUpdate.Role}.",
+                    entityId: userToUpdate.Id,
+                    entityType: "User"
+                );
 
                 SuccessMessage = $"{userToUpdate.Username}'s role updated to {role}.";
             }
@@ -134,8 +232,8 @@ namespace Apartment.Pages.Admin
             }
 
             // Check security: Prevent the Admin from deleting themselves 
-            var currentAdminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userToDelete.Id.ToString() == currentAdminId)
+            var currentAdminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userToDelete.Id.ToString() == currentAdminIdString)
             {
                 ErrorMessage = "Error: You cannot delete your own account.";
                 return RedirectToPage();
@@ -183,8 +281,9 @@ namespace Apartment.Pages.Admin
                     }
                 }
             }
-            var adminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(adminIdString) || !int.TryParse(adminIdString, out var adminId))
+            var adminIdStringForDelete = User.FindFirstValue(ClaimTypes.NameIdentifier); // Renamed for clarity
+            int adminIdForDelete = -1;
+            if (string.IsNullOrEmpty(adminIdStringForDelete) || !int.TryParse(adminIdStringForDelete, out adminIdForDelete))
             {
                 ErrorMessage = "Could not identify the administrator performing the action.";
                 // Decide if you want to stop the deletion or log it as a system action
@@ -194,8 +293,8 @@ namespace Apartment.Pages.Admin
             // Log the deletion action
             await _auditService.LogAsync(
                 action: AuditActionType.DeleteUser,
-                userId: adminId,
-                details: $"User {userToDelete.Username} (ID: {userToDelete.Id}) was deleted by admin (ID: {adminId}).",
+                userId: adminIdForDelete,
+                details: $"User {userToDelete.Username} (ID: {userToDelete.Id}) was deleted by admin (ID: {adminIdForDelete}).",
                 entityId: userToDelete.Id,
                 entityType: "User"
             );
