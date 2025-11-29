@@ -1,0 +1,48 @@
+@* Standardized Message Display Partial *@
+@* Usage: @await Html.PartialAsync("_MessagePartial", Model) *@
+
+@if (!string.IsNullOrEmpty(ViewData["SuccessMessage"] as string))
+{
+    <div class="alert alert-success alert-dismissible fade show animate__animated animate__fadeInDown" role="alert" data-auto-toast="true">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Success!</strong> @ViewData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+{
+    <div class="alert alert-danger alert-dismissible fade show animate__animated animate__fadeInDown" role="alert" data-auto-toast="true">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Error!</strong> @ViewData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(TempData["SuccessMessage"] as string))
+{
+    <div class="alert alert-success alert-dismissible fade show animate__animated animate__fadeInDown" role="alert" data-auto-toast="true">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Success!</strong> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(TempData["ErrorMessage"] as string))
+{
+    <div class="alert alert-danger alert-dismissible fade show animate__animated animate__fadeInDown" role="alert" data-auto-toast="true">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Error!</strong> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(TempData["Message"] as string))
+{
+    <div class="alert alert-info alert-dismissible fade show animate__animated animate__fadeInDown" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        @TempData["Message"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+

@@ -1,0 +1,360 @@
+/* ========================================
+   UI/UX Enhancements
+   Animations, Transitions, Tooltips, etc.
+   ======================================== */
+
+/* ========================================
+   Smooth Animations & Transitions
+   ======================================== */
+
+/* Page transitions */
+.main-content {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Card hover effects */
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Button animations */
+.btn {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Table row hover */
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--cream, #FAF8F5);
+}
+
+/* Form input focus animations */
+.form-control,
+.form-select {
+    transition: all 0.2s ease;
+    border-color: var(--sand, #F0EBE3);
+}
+
+.form-control:focus,
+.form-select:focus {
+    transform: scale(1.01);
+    border-color: var(--matcha-primary, #9fbf9f);
+    box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25);
+}
+
+/* Badge animations */
+.badge {
+    transition: all 0.2s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+/* ========================================
+   Dashboard Card Enhancements
+   ======================================== */
+
+.dashboard-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12) !important;
+    border-color: var(--matcha-primary, #9fbf9f);
+}
+
+.dashboard-card:active {
+    transform: translateY(-2px) scale(1.01);
+}
+
+.dashboard-card .card-body {
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover .card-body {
+    background: linear-gradient(135deg, rgba(159, 191, 159, 0.05) 0%, rgba(232, 245, 233, 0.1) 100%);
+}
+
+/* ========================================
+   Tooltip Enhancements
+   ======================================== */
+
+[data-bs-toggle="tooltip"],
+[title] {
+    cursor: help;
+    position: relative;
+}
+
+/* Custom tooltip styling */
+.tooltip-inner {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #1a1a1a;
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: #1a1a1a;
+}
+
+.tooltip.bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: #1a1a1a;
+}
+
+.tooltip.bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: #1a1a1a;
+}
+
+/* ========================================
+   Loading States
+   ======================================== */
+
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--sand, #F0EBE3);
+    border-top: 2px solid var(--matcha-primary, #9fbf9f);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   Mobile Responsiveness Enhancements
+   ======================================== */
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 1rem !important;
+    }
+
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-group .btn {
+        margin: 0.25rem 0;
+        width: 100%;
+    }
+
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+    }
+
+    .empty-state-title {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .display-5 {
+        font-size: 1.75rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table {
+        font-size: 0.8rem;
+    }
+}
+
+/* ========================================
+   Action Button Consistency
+   ======================================== */
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 2.5rem;
+    height: 2.5rem;
+}
+
+.btn-action i {
+    font-size: 1rem;
+}
+
+/* Button hierarchy */
+.btn-primary {
+    background: linear-gradient(135deg, #b8d4b3 0%, #9fbf9f 50%, #7aa378 100%);
+    border: none;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 50%, #5a8a58 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(159, 191, 159, 0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #7aa378 0%, #5a8a58 100%);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #D4726A 0%, #C9574E 100%);
+    border: none;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #C9574E 0%, #B34840 100%);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #F0C878 0%, #E6B566 100%);
+    border: none;
+    color: #3D3D3D;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #E6B566 0%, #D4A455 100%);
+    color: #3D3D3D;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #8FBFBF 0%, #6B9E9E 100%);
+    border: none;
+    color: #ffffff;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #6B9E9E 0%, #4A7A7A 100%);
+    color: #ffffff;
+}
+
+/* Accent button gradient */
+.btn-accent {
+    background: linear-gradient(135deg, #E8A598 0%, #C9826E 100%);
+    border: none;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.btn-accent:hover {
+    background: linear-gradient(135deg, #C9826E 0%, #A66B5A 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(201, 130, 110, 0.3);
+    color: #ffffff;
+}
+
+/* Teal button gradient */
+.btn-teal {
+    background: linear-gradient(135deg, #8FBFBF 0%, #6B9E9E 100%);
+    border: none;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.btn-teal:hover {
+    background: linear-gradient(135deg, #6B9E9E 0%, #4A7A7A 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(107, 158, 158, 0.3);
+    color: #ffffff;
+}
+
+/* ========================================
+   Smooth Scroll
+   ======================================== */
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* ========================================
+   Focus Visible Improvements
+   ======================================== */
+
+*:focus-visible {
+    outline: 2px solid var(--matcha-primary, #9fbf9f);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+
+@media print {
+    .sidebar,
+    .btn,
+    .no-print {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+

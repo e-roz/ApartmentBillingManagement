@@ -1,0 +1,58 @@
+Changed database context to 'apartmentDB'.
+COLUMN_NAME                                                                                                                      DATA_TYPE                                                                                                                        IS_NULLABLE
+-------------------------------------------------------------------------------------------------------------------------------- -------------------------------------------------------------------------------------------------------------------------------- -----------
+ApartmentId                                                                                                                      int                                                                                                                              YES        
+LeaseStart                                                                                                                       datetime2                                                                                                                        YES        
+LeaseEnd                                                                                                                         datetime2                                                                                                                        YES        
+LeaseStatus                                                                                                                      nvarchar                                                                                                                         YES        
+
+(4 rows affected)
+Msg 1934, Level 16, State 1, Server Eros\SQLEXPRESS, Line 10
+UPDATE failed because the following SET options have incorrect settings: 'QUOTED_IDENTIFIER'. Verify that SET options are correct for use with indexed views and/or indexes on computed columns and/or filtered indexes and/or query notifications and/or XML data type methods and/or spatial index operations.
+Msg 1934, Level 16, State 1, Server Eros\SQLEXPRESS, Line 3
+UPDATE failed because the following SET options have incorrect settings: 'QUOTED_IDENTIFIER'. Verify that SET options are correct for use with indexed views and/or indexes on computed columns and/or filtered indexes and/or query notifications and/or XML data type methods and/or spatial index operations.
+TotalUsers  UsersWithApartmentId UsersWithLeaseStart UsersWithLeaseStatus
+----------- -------------------- ------------------- --------------------
+          3                    0                   0                    0
+
+(1 rows affected)
+
+(9 rows affected)
+
+(11 rows affected)
+========================================
+VERIFICATION CHECKS
+========================================
+PASS: All Bills have TenantUserId populated
+PASS: All Invoices have TenantUserId populated
+PASS: All Requests have SubmittedByUserId populated
+ 
+Sample Verification - First 10 Tenants:
+TenantId    TenantEmail                                                                                          UserId      UserEmail                                                                                                                                                                                                                                                                                                                                                                                                                                                          ApartmentId LeaseStatus                      BillCount   InvoiceCount
+----------- ---------------------------------------------------------------------------------------------------- ----------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ ----------- -------------------------------- ----------- ------------
+          9 andrei@gmail.com                                                                                              20 andrei@gmail.com                                                                                                                                                                                                                                                                                                                                                                                                                                                          NULL NULL                                       9           11
+
+(1 rows affected)
+PASS: All Bills TenantUserId values are valid
+PASS: All Invoices TenantUserId values are valid
+ 
+========================================
+MIGRATION SUMMARY
+========================================
+Metric                 Count      
+---------------------- -----------
+Users with tenant data           0
+Bills migrated                   9
+Invoices migrated               11
+
+(3 rows affected)
+ 
+========================================
+MIGRATION COMPLETE - TENANTS TABLE PRESERVED
+========================================
+Next steps:
+1. Review all verification results above
+2. Ensure all counts are 0 or acceptable
+3. Refactor services and Razor Pages to use Users instead of Tenants
+4. After refactoring, drop Tenants table in a separate migration
+========================================

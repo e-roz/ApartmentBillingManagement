@@ -1,0 +1,82 @@
+@page
+@model Apartment.Pages.Tenant.SubmitRequestModel
+@{
+    ViewData["Title"] = "Submit Maintenance Request";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_TenantSidebar")
+
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">Submit New Request</h1>
+        <p class="text-muted mb-4">Report maintenance issues or submit service requests.</p>
+
+        @if (Model.TenantInfo != null)
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label asp-for="Input.Title" class="form-label">Request Title</label>
+                            <input asp-for="Input.Title" class="form-control" placeholder="e.g., Leaky Faucet" required />
+                            <span asp-validation-for="Input.Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Description" class="form-label">Detailed Description</label>
+                            <textarea asp-for="Input.Description" class="form-control" rows="5" placeholder="Please provide a detailed description of the issue..." required></textarea>
+                            <span asp-validation-for="Input.Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.RequestType" class="form-label">Request Type</label>
+                            <select asp-for="Input.RequestType" asp-items="Html.GetEnumSelectList<Apartment.Enums.RequestType>()" class="form-select">
+                                <option value="">-- Select a Type --</option>
+                            </select>
+                            <span asp-validation-for="Input.RequestType" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.Priority" class="form-label">Priority</label>
+                            <select asp-for="Input.Priority" asp-items="Html.GetEnumSelectList<Apartment.Enums.RequestPriority>()" class="form-select">
+                            </select>
+                            <span asp-validation-for="Input.Priority" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Photo Upload (Optional)</label>
+                            <input type="file" class="form-control" accept="image/*" />
+                            <small class="text-muted">You can upload photos to help describe the issue.</small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Note:</strong> Photo upload functionality is a placeholder. In production, this would integrate with file storage.
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send me-2"></i>Submit Request
+                        </button>
+                        <a asp-page="/TenantDashboard" class="btn btn-secondary btn-lg ms-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No tenant profile found. Please contact the administrator.
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>
+

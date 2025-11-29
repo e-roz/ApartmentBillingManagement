@@ -17,7 +17,7 @@ namespace Apartment.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "8.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -41,14 +41,60 @@ namespace Apartment.Migrations
 
                     b.Property<string>("UnitNumber")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId");
 
+                    b.HasIndex("UnitNumber")
+                        .IsUnique();
+
                     b.ToTable("Apartments");
+                });
+
+            modelBuilder.Entity("Apartment.Model.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("Apartment.Model.Bill", b =>
@@ -87,9 +133,14 @@ namespace Apartment.Migrations
 
                     b.HasIndex("ApartmentId");
 
-                    b.HasIndex("BillingPeriodId");
+                    b.HasIndex("BillingPeriodId")
+                        .HasDatabaseName("IX_Bills_BillingPeriodId");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("DueDate")
+                        .HasDatabaseName("IX_Bills_DueDate");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Bills_TenantId");
 
                     b.ToTable("Bills");
                 });
@@ -123,6 +174,279 @@ namespace Apartment.Migrations
                     b.ToTable("BillingPeriods");
                 });
 
+            modelBuilder.Entity("Apartment.Model.Invoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AmountDue")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int>("ApartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BillId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("IssueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ReceiptImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApartmentId");
+
+                    b.HasIndex("BillId")
+                        .HasDatabaseName("IX_Invoices_BillId");
+
+                    b.HasIndex("PaymentDate")
+                        .HasDatabaseName("IX_Invoices_PaymentDate");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Invoices_TenantId");
+
+                    b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("Apartment.Model.Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssociatedRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ReceiverUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SenderUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssociatedRequestId");
+
+                    b.HasIndex("ReceiverUserId");
+
+                    b.HasIndex("SenderUserId");
+
+                    b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("Apartment.Model.PaymentReceipt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UploadedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("PaymentReceipts");
+                });
+
+            modelBuilder.Entity("Apartment.Model.Request", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ApartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateSubmitted")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("RequestType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int?>("SubmittedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApartmentId");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.ToTable("Requests");
+                });
+
+            modelBuilder.Entity("Apartment.Model.Tenant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ApartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("LeaseEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LeaseStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("MonthlyRent")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<string>("PrimaryEmail")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PrimaryPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("UnitNumber")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApartmentId")
+                        .HasDatabaseName("IX_Tenants_ApartmentId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_Tenants_Status");
+
+                    b.ToTable("Tenants");
+                });
+
+            modelBuilder.Entity("Apartment.Model.TenantLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApartmentId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("LinkedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TenantLinks");
+                });
+
             modelBuilder.Entity("Apartment.Model.User", b =>
                 {
                     b.Property<int>("Id")
@@ -136,7 +460,7 @@ namespace Apartment.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("HasedPassword")
                         .IsRequired()
@@ -144,6 +468,9 @@ namespace Apartment.Migrations
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TenantID")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -156,20 +483,33 @@ namespace Apartment.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Username")
+                    b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("TenantID")
+                        .IsUnique()
+                        .HasFilter("[TenantID] IS NOT NULL");
 
                     b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Apartment.Model.ApartmentModel", b =>
                 {
-                    b.HasOne("Apartment.Model.User", "Tenant")
+                    b.HasOne("Apartment.Model.Tenant", "CurrentTenant")
                         .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("TenantId");
 
-                    b.Navigation("Tenant");
+                    b.Navigation("CurrentTenant");
+                });
+
+            modelBuilder.Entity("Apartment.Model.AuditLog", b =>
+                {
+                    b.HasOne("Apartment.Model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Apartment.Model.Bill", b =>
@@ -186,7 +526,32 @@ namespace Apartment.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Apartment.Model.User", "Tenant")
+                    b.HasOne("Apartment.Model.Tenant", "Tenant")
+                        .WithMany("Bills")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Apartment");
+
+                    b.Navigation("BillingPeriod");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Apartment.Model.Invoice", b =>
+                {
+                    b.HasOne("Apartment.Model.ApartmentModel", "Apartment")
+                        .WithMany()
+                        .HasForeignKey("ApartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Apartment.Model.Bill", "Bill")
+                        .WithMany()
+                        .HasForeignKey("BillId");
+
+                    b.HasOne("Apartment.Model.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -194,7 +559,76 @@ namespace Apartment.Migrations
 
                     b.Navigation("Apartment");
 
-                    b.Navigation("BillingPeriod");
+                    b.Navigation("Bill");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Apartment.Model.Message", b =>
+                {
+                    b.HasOne("Apartment.Model.Request", "AssociatedRequest")
+                        .WithMany()
+                        .HasForeignKey("AssociatedRequestId");
+
+                    b.HasOne("Apartment.Model.User", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Apartment.Model.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssociatedRequest");
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("Apartment.Model.PaymentReceipt", b =>
+                {
+                    b.HasOne("Apartment.Model.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("Apartment.Model.Request", b =>
+                {
+                    b.HasOne("Apartment.Model.ApartmentModel", "Apartment")
+                        .WithMany()
+                        .HasForeignKey("ApartmentId");
+
+                    b.HasOne("Apartment.Model.User", "SubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId");
+
+                    b.Navigation("Apartment");
+
+                    b.Navigation("SubmittedByUser");
+                });
+
+            modelBuilder.Entity("Apartment.Model.Tenant", b =>
+                {
+                    b.HasOne("Apartment.Model.ApartmentModel", "Apartment")
+                        .WithMany()
+                        .HasForeignKey("ApartmentId");
+
+                    b.Navigation("Apartment");
+                });
+
+            modelBuilder.Entity("Apartment.Model.User", b =>
+                {
+                    b.HasOne("Apartment.Model.Tenant", "Tenant")
+                        .WithOne("UserAccount")
+                        .HasForeignKey("Apartment.Model.User", "TenantID");
 
                     b.Navigation("Tenant");
                 });
@@ -207,6 +641,13 @@ namespace Apartment.Migrations
             modelBuilder.Entity("Apartment.Model.BillingPeriod", b =>
                 {
                     b.Navigation("Bills");
+                });
+
+            modelBuilder.Entity("Apartment.Model.Tenant", b =>
+                {
+                    b.Navigation("Bills");
+
+                    b.Navigation("UserAccount");
                 });
 #pragma warning restore 612, 618
         }

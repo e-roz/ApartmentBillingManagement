@@ -1,0 +1,96 @@
+@page
+@model Apartment.Pages.Tenant.ViewInvoicesModel
+@{
+    ViewData["Title"] = "View Invoices";
+    Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_TenantSidebar")
+
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <h1 class="h3 mb-4">View Invoices</h1>
+        <p class="text-muted mb-4">All past and current invoices for your account.</p>
+
+        @if (Model.Invoices != null && Model.Invoices.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover data-table" id="invoicesTable">
+                            <thead>
+                                <tr>
+                                    <th>Invoice</th>
+                                    <th>Bill Amount</th>
+                                    <th>Payment Amount</th>
+                                    <th>Issue Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var invoice in Model.Invoices)
+                                {
+                                    var billingPeriod = invoice.Bill?.BillingPeriod != null
+                                        ? $"{invoice.Bill.BillingPeriod.MonthName} {invoice.Bill.BillingPeriod.Year}"
+                                        : "N/A";
+                                    var billAmount = invoice.Bill?.AmountDue ?? invoice.AmountDue;
+                                    var remaining = invoice.Bill != null
+                                        ? Math.Max(0m, invoice.Bill.AmountDue - invoice.Bill.AmountPaid)
+                                        : 0m;
+                                    var showPayButton = invoice.BillId.HasValue && remaining > 0m;
+                                    
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@invoice.Title</div>
+                                            <small class="text-muted d-block">@billingPeriod</small>
+                                        </td>
+                                        <td>@billAmount.ToString("C", pesoCulture)</td>
+                                        <td>@invoice.AmountDue.ToString("C", pesoCulture)</td>
+                                        <td>@invoice.IssueDate.ToString("MM/dd/yyyy")</td>
+                                        <td>@invoice.DueDate.ToString("MM/dd/yyyy")</td>
+                                        <td>
+                                            <span class="badge @(invoice.Status == Apartment.Enums.InvoiceStatus.Paid ? "bg-success" : invoice.Status == Apartment.Enums.InvoiceStatus.Overdue ? "bg-danger" : invoice.Status == Apartment.Enums.InvoiceStatus.Partial ? "bg-warning text-dark" : "bg-secondary")">
+                                                @invoice.Status
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <a asp-page="/Tenant/InvoiceDownload" asp-route-invoiceId="@invoice.Id" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="bi bi-download me-1"></i>PDF
+                                                </a>
+                                                @if (showPayButton)
+                                                {
+                                                    <a asp-page="/Tenant/MakePayment" asp-route-billId="@invoice.BillId" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-credit-card me-1"></i>Pay
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No invoices found for your account.
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>
+

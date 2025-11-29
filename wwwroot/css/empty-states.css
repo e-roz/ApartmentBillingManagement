@@ -1,0 +1,68 @@
+/* ========================================
+   Empty States - Better UX for No Data
+   Matcha Latte Theme
+   ======================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--main-text-muted, #8C8279);
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: var(--matcha-primary, #9fbf9f);
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.empty-state-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--main-text, #3D3D3D);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-message {
+    font-size: 1rem;
+    color: var(--main-text-muted, #8C8279);
+    margin-bottom: 1.5rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state-action {
+    margin-top: 1.5rem;
+}
+
+.empty-state-card {
+    background: var(--main-content-bg, #ffffff);
+    border: 2px dashed var(--sand, #F0EBE3);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    margin: 2rem 0;
+}
+
+.empty-state-card .empty-state-icon {
+    color: var(--matcha-primary, #9fbf9f);
+}
+
+/* Alternative empty state with accent color */
+.empty-state-accent .empty-state-icon {
+    color: var(--accent-primary, #C9826E);
+}
+
+.empty-state-accent .empty-state-card {
+    border-color: var(--accent-light, #FAE5E0);
+}
+
+/* Teal variant for info empty states */
+.empty-state-teal .empty-state-icon {
+    color: var(--teal-primary, #6B9E9E);
+}
+
+.empty-state-teal .empty-state-card {
+    border-color: var(--teal-light, #E5F2F2);
+}
+

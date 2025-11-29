@@ -1,0 +1,257 @@
+TENANT REFERENCE DISCOVERY REPORT
+==================================
+Generated: $(Get-Date)
+Purpose: Identify all Tenant references for refactoring to Users
+
+CLASSIFICATION KEY:
+- [MODEL] = Model/Entity class
+- [DBCONTEXT] = DbContext/Migrations
+- [SERVICE] = Service/Business Logic
+- [PAGE] = Razor Page/PageModel
+- [CONTROLLER] = Controller/API
+- [TEST] = Test files
+- [VIEWMODEL] = ViewModel/DTO
+- [MIGRATION] = Migration files (SQL/EF)
+
+==================================
+MODEL / ENTITY FILES
+==================================
+
+[MODEL] Model/Tenant.cs
+  - Line 7: public class Tenant
+  - Line 10: public int Id
+  - Full Tenant entity definition
+
+[MODEL] Model/User.cs
+  - Line 36: public int? TenantID { get; set; }
+  - Line 38: [ForeignKey(nameof(TenantID))]
+  - Line 39: public Tenant? Tenant { get; set; }
+  - NOTE: TenantID and Tenant navigation should be removed after migration
+
+[MODEL] Model/Bill.cs
+  - Line 26: public int TenantId { get; set; }
+  - Line 36: [ForeignKey("TenantId")]
+  - Line 37: public Tenant Tenant { get; set; } = null!;
+  - ACTION: Replace with TenantUserId and User navigation
+
+[MODEL] Model/Invoice.cs
+  - Line 11: public int TenantId { get; set; }
+  - Line 50: [ForeignKey("TenantId")]
+  - Line 51: public Tenant? Tenant { get; set; }
+  - ACTION: Replace with TenantUserId and User navigation
+
+[MODEL] Model/ApartmentModel.cs
+  - Line 27: public int? TenantId { get; set; }
+  - Line 29: [ForeignKey("TenantId")]
+  - Line 30: public Tenant? CurrentTenant { get; set; }
+  - ACTION: Change to reference User instead
+
+==================================
+DBCONTEXT / MIGRATIONS
+==================================
+
+[DBCONTEXT] Data/ApplicationDbContext.cs
+  - Line 17-18: public DbSet<Tenant> Tenants { get; set; }
+  - Line 72-77: Tenant-Bill relationship configuration
+  - Line 79-82: Tenant Status conversion
+  - Line 147-149: Tenant ApartmentId index
+  - Line 151-153: Tenant Status index
+  - Line 124: Bills.TenantId index
+  - Line 140: Invoices.TenantId index
+  - ACTION: Mark Tenants DbSet as Obsolete, update relationships
+
+[MIGRATION] Migrations/*.cs (Multiple files)
+  - Various migration files reference Tenants table
+  - NOTE: These are historical - do not modify
+
+==================================
+SERVICE / BUSINESS LOGIC
+==================================
+
+[SERVICE] Services/TenantLinkingService.cs
+  - Line 8: public class TenantLinkingService : ITenantLinkingService
+  - Line 25: var tenant = await _context.Tenants
+  - Line 35: user.TenantID = tenant.Id;
+  - ACTION: REMOVE - Replace with direct User queries
+
+[SERVICE] Services/ITenantLinkingService.cs
+  - Line 5: public interface ITenantLinkingService
+  - ACTION: REMOVE after TenantLinkingService removed
+
+[SERVICE] Services/ManagerReportingService.cs
+  - Line 9: public class ManagerReportingService
+  - Line 30: .Include(b => b.Tenant)
+  - Line 55: TenantName = b.Tenant.FullName ?? b.Tenant.PrimaryEmail ?? $"Tenant #{b.TenantId}",
+  - Line 56: b.TenantId,
+  - Line 116: .GroupBy(b => new { b.TenantId, b.TenantName, b.UnitNumber })
+  - Line 119: TenantId = g.Key.TenantId,
+  - ACTION: Rename to AdminReportingService, replace Tenant references
+
+==================================
+RAZOR PAGE / PAGEMODEL FILES
+==================================
+
+[PAGE] Pages/Manager/ManageTenants.cshtml.cs
+  - Line 34: public IList<TenantListViewModel> Tenants
+  - Line 37: public Model.Tenant? TenantDetails
+  - Line 41: public Model.Tenant Tenant
+  - Line 59: Tenants = await _context.Tenants
+  - Line 84: TenantDetails = await _context.Tenants
+  - Line 181: _context.Tenants.Add(Tenant);
+  - Line 213: Tenant = await _context.Tenants
+  - Line 249: var tenantToUpdate = await _context.Tenants
+  - Line 359: TenantDetails = await _context.Tenants
+  - Line 424: var tenant = await _context.Tenants
+  - Line 435: _context.Tenants.Remove(tenant);
+  - Line 530: return await _context.Tenants.AnyAsync(e => e.Id == id);
+  - Line 382: .Where(b => b.TenantId == id.Value)
+  - Line 401: .Where(b => b.TenantId == id.Value)
+  - ACTION: Major refactor - replace all Tenant operations with User operations
+
+[PAGE] Pages/Manager/ManageTenants.cshtml
+  - Multiple references to Tenant model in Razor syntax
+  - ACTION: Update all @Model.Tenant references
+
+[PAGE] Pages/Manager/ManageApartments.cshtml.cs
+  - Line 59: AssignTenantToApartment(Apartment.Model.Tenant tenant, ...)
+  - Line 64: dbData.Tenants.Update(tenant);
+  - Line 70: DetachTenantFromApartment(Apartment.Model.Tenant tenant)
+  - Line 75: dbData.Tenants.Update(tenant);
+  - Line 123: TenantId = a.CurrentTenant?.Id
+  - Line 137: var unassignedTenants = await dbData.Tenants
+  - Line 190: var tenant = await dbData.Tenants.FindAsync(SelectedTenantId.Value);
+  - Line 216: var activeTenant = await dbData.Tenants
+  - Line 257: var tenant = await dbData.Tenants.FindAsync(tenantId);
+  - Line 266: var existingTenant = await dbData.Tenants
+  - Line 297: var tenant = await dbData.Tenants.FindAsync(TenantId.Value);
+  - Line 344: var tenant = await dbData.Tenants.FindAsync(TenantId.Value);
+  - Line 348: var existingTenant = await dbData.Tenants
+  - Line 366: var existingTenant = await dbData.Tenants
+  - ACTION: Replace Tenant operations with User operations
+
+[PAGE] Pages/Manager/GenerateBills.cshtml.cs
+  - Line 79: var activeTenants = await dbData.Tenants
+  - Line 181: var activeTenants = await dbData.Tenants
+  - Line 203: .Select(b => b.TenantId)
+  - Line 214: // Check if a Bill already exists for this TenantId
+  - Line 227: TenantId = tenant.Id,
+  - Line 229: AmountDue = tenant.MonthlyRent,
+  - ACTION: Replace Tenant queries with User queries, use TenantUserId
+
+[PAGE] Pages/Manager/RecordPayments.cshtml.cs
+  - Line 63: public int TenantId { get; set; }
+  - Line 76: public int TenantId { get; set; }
+  - Line 105: public int TenantId { get; set; }
+  - Line 162: .Where(b => b.TenantId == AddPaymentInput.TenantId)
+  - Line 212: .FirstOrDefaultAsync(b => b.Id == bill.Id && b.TenantId == AddPaymentInput.TenantId);
+  - Line 226: .FirstOrDefaultAsync(b => b.Id == AddPaymentInput.BillId && b.TenantId == AddPaymentInput.TenantId);
+  - Line 274: TenantId = bill.TenantId,
+  - Line 316: SelectedTenantId = AddPaymentInput.TenantId;
+  - Line 317: return RedirectToPage(new { SelectedTenantId = AddPaymentInput.TenantId });
+  - Line 357: var tenant = await _context.Tenants
+  - Line 362: return new PaymentSummaryViewModel { TenantId = tenantId };
+  - Line 368: .Where(b => b.TenantId == tenantId)
+  - Line 396: .Where(i => i.TenantId == tenantId && i.PaymentDate != null)
+  - Line 411: TenantId = tenantId,
+  - Line 470: var query = _context.Tenants
+  - Line 494: .Where(b => tenantIds.Contains(b.TenantId))
+  - Line 662: var tenants = await _context.Tenants
+  - Line 674: TenantOptions.Insert(0, new SelectListItem("All Tenants", "", !SelectedTenantId.HasValue));
+  - ACTION: Replace all TenantId with TenantUserId, update queries
+
+[PAGE] Pages/Manager/BillingSummary.cshtml.cs
+  - Line 17: private readonly ManagerReportingService _reportingService;
+  - Line 20: ManagerReportingService reportingService
+  - ACTION: Update to AdminReportingService
+
+[PAGE] Pages/Manager/ManagerDashboard.cshtml.cs
+  - Line 34: ActiveTenants = await _context.Tenants
+  - ACTION: Replace with Users query filtering by LeaseStatus
+
+[PAGE] Pages/TenantDashboard.cshtml.cs
+  - Line 22: public Model.Tenant? TenantInfo { get; set; }
+  - Line 51: // Find tenant linked to this user via User.TenantID
+  - Line 63: .Where(b => b.TenantId == TenantInfo.Id)
+  - ACTION: Replace TenantInfo with User properties
+
+[PAGE] Pages/Tenant/ViewInvoices.cshtml.cs
+  - Line 21: public Model.Tenant? TenantInfo { get; set; }
+  - Line 28: .Include(u => u.Tenant)
+  - Line 35: if (user.Tenant != null)
+  - Line 37: TenantInfo = user.Tenant;
+  - Line 48: var tenant = await _context.Tenants
+  - Line 63: var tenantByEmail = await _context.Tenants
+  - ACTION: Replace TenantInfo with User properties
+
+[PAGE] Pages/Tenant/MakePayment.cshtml.cs
+  - Line 78: .Where(b => b.TenantId == tenant.Id && b.AmountDue > b.AmountPaid)
+  - Line 140: TenantInfo = await _context.Tenants.FindAsync(targetTenantId.Value);
+  - Line 147: .Where(b => b.TenantId == targetTenantId.Value && b.AmountDue > b.AmountPaid)
+  - Line 202: .Where(b => b.TenantId == tenantId && billIds.Contains(b.Id))
+  - Line 225: TenantId = bill.TenantId,
+  - ACTION: Replace TenantId with TenantUserId
+
+[PAGE] Pages/ManageApartments.cshtml.cs
+  - Line 63: TenantId = a.CurrentTenant != null ? a.CurrentTenant.Id : (int?)null
+  - Line 75: var unassignedTenants = await dbData.Tenants
+  - Line 134: var assignedTenant = await dbData.Tenants.FindAsync(ApartmentInput.TenantId.Value);
+  - Line 138: dbData.Tenants.Update(assignedTenant);
+  - ACTION: Replace Tenant operations with User operations
+
+[PAGE] Pages/Register.cshtml.cs
+  - Line 82: var existingTenant = await dbData.Tenants
+  - ACTION: Replace with User query
+
+[PAGE] Pages/Admin/ManageUsers.cshtml.cs
+  - Line 151: .Where(b => b.TenantId == tenantId)
+  - Line 169: .Where(b => b.TenantId == tenantId)
+  - ACTION: Replace TenantId with TenantUserId
+
+==================================
+VIEWMODEL / DTO FILES
+==================================
+
+[VIEWMODEL] ViewModels/TenantListViewModel.cs
+  - Check if exists - may need to rename or update
+
+[VIEWMODEL] ViewModels/TenantInputModel.cs
+  - Check if exists - may need to update
+
+[VIEWMODEL] ViewModels/BillingSummaryViewModel.cs
+  - May contain TenantId references
+  - ACTION: Review and update
+
+==================================
+DEPENDENCY INJECTION
+==================================
+
+[DI] Program.cs
+  - Line 26: builder.Services.AddScoped<ITenantLinkingService, TenantLinkingService>();
+  - Line 28: builder.Services.AddScoped<ManagerReportingService>();
+  - ACTION: Remove TenantLinkingService, rename ManagerReportingService
+
+==================================
+SUMMARY STATISTICS
+==================================
+
+Total Files with Tenant References: ~30+
+- Model Files: 5
+- Service Files: 3
+- PageModel Files: ~15
+- Razor View Files: ~5
+- DbContext/Migrations: Multiple
+- DI Configuration: 1
+
+Critical Actions Required:
+1. Update User model with tenant properties
+2. Update Bill and Invoice models to use TenantUserId
+3. Remove TenantLinkingService
+4. Rename ManagerReportingService to AdminReportingService
+5. Update all PageModels to use User instead of Tenant
+6. Update ApplicationDbContext relationships
+7. Update DI registrations
+
+==================================
+END OF REPORT
+==================================
+

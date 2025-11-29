@@ -1,0 +1,572 @@
+﻿@page "/Manager/GenerateBills"
+@model Apartment.Pages.Manager.GenerateBillsModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Generate Monthly Bills";
+    Layout = "_Layout";
+    var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_ManagerSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold">Monthly Bill Generation</h1>
+            <p class="text-muted mb-0">Select a month and year to generate bills for all occupied units.</p>
+        </div>
+    </div>
+
+    @* Standardized Messages *@
+    @{
+        ViewData["SuccessMessage"] = Model.SuccessMessage;
+        ViewData["ErrorMessage"] = Model.ErrorMessage;
+    }
+    @await Html.PartialAsync("_MessagePartial")
+
+    <form id="generationForm" method="post" asp-page-handler="Generate" novalidate data-loading="true">
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-5">
+                <div class="card shadow-lg border-0 h-100 d-flex flex-column">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0">Bill Generation</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column" style="flex: 1;">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- Form Fields Group -->
+                        <div class="form-fields-group">
+                            <div class="mb-3">
+                                <label asp-for="Input.Month" class="form-label fw-semibold">Month</label>
+                                <select asp-for="Input.Month" class="form-select" required>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                                <span asp-validation-for="Input.Month" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.Year" class="form-label fw-semibold">Year</label>
+                                <input asp-for="Input.Year" type="number" class="form-control" placeholder="e.g., 2025" min="1900" max="2100" step="1" inputmode="numeric" required />
+                                <span asp-validation-for="Input.Year" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.DueDate" class="form-label fw-semibold">Payment Due Date</label>
+                                <input asp-for="Input.DueDate" type="date" class="form-control" required />
+                                <span asp-validation-for="Input.DueDate" class="text-danger small"></span>
+                                <div class="form-text small mt-1">Choose the exact due date tenants will see on their bills.</div>
+                            </div>
+                        </div>
+
+                        <!-- Information Alerts -->
+                        <div class="alerts-group">
+                            <div class="alert alert-info no-toast mb-2" role="alert">
+                                <strong>Selected Due Date:</strong> <span id="dueDatePreview">@((Model.Input.DueDate.HasValue ? Model.Input.DueDate.Value.ToString("MMM dd, yyyy") : "—"))</span>
+                            </div>
+
+                            <div class="alert alert-warning no-toast mb-0" role="alert">
+                                <strong>Reminder:</strong> Confirm the targeted units before generating bills for the selected period.
+                            </div>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div class="mt-auto pt-3">
+                            <button id="confirmGenerateButton" type="button" class="btn btn-primary btn-lg w-100" data-bs-toggle="modal" data-bs-target="#confirmGenerateModal">Confirm &amp; Generate Bills</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card shadow-lg border-0 h-100 d-flex flex-column">
+                    <div class="card-header bg-light py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Targeted Units Preview</h5>
+                            <span class="badge bg-secondary">@((Model.OccupiedApartments != null) ? Model.OccupiedApartments.Count : 0) units</span>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column" style="flex: 1; min-height: 0;">
+                        <div id="billsTable_wrapper" class="d-flex flex-column" style="flex: 1; min-height: 0;">
+                            <table class="table table-striped table-hover mb-0 data-table data-table-manual-init" id="billsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" style="width: 70px;">Select</th>
+                                        <th scope="col">Unit Number</th>
+                                        <th scope="col" class="text-end">Monthly Rent</th>
+                                        <th scope="col">Current Tenant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.OccupiedApartments != null && Model.OccupiedApartments.Count > 0)
+                                    {
+                                        foreach (var unit in Model.OccupiedApartments)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="Input.SelectedApartmentIds" value="@unit.Id" @((Model.Input.SelectedApartmentIds == null || Model.Input.SelectedApartmentIds.Contains(unit.Id)) ? "checked=\"checked\"" : string.Empty) />
+                                                    </div>
+                                                </td>
+                                                <td>@unit.UnitNumber</td>
+                                                <td class="text-end">@String.Format(pesoCulture, "{0:C}", unit.MonthlyRent)</td>
+                                                <td>@(string.IsNullOrEmpty(unit.TenantName) ? "N/A" : unit.TenantName)</td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No occupied units found for billing.</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div id="selectionValidationMessage" class="text-danger small d-none">Please select at least one apartment before continuing.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    
+    <style>
+        /* ============================================
+           CARD ALIGNMENT & LAYOUT
+           ============================================ */
+        
+        /* Ensure both cards have equal height and align at top */
+        .row.g-4 {
+            align-items: flex-start;
+        }
+        
+        .row.g-4 > .col-lg-5,
+        .row.g-4 > .col-lg-7 {
+            display: flex;
+        }
+        
+        .row.g-4 > .col-lg-5 > .card,
+        .row.g-4 > .col-lg-7 > .card {
+            width: 100%;
+        }
+        
+        /* Ensure both card headers have the same height and alignment */
+        .row.g-4 .card-header {
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+        }
+        
+        /* Ensure card bodies start at the same vertical position with consistent padding */
+        .row.g-4 .col-lg-5 .card-body,
+        .row.g-4 .col-lg-7 .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* ============================================
+           LEFT CARD: BILL GENERATION REFINEMENTS
+           ============================================ */
+        
+        /* Form fields group - compact spacing */
+        .form-fields-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-fields-group .form-label {
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-fields-group .form-control,
+        .form-fields-group .form-select {
+            width: 100%;
+        }
+        
+        .form-fields-group .form-text {
+            font-size: 0.8125rem;
+            margin-top: 0.375rem;
+        }
+        
+        /* Alerts group - compact spacing */
+        .alerts-group {
+            margin-bottom: 1rem;
+        }
+        
+        .alerts-group .alert {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .alerts-group .alert:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Action button spacing */
+        .card-body .mt-auto {
+            margin-top: auto;
+            padding-top: 1rem;
+        }
+        
+        /* ============================================
+           RIGHT CARD: TARGETED UNITS PREVIEW
+           ============================================ */
+        
+        /* Make sure table starts immediately after card-body padding, aligned with form fields */
+        .row.g-4 .col-lg-7 #billsTable_wrapper {
+            margin-top: 0;
+            padding-top: 0;
+        }
+        
+        /* Ensure DataTables controls row doesn't add extra space */
+        #billsTable_wrapper > .row:first-child {
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+        
+        /* Fix Targeted Units Preview card layout */
+        #billsTable_wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+            flex: 1;
+        }
+        
+        /* Align DataTables controls properly */
+        #billsTable_wrapper .row {
+            align-items: center;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #billsTable_wrapper .row > div {
+            padding: 0.5rem 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        #billsTable_wrapper .dataTables_length,
+        #billsTable_wrapper .dataTables_filter {
+            margin-bottom: 0;
+        }
+        
+        #billsTable_wrapper .dataTables_length label,
+        #billsTable_wrapper .dataTables_filter label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            white-space: nowrap;
+        }
+        
+        #billsTable_wrapper .dataTables_length select,
+        #billsTable_wrapper .dataTables_filter input {
+            margin: 0;
+            display: inline-block;
+        }
+        
+        #billsTable_wrapper .dataTables_filter input {
+            width: auto;
+            min-width: 200px;
+            margin-left: 0.5rem;
+        }
+        
+        #billsTable_wrapper .dataTables_length select {
+            width: auto;
+            margin: 0 0.5rem;
+        }
+        
+        /* Ensure table fills available space */
+        .card-body .table-responsive {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        
+        /* Make sure the table container takes full height */
+        #billsTable_wrapper .dataTables_scroll {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        #billsTable_wrapper .dataTables_scrollBody {
+            flex: 1;
+            min-height: 0;
+        }
+        
+        /* Fix pagination alignment */
+        #billsTable_wrapper .dataTables_paginate {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.25rem;
+        }
+        
+        #billsTable_wrapper .dataTables_info {
+            display: flex;
+            align-items: center;
+            padding-top: 0.75rem;
+        }
+        
+        /* Ensure table wrapper fills card body */
+        .card-body.d-flex.flex-column #billsTable_wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+    </style>
+
+    @if (Model.Summary != null)
+    {
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-6">
+                <div class="card border-info shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Generation Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-6 col-sm-5">Billing Period</dt>
+                            <dd class="col-6 col-sm-7">@Model.Summary.PeriodKey</dd>
+
+                            <dt class="col-6 col-sm-5">Units Processed</dt>
+                            <dd class="col-6 col-sm-7">@Model.Summary.OccupiedUnits</dd>
+
+                            <dt class="col-6 col-sm-5">Bills Created</dt>
+                            <dd class="col-6 col-sm-7">@Model.Summary.BillsCreated</dd>
+
+                            <dt class="col-6 col-sm-5">Total Amount Billed</dt>
+                            <dd class="col-6 col-sm-7">@String.Format(pesoCulture, "{0:C}", Model.Summary.TotalAmountBilled)</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Custom DataTables initialization for billsTable to maintain flex layout
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a bit for page-enhancements to potentially initialize, then reinitialize with custom settings
+            setTimeout(function() {
+                const table = document.getElementById('billsTable');
+                if (table && typeof jQuery !== 'undefined' && jQuery.fn.DataTable) {
+                    // Destroy existing DataTable if any
+                    if (jQuery.fn.DataTable.isDataTable('#billsTable')) {
+                        jQuery('#billsTable').DataTable().destroy();
+                    }
+                    
+                    // Initialize with custom settings that respect flex layout
+                    initDataTable('#billsTable', {
+                        pageLength: 10,
+                        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                        order: [],
+                        responsive: true,
+                        scrollY: false, // Don't use scroll, let flex handle it
+                        paging: true,
+                        searching: true,
+                        language: {
+                            search: 'Search:',
+                            lengthMenu: 'Show _MENU_ entries',
+                            info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+                            infoEmpty: 'No entries to show',
+                            infoFiltered: '(filtered from _MAX_ total entries)',
+                            zeroRecords: 'No matching records found',
+                            paginate: {
+                                first: 'First',
+                                last: 'Last',
+                                next: 'Next',
+                                previous: 'Previous'
+                            }
+                        },
+                        columns: [
+                            { orderable: false }, // Select checkbox column
+                            null,                 // Unit Number
+                            { className: "text-end" }, // Monthly Rent
+                            null                  // Current Tenant
+                        ],
+                        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                        drawCallback: function() {
+                            // Ensure wrapper maintains flex layout
+                            const wrapper = document.getElementById('billsTable_wrapper');
+                            if (wrapper) {
+                                wrapper.style.display = 'flex';
+                                wrapper.style.flexDirection = 'column';
+                                wrapper.style.flex = '1';
+                                wrapper.style.minHeight = '0';
+                            }
+                        }
+                    });
+                }
+            }, 300);
+        });
+
+        (function () {
+            const form = document.getElementById('generationForm');
+            const confirmButton = document.getElementById('confirmGenerateButton');
+            const modalEl = document.getElementById('confirmGenerateModal');
+            const selectionValidationMessage = document.getElementById('selectionValidationMessage');
+            const modalSelectedCount = document.getElementById('modalSelectedCount');
+            const dueDateInput = document.getElementById('Input_DueDate');
+            const dueDatePreview = document.getElementById('dueDatePreview');
+            const modalDueDateText = document.getElementById('modalDueDateText');
+
+            if (!form || !confirmButton || !modalEl) {
+                return;
+            }
+
+            const formatDateDisplay = (inputValue) => {
+                if (!inputValue) {
+                    return '—';
+                }
+
+                const parsed = new Date(inputValue);
+                if (Number.isNaN(parsed.getTime())) {
+                    return '—';
+                }
+
+                return parsed.toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: '2-digit',
+                    year: 'numeric'
+                });
+            };
+
+            const toggleSelectionMessage = (selectedCount) => {
+                if (!selectionValidationMessage) {
+                    return;
+                }
+                selectionValidationMessage.classList.toggle('d-none', selectedCount > 0);
+            };
+
+            const updateSelectionState = () => {
+                const selectedCount = form.querySelectorAll('input[name="Input.SelectedApartmentIds"]:checked').length;
+                toggleSelectionMessage(selectedCount);
+                confirmButton.disabled = selectedCount === 0;
+                return selectedCount;
+            };
+
+            if (dueDateInput && dueDatePreview) {
+                const updatePreviews = () => {
+                    const formatted = formatDateDisplay(dueDateInput.value);
+                    dueDatePreview.textContent = formatted;
+                    if (modalDueDateText) {
+                        modalDueDateText.textContent = formatted;
+                    }
+                };
+
+                updatePreviews();
+
+                dueDateInput.addEventListener('change', updatePreviews);
+                dueDateInput.addEventListener('input', updatePreviews);
+            }
+
+            updateSelectionState();
+
+            form.addEventListener('change', function (event) {
+                if (event.target && event.target.matches('input[name="Input.SelectedApartmentIds"]')) {
+                    updateSelectionState();
+                }
+            });
+
+            confirmButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                const selectedCount = updateSelectionState();
+                const isValidForm = form.checkValidity();
+
+                if (!isValidForm) {
+                    form.classList.add('was-validated');
+                    const firstInvalid = form.querySelector(':invalid');
+                    if (firstInvalid) {
+                        firstInvalid.focus();
+                    }
+                }
+
+                if (!isValidForm || selectedCount === 0) {
+                    return;
+                }
+
+                if (modalSelectedCount) {
+                    modalSelectedCount.textContent = selectedCount.toString();
+                }
+
+                if (dueDateInput && modalDueDateText) {
+                    const formattedDueDate = formatDateDisplay(dueDateInput.value);
+                    modalDueDateText.textContent = formattedDueDate;
+                }
+
+                if (typeof bootstrap !== 'undefined') {
+                    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modalInstance.show();
+                } else {
+                    modalEl.classList.add('show');
+                }
+            });
+
+            // Add loading indicator when form is submitted
+            form.addEventListener('submit', function() {
+                if (typeof showLoading !== 'undefined') {
+                    showLoading.show('body', 'Generating bills... This may take a moment.');
+                }
+            });
+        })();
+    </script>
+}
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmGenerateModal" tabindex="-1" aria-labelledby="confirmGenerateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmGenerateModalLabel">Confirm Bill Generation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger no-toast" role="alert">
+                    Are you sure you want to generate <strong><span id="modalSelectedCount">@((Model.Input.SelectedApartmentIds != null && Model.Input.SelectedApartmentIds.Count > 0) ? Model.Input.SelectedApartmentIds.Count : (Model.OccupiedApartments != null ? Model.OccupiedApartments.Count : 0))</span></strong> new bills for @(new DateTime(Model.Input.Year, Model.Input.Month, 1).ToString("MMMM yyyy"))?
+                </div>
+                <p class="mb-0 text-muted">This action will bill the selected occupied units and schedule payment due on <span id="modalDueDateText">@((Model.Input.DueDate.HasValue ? Model.Input.DueDate.Value.ToString("MMM dd, yyyy") : "—"))</span>.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="generationForm">Generate Bills Now!</button>
+            </div>
+        </div>
+    </div>
+    
+</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-content {
+        min-height: 100vh;
+        background: #f8f9fa;
+    }
+</style>

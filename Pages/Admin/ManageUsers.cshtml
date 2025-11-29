@@ -1,0 +1,334 @@
+@page "/Admin/ManageUsers"
+@using Apartment.ViewModels
+@using Apartment.Enums
+@model Apartment.Pages.Admin.ManageUsersModel
+@{
+    ViewData["Title"] = "User Management";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_AdminSidebar")
+
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+        <div class="container-fluid">
+    @* Standardized Messages *@
+    @{
+        ViewData["SuccessMessage"] = Model.SuccessMessage;
+        ViewData["ErrorMessage"] = Model.ErrorMessage;
+    }
+    @await Html.PartialAsync("_MessagePartial")
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-people-fill text-primary me-2"></i>User Management
+                    </h2>
+                    <p class="text-muted mb-0">Manage system users and their roles</p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary fs-6">@Model.Users.Count Users</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       placeholder="Search by username or email..." 
+                                       name="SearchTerm" 
+                                       value="@Model.SearchTerm" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search me-1"></i>Search
+                                </button>
+                                @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                                {
+                                    <a href="/Admin/ManageUsers" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle me-1"></i>Clear
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-table me-2"></i>Users List
+                        </h5>
+                        <div class="text-muted small">
+                            Showing @Model.Users.Count user(s)
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Users.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 data-table" id="usersTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0">
+                                            <i class="bi bi-person me-1"></i>User
+                                        </th>
+                                        <th class="border-0">
+                                            <i class="bi bi-envelope me-1"></i>Email
+                                        </th>
+                                        <th class="border-0">
+                                            <i class="bi bi-shield me-1"></i>Role
+                                        </th>
+                                        <th class="border-0">
+                                            <i class="bi bi-calendar me-1"></i>Created
+                                        </th>
+                                        <th class="border-0 text-center">
+                                            <i class="bi bi-gear me-1"></i>Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in Model.Users)
+                                    {
+                                        <tr>
+                                            <td class="align-middle">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">
+                                                        <i class="bi bi-person-fill"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">@user.Username</div>
+                                                        <small class="text-muted">ID: @user.Id</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="align-middle">
+                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="@user.Email">
+                                                    @user.Email
+                                                </span>
+                                            </td>
+                                            <td class="align-middle">
+                                                @{
+                                                    var roleClass = user.Role switch
+                                                    {
+                                                        UserRoles.Admin => "bg-danger",
+                                                        // Manager role removed
+                                                        UserRoles.User => "bg-info",
+                                                        _ => "bg-secondary"
+                                                    };
+                                                }
+                                                <span class="badge @roleClass">
+                                                    <i class="bi bi-shield-check me-1"></i>@user.Role
+                                                </span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <div class="text-muted small">
+                                                    @user.CreationDate.ToString("MMM dd, yyyy")
+                                                </div>
+                                                <div class="text-muted small">
+                                                    @user.CreationDate.ToString("HH:mm")
+                                                </div>
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <div class="btn-group" role="group">
+                                                    @if (user.Role != UserRoles.Admin)
+                                                    {
+                                                        @if (user.Role == UserRoles.User)
+                                                        {
+                                                            <form method="post" asp-page-handler="UpdateRole" class="d-inline" id="promoteForm_@user.Id">
+                                                                <input type="hidden" name="userId" value="@user.Id" />
+                                                                <input type="hidden" name="newRole" value="Admin" />
+                                                                <button type="button" 
+                                                                        class="btn btn-danger btn-sm" 
+                                                                        title="Promote to Admin"
+                                                                        onclick="confirmPromote('@user.Username', '@user.Id')">
+                                                                    <i class="bi bi-arrow-up"></i>
+                                                                </button>
+                                                            </form>
+                                                        }
+                                                        // Manager role removed - no longer supported
+
+                                                        <form method="post" asp-page-handler="DeleteUser" class="d-inline" id="deleteForm_@user.Id">
+                                                            <input type="hidden" name="userId" value="@user.Id" />
+                                                            <button type="button" 
+                                                                    class="btn btn-danger btn-sm" 
+                                                                    title="Delete User"
+                                                                    onclick="confirmDeleteUser('@user.Username', '@user.Id')">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted small">
+                                                            <i class="bi bi-shield-check me-1"></i>Admin
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        @* Standardized Empty State *@
+                        ViewData["EmptyIcon"] = "bi-person-x";
+                        ViewData["EmptyTitle"] = "No Users Found";
+                        ViewData["EmptyMessage"] = !string.IsNullOrEmpty(Model.SearchTerm) 
+                            ? "No users match your search criteria. Try adjusting your search terms." 
+                            : "There are no users in the system yet.";
+                        @await Html.PartialAsync("_EmptyStatePartial")
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill display-6"></i>
+                    <h5 class="mt-2">@Model.Users.Count</h5>
+                    <small>Total Users</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-shield-check display-6"></i>
+                    @* Manager role removed *@
+                    <h5 class="mt-2">0</h5>
+                    <small>Managers</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-person display-6"></i>
+                    <h5 class="mt-2">@Model.Users.Count(u => u.Role == UserRoles.User)</h5>
+                    <small>Regular Users</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-check display-6"></i>
+                    <h5 class="mt-2">@Model.Users.Count(u => u.CreationDate.Date == DateTime.Today)</h5>
+                    <small>New Today</small>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-sm {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table td {
+        vertical-align: middle;
+        border-top: 1px solid #f1f3f4;
+    }
+    
+    .btn-group .btn {
+        margin: 0 2px;
+    }
+    
+    .card {
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Promote to Manager confirmation
+        function confirmPromote(username, userId) {
+            showAlert.confirm(
+                'Promote User',
+                `Are you sure you want to promote <strong>${username}</strong> to Manager?`,
+                'Yes, Promote',
+                'Cancel'
+            ).then((confirmed) => {
+                if (confirmed) {
+                    document.getElementById(`promoteForm_${userId}`).submit();
+                }
+            });
+        }
+
+        // Demote to User confirmation
+        function confirmDemote(username, userId) {
+            showAlert.confirm(
+                'Demote User',
+                `Are you sure you want to demote <strong>${username}</strong> to User?`,
+                'Yes, Demote',
+                'Cancel'
+            ).then((confirmed) => {
+                if (confirmed) {
+                    document.getElementById(`demoteForm_${userId}`).submit();
+                }
+            });
+        }
+
+        // Delete user confirmation
+        function confirmDeleteUser(username, userId) {
+            showAlert.delete(
+                'Delete User',
+                `Are you sure you want to delete user <strong>${username}</strong>? This action cannot be undone!`
+            ).then((confirmed) => {
+                if (confirmed) {
+                    document.getElementById(`deleteForm_${userId}`).submit();
+                }
+            });
+        }
+    </script>
+}
+

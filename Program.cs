@@ -1,4 +1,6 @@
 using Apartment.Data;
+using Apartment.Options;
+using Apartment.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 namespace Apartment
@@ -18,6 +20,16 @@ namespace Apartment
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
+            // Register application services
+            builder.Services.Configure<LogSnagOptions>(builder.Configuration.GetSection("LogSnag"));
+            builder.Services.AddHttpClient<ILogSnagClient, LogSnagClient>();
+            // TenantLinkingService removed - functionality merged into User model
+            builder.Services.AddScoped<InvoicePdfService>();
+            builder.Services.AddScoped<AdminReportingService>();
+            builder.Services.AddScoped<ExcelExportService>();
+            builder.Services.AddScoped<AuditLogPdfService>();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IAuditService, AuditService>();
 
             // Add Cookie Authentication Service
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -34,6 +46,24 @@ namespace Apartment
                 });
 
             var app = builder.Build();
+
+            // Automatically apply database migrations on startup to ensure the DB is up to date
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var context = services.GetRequiredService<ApplicationDbContext>();
+                    // Ensure the database is created and all pending migrations are applied.
+                    context.Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while migrating the database.");
+                    // In a real production scenario, you might want to handle this more gracefully.
+                }
+            }
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())

@@ -1,0 +1,305 @@
+:root {
+  /* ========================================
+   DARK THEME OVERRIDES
+   ======================================== */
+
+  /* Dark Neutrals */
+  --dark-bg-primary: #121212;
+  --dark-bg-secondary: #1e1e1e;
+  --dark-bg-tertiary: #2a2a2a;
+  --dark-border-primary: #363636;
+  --dark-text-primary: #e0e0e0;
+  --dark-text-secondary: #a0a0a0;
+
+  /* ========================================
+   PRIMARY - Matcha Green (Dark Mode Adapted)
+   ======================================== */
+  --dm-matcha-primary: #8fbc8f;
+  --dm-matcha-secondary: #7aa378;
+  --dm-matcha-light: #3a4b3a;
+  --dm-matcha-dark: #a8d3a8;
+  --dm-matcha-deep: #c0e0c0;
+
+  /* ========================================
+   ACCENT - Terracotta/Coral (Dark Mode Adapted)
+   ======================================== */
+  --dm-accent-primary: #d89c8a;
+  --dm-accent-secondary: #b88a7d;
+  --dm-accent-light: #523a34;
+  --dm-accent-dark: #e6b3a5;
+
+  /* ========================================
+   SECONDARY - Teal (Dark Mode Adapted)
+   ======================================== */
+  --dm-teal-primary: #7abfbf;
+  --dm-teal-secondary: #5a9a9a;
+  --dm-teal-light: #344a4a;
+  --dm-teal-dark: #9ad4d4;
+
+  /* ========================================
+   SEMANTIC - Status Colors (Dark Mode Adapted)
+   ======================================== */
+  --dm-success: #8fbc8f;
+  --dm-warning: #ffd700;
+  --dm-danger: #e57373;
+  --dm-info: #7abfbf;
+}
+
+/* Apply dark mode overrides when the .dark-mode class is present */
+body.dark-mode {
+  --main-bg: var(--dark-bg-primary);
+  --main-content-bg: var(--dark-bg-secondary);
+  --main-border: var(--dark-border-primary);
+  --main-text: var(--dark-text-primary);
+  --main-text-muted: var(--dark-text-secondary);
+  --cream: var(--dark-bg-secondary);
+  --sand: var(--dark-bg-tertiary);
+  --warm-gray: var(--dark-text-secondary);
+  --charcoal: var(--dark-text-primary);
+
+  --matcha-primary: var(--dm-matcha-primary);
+  --matcha-secondary: var(--dm-matcha-secondary);
+  --matcha-light: var(--dm-matcha-light);
+  --matcha-dark: var(--dm-matcha-dark);
+  --matcha-deep: var(--dm-matcha-deep);
+
+  --accent-primary: var(--dm-accent-primary);
+  --accent-secondary: var(--dm-accent-secondary);
+  --accent-light: var(--dm-accent-light);
+  --accent-dark: var(--dm-accent-dark);
+
+  --teal-primary: var(--dm-teal-primary);
+  --teal-secondary: var(--dm-teal-secondary);
+  --teal-light: var(--dm-teal-light);
+  --teal-dark: var(--dm-teal-dark);
+
+  --success: var(--dm-success);
+  --warning: var(--dm-warning);
+  --danger: var(--dm-danger);
+  --info: var(--dm-info);
+
+  /* Sidebar variables */
+  --sidebar-bg: var(--dark-bg-secondary);
+  --sidebar-bg-solid: var(--dark-bg-secondary);
+  --sidebar-text: var(--dark-text-primary);
+  --sidebar-text-muted: var(--dark-text-secondary);
+  --sidebar-border: var(--dark-border-primary);
+  --sidebar-hover: var(--dark-bg-tertiary);
+  --sidebar-active: var(--dm-matcha-primary);
+  --sidebar-active-text: var(--dark-bg-primary);
+  --sidebar-active-indicator: var(--dm-matcha-deep);
+  --sidebar-profile-bg: var(--dark-bg-primary);
+  --sidebar-section-text: var(--dark-text-secondary);
+  --sidebar-shadow: rgba(0, 0, 0, 0.2);
+  --sidebar-brand-bg: var(--dm-matcha-primary);
+  --sidebar-brand-text: var(--dark-bg-primary);
+
+  /* Bootstrap variable overrides */
+  --bs-body-bg: var(--dark-bg-primary);
+  --bs-body-color: var(--dark-text-primary);
+  --bs-border-color: var(--dark-border-primary);
+  --bs-table-bg: var(--dark-bg-secondary);
+  --bs-table-striped-bg: var(--dark-bg-tertiary);
+  --bs-table-hover-bg: var(--dark-bg-tertiary);
+  --bs-card-bg: var(--dark-bg-secondary);
+  --bs-card-border-color: var(--dark-border-primary);
+  --bs-list-group-bg: var(--dark-bg-secondary);
+  --bs-list-group-border-color: var(--dark-border-primary);
+  --bs-modal-content-bg: var(--dark-bg-secondary);
+  --bs-modal-header-border-color: var(--dark-border-primary);
+  --bs-form-control-bg: var(--dark-bg-tertiary);
+  --bs-form-select-bg: var(--dark-bg-tertiary);
+}
+
+body.dark-mode,
+body.dark-mode *,
+body.dark-mode .main-content,
+body.dark-mode .card,
+body.dark-mode .modal-content,
+body.dark-mode .list-group-item,
+body.dark-mode .table {
+  background-color: var(--main-bg) !important;
+  color: var(--main-text) !important;
+}
+
+body.dark-mode .swal2-popup {
+    background-color: var(--dark-bg-secondary) !important;
+    border-color: var(--dark-border-primary) !important;
+}
+
+body.dark-mode .swal2-title,
+body.dark-mode .swal2-content,
+body.dark-mode .swal2-html-container,
+body.dark-mode .swal2-close,
+body.dark-mode .toast-warning .toast-title,
+body.dark-mode .toast-warning .toast-message,
+body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    color: var(--dark-text-primary) !important;
+}
+
+body.dark-mode .swal2-confirm.swal2-confirm-danger,
+body.dark-mode .swal2-confirm[style*="background-color: rgb(220, 53, 69)"],
+body.dark-mode .swal2-confirm[style*="background-color: rgb(201, 87, 78)"] {
+    background: linear-gradient(135deg, #e57373 0%, #d32f2f 100%) !important;
+}
+
+body.dark-mode .swal2-cancel {
+    background-color: var(--dark-bg-tertiary) !important;
+    border-color: var(--dark-border-primary) !important;
+}
+
+body.dark-mode .dataTables_wrapper .dataTables_filter input,
+body.dark-mode .dataTables_wrapper .dataTables_length select,
+body.dark-mode .select2-container--bootstrap-5 .select2-selection--single,
+body.dark-mode .enhanced-form .form-control,
+body.dark-mode .enhanced-form .form-select {
+    background-color: var(--dark-bg-tertiary) !important;
+    color: var(--dark-text-primary) !important;
+    border-color: var(--dark-border-primary) !important;
+}
+
+body.dark-mode .flatpickr-calendar,
+body.dark-mode .flatpickr-months .flatpickr-month,
+body.dark-mode .flatpickr-current-month .flatpickr-monthDropdown-months,
+body.dark-mode .flatpickr-weekdays {
+    background: var(--dark-bg-secondary) !important;
+    border-color: var(--dark-border-primary) !important;
+    color: var(--dark-text-primary) !important;
+}
+
+body.dark-mode .flatpickr-day {
+    color: var(--dark-text-primary) !important;
+}
+
+body.dark-mode .flatpickr-day:hover {
+    background: var(--dark-bg-tertiary) !important;
+}
+
+body.dark-mode .flatpickr-day.selected,
+body.dark-mode .flatpickr-day.startRange,
+body.dark-mode .flatpickr-day.endRange {
+    background: var(--dm-matcha-primary) !important;
+    border-color: var(--dm-matcha-primary) !important;
+}
+
+body.dark-mode .sortable-ghost {
+    background: var(--dark-bg-tertiary) !important;
+}
+
+body.dark-mode .sortable-chosen {
+    background: var(--dark-bg-tertiary) !important;
+}
+
+/* Button Gradients Overrides */
+body.dark-mode .btn-primary {
+    background: linear-gradient(135deg, var(--dm-matcha-primary) 0%, var(--dm-matcha-dark) 50%, var(--dm-matcha-deep) 100%) !important;
+    border-color: var(--dm-matcha-primary) !important;
+    color: var(--dark-bg-primary) !important;
+}
+
+body.dark-mode .btn-primary:hover {
+    background: linear-gradient(135deg, var(--dm-matcha-dark) 0%, var(--dm-matcha-deep) 50%, var(--dm-matcha-primary) 100%) !important;
+    border-color: var(--dm-matcha-dark) !important;
+    box-shadow: 0 6px 12px rgba(0,0,0, 0.3) !important;
+}
+
+body.dark-mode .btn-success {
+    background: linear-gradient(135deg, var(--dm-matcha-primary) 0%, var(--dm-matcha-deep) 100%) !important;
+    border-color: var(--dm-matcha-primary) !important;
+    color: var(--dark-bg-primary) !important;
+}
+
+body.dark-mode .btn-success:hover {
+    background: linear-gradient(135deg, var(--dm-matcha-deep) 0%, var(--dm-matcha-primary) 100%) !important;
+    border-color: var(--dm-matcha-deep) !important;
+}
+
+body.dark-mode .btn-danger {
+    background: linear-gradient(135deg, var(--dm-danger) 0%, #a03c3c 100%) !important;
+    border-color: var(--dm-danger) !important;
+    color: var(--dark-text-primary) !important;
+}
+
+body.dark-mode .btn-danger:hover {
+    background: linear-gradient(135deg, #a03c3c 0%, var(--dm-danger) 100%) !important;
+    border-color: #a03c3c !important;
+}
+
+body.dark-mode .btn-warning {
+    background: linear-gradient(135deg, var(--dm-warning) 0%, #ccaa00 100%) !important;
+    border-color: var(--dm-warning) !important;
+    color: var(--dark-bg-primary) !important;
+}
+
+body.dark-mode .btn-warning:hover {
+    background: linear-gradient(135deg, #ccaa00 0%, var(--dm-warning) 100%) !important;
+    border-color: #ccaa00 !important;
+}
+
+body.dark-mode .btn-info {
+    background: linear-gradient(135deg, var(--dm-teal-primary) 0%, var(--dm-teal-dark) 100%) !important;
+    border-color: var(--dm-teal-primary) !important;
+    color: var(--dark-text-primary) !important;
+}
+
+body.dark-mode .btn-info:hover {
+    background: linear-gradient(135deg, var(--dm-teal-dark) 0%, var(--dm-teal-primary) 100%) !important;
+    border-color: var(--dm-teal-dark) !important;
+}
+
+body.dark-mode .btn-accent {
+    background: linear-gradient(135deg, var(--dm-accent-primary) 0%, var(--dm-accent-dark) 100%) !important;
+    border-color: var(--dm-accent-primary) !important;
+    color: var(--dark-bg-primary) !important;
+}
+
+body.dark-mode .btn-accent:hover {
+    background: linear-gradient(135deg, var(--dm-accent-dark) 0%, var(--dm-accent-primary) 100%) !important;
+    border-color: var(--dm-accent-dark) !important;
+}
+
+body.dark-mode .btn-teal {
+    background: linear-gradient(135deg, var(--dm-teal-primary) 0%, var(--dm-teal-dark) 100%) !important;
+    border-color: var(--dm-teal-primary) !important;
+    color: var(--dark-bg-primary) !important;
+}
+
+body.dark-mode .btn-teal:hover {
+    background: linear-gradient(135deg, var(--dm-teal-dark) 0%, var(--dm-teal-primary) 100%) !important;
+    border-color: var(--dm-teal-dark) !important;
+}
+
+body.dark-mode .bi {
+    color: var(--dark-text-primary) !important;
+}
+
+/* Chart.js Dark Mode Overrides */
+body.dark-mode .chart-matcha-primary {
+    border-color: var(--dm-matcha-primary);
+    background-color: rgba(143, 188, 143, 0.2);
+}
+
+body.dark-mode .chart-matcha-secondary {
+    border-color: var(--dm-matcha-secondary);
+    background-color: rgba(122, 163, 120, 0.2);
+}
+
+body.dark-mode .chart-matcha-dark {
+    border-color: var(--dm-matcha-dark);
+    background-color: rgba(168, 211, 168, 0.2);
+}
+
+body.dark-mode .chart-accent {
+    border-color: var(--dm-accent-primary);
+    background-color: rgba(216, 156, 138, 0.2);
+}
+
+body.dark-mode .chart-teal {
+    border-color: var(--dm-teal-primary);
+    background-color: rgba(122, 191, 191, 0.2);
+}
+
+body.dark-mode .chart-warning {
+    border-color: var(--dm-warning);
+    background-color: rgba(255, 215, 0, 0.2);
+}

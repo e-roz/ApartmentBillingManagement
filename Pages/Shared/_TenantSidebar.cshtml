@@ -1,0 +1,260 @@
+@using System.Security.Claims
+@{
+    var username = User.Identity?.Name ?? "Unknown User";
+    var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Resident";
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    var isDashboard = currentPage.Contains("TenantDashboard");
+    var isViewInvoices = currentPage.Contains("ViewInvoices");
+    var isPaymentHistory = currentPage.Contains("PaymentHistory");
+    var isMakePayment = currentPage.Contains("MakePayment");
+    var isSubmitRequest = currentPage.Contains("SubmitRequest");
+    var isViewRequests = currentPage.Contains("ViewRequests");
+    var isDocuments = currentPage.Contains("Documents");
+    var isMessages = currentPage.Contains("Messages");
+    var isProfile = currentPage.Contains("Profile");
+    
+    // Determine if sections should be expanded
+    var isFinancialsSection = isViewInvoices || isPaymentHistory || isMakePayment;
+    var isMaintenanceSection = isSubmitRequest || isViewRequests;
+}
+
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="tenantSidebar">
+    <!-- Brand Section -->
+    <div class="sidebar-brand">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <div class="brand-icon me-2">
+                    <i class="bi bi-house-heart"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold">Tenant Portal</h5>
+                    <small class="text-muted opacity-75">Resident Hub</small>
+                </div>
+            </div>
+            <button class="btn btn-link text-white d-lg-none p-0 sidebar-close" id="sidebarClose" type="button">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- User Profile Section -->
+    <div class="sidebar-profile">
+        <div class="d-flex align-items-center px-3 py-3">
+            <div class="profile-avatar me-3">
+                <div class="avatar-circle">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <span class="avatar-status bg-success"></span>
+            </div>
+            <div class="flex-grow-1 min-w-0">
+                <h6 class="mb-0 text-truncate fw-semibold">@username</h6>
+                <small class="text-muted d-block text-truncate">@userRole</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+        <div class="nav-content">
+            <!-- Dashboard -->
+            <a asp-page="/TenantDashboard" 
+               class="nav-item @(isDashboard ? "active" : "")"
+               aria-current="@(isDashboard ? "page" : null)">
+                <span class="nav-icon">
+                    <i class="bi bi-speedometer2"></i>
+                </span>
+                <span class="nav-label">Dashboard</span>
+                @if (isDashboard)
+                {
+                    <span class="nav-indicator"></span>
+                }
+            </a>
+
+            <!-- Financials Section (Collapsible) -->
+            <div class="nav-section mt-3">
+                <button class="nav-section-toggle" 
+                        type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#financialsCollapse"
+                        aria-expanded="@(isFinancialsSection ? "true" : "false")"
+                        aria-controls="financialsCollapse">
+                    <div class="d-flex align-items-center w-100">
+                        <span class="nav-icon">
+                            <i class="bi bi-wallet2"></i>
+                        </span>
+                        <span class="nav-label flex-grow-1">Financials</span>
+                        <i class="bi bi-chevron-down collapse-icon"></i>
+                    </div>
+                </button>
+                
+                <div class="collapse @(isFinancialsSection ? "show" : "")" id="financialsCollapse">
+                    <div class="nav-submenu">
+                        <a asp-page="/Tenant/ViewInvoices" 
+                           class="nav-item @(isViewInvoices ? "active" : "")"
+                           aria-current="@(isViewInvoices ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-receipt"></i>
+                            </span>
+                            <span class="nav-label">View Invoices</span>
+                            @if (isViewInvoices)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+
+                        <a asp-page="/Tenant/PaymentHistory" 
+                           class="nav-item @(isPaymentHistory ? "active" : "")"
+                           aria-current="@(isPaymentHistory ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </span>
+                            <span class="nav-label">Payment History</span>
+                            @if (isPaymentHistory)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+
+                        <a asp-page="/Tenant/MakePayment" 
+                           class="nav-item @(isMakePayment ? "active" : "")"
+                           aria-current="@(isMakePayment ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-credit-card"></i>
+                            </span>
+                            <span class="nav-label">Make Payment</span>
+                            @if (isMakePayment)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maintenance Section (Collapsible) -->
+            <div class="nav-section mt-3">
+                <button class="nav-section-toggle" 
+                        type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#maintenanceCollapse"
+                        aria-expanded="@(isMaintenanceSection ? "true" : "false")"
+                        aria-controls="maintenanceCollapse">
+                    <div class="d-flex align-items-center w-100">
+                        <span class="nav-icon">
+                            <i class="bi bi-tools"></i>
+                        </span>
+                        <span class="nav-label flex-grow-1">Maintenance</span>
+                        <i class="bi bi-chevron-down collapse-icon"></i>
+                    </div>
+                </button>
+                
+                <div class="collapse @(isMaintenanceSection ? "show" : "")" id="maintenanceCollapse">
+                    <div class="nav-submenu">
+                        <a asp-page="/Tenant/SubmitRequest" 
+                           class="nav-item @(isSubmitRequest ? "active" : "")"
+                           aria-current="@(isSubmitRequest ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-plus-circle"></i>
+                            </span>
+                            <span class="nav-label">Submit Request</span>
+                            @if (isSubmitRequest)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+
+                        <a asp-page="/Tenant/ViewRequests" 
+                           class="nav-item @(isViewRequests ? "active" : "")"
+                           aria-current="@(isViewRequests ? "page" : null)">
+                            <span class="nav-icon">
+                                <i class="bi bi-list-check"></i>
+                            </span>
+                            <span class="nav-label">View My Requests</span>
+                            @if (isViewRequests)
+                            {
+                                <span class="nav-indicator"></span>
+                            }
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resources Section -->
+            <div class="nav-section mt-3">
+                <div class="nav-section-header">
+                    <small class="text-uppercase">Resources</small>
+                </div>
+                
+                <a asp-page="/Tenant/Documents" 
+                   class="nav-item @(isDocuments ? "active" : "")"
+                   aria-current="@(isDocuments ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </span>
+                    <span class="nav-label">Documents</span>
+                    @if (isDocuments)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+
+                <a asp-page="/Tenant/Messages" 
+                   class="nav-item d-flex align-items-center @(isMessages ? "active" : "")"
+                   aria-current="@(isMessages ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-envelope"></i>
+                    </span>
+                    <span class="nav-label">Messages</span>
+                    @if (ViewData["UnreadMessagesCount"] is int unreadCount && unreadCount > 0)
+                    {
+                        <span class="badge bg-danger rounded-pill ms-auto me-3">@unreadCount</span>
+                    }
+                    @if (isMessages)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+            </div>
+
+            <!-- Account Section -->
+            <div class="nav-section mt-3">
+                <div class="nav-section-header">
+                    <small class="text-uppercase">Account</small>
+                </div>
+                
+                <a asp-page="/Tenant/Profile" 
+                   class="nav-item @(isProfile ? "active" : "")"
+                   aria-current="@(isProfile ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-person-gear"></i>
+                    </span>
+                    <span class="nav-label">Profile & Settings</span>
+                    @if (isProfile)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+        <div class="theme-switcher nav-item">
+            <button id="theme-toggle" class="btn btn-link nav-item w-100 text-start">
+                <i class="bi bi-moon-stars-fill me-2"></i>
+                <span class="nav-label">Dark Mode</span>
+            </button>
+        </div>
+        <a href="#" class="nav-item text-danger" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
+            <span class="nav-icon">
+                <i class="bi bi-box-arrow-right"></i>
+            </span>
+            <span class="nav-label">Logout</span>
+        </a>
+    </div>
+</aside>
