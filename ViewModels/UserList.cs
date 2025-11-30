@@ -17,6 +17,12 @@ namespace Apartment.ViewModels
 
         [Display(Name = "Creation Date")]
         public DateTime CreationDate { get; set; }
+
+        [Display(Name = "Status")]
+        public string? Status { get; set; }
+
+        [Display(Name = "Last Login")]
+        public DateTime? LastLogin { get; set; }
     }
 }
 

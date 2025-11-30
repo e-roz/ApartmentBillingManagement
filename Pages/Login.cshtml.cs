@@ -65,6 +65,23 @@ namespace Apartment.Pages
                 return Page();
             }
 
+            // Check if user account is inactive
+            if (user.Status != null && user.Status.ToLower() == "inactive")
+            {
+                ErrorMessage = "Your account has been deactivated by the system. Please contact the administrator for more information.";
+                // Log blocked login attempt due to inactive account
+                await _auditService.LogAsync(
+                    AuditActionType.UserLoginFailure,
+                    user.Id,
+                    $"Login attempt blocked for inactive account: {Input.Email}.",
+                    user.Id,
+                    nameof(User),
+                    success: false
+                );
+                await dbData.SaveChangesAsync();
+                return Page();
+            }
+
             // Log successful login
             await _auditService.LogAsync(
                 AuditActionType.UserLoginSuccess,

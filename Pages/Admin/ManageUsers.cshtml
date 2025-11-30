@@ -11,343 +11,595 @@
     @await Html.PartialAsync("_AdminSidebar")
 
     <!-- Main Content -->
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem; background-color: #FAFAF5; min-height: 100vh;">
         <div class="container-fluid">
-    @* Standardized Messages *@
-    @{
-        ViewData["SuccessMessage"] = Model.SuccessMessage;
-        ViewData["ErrorMessage"] = Model.ErrorMessage;
-    }
-    @await Html.PartialAsync("_MessagePartial")
+            @* Standardized Messages *@
+            @{
+                ViewData["SuccessMessage"] = Model.SuccessMessage;
+                ViewData["ErrorMessage"] = Model.ErrorMessage;
+            }
+            @await Html.PartialAsync("_MessagePartial")
 
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-1">
-                        <i class="bi bi-people-fill text-primary me-2"></i>User Management
-                    </h2>
-                    <p class="text-muted mb-0">Manage system users and their roles</p>
-                </div>
-                <div class="text-end">
-                    <span class="badge bg-primary fs-6">@Model.Users.Count Users</span>
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="mb-1" style="font-weight: 600; color: #2c3e50;">User Management</h2>
+                            <p class="text-muted mb-0" style="font-size: 0.95rem;">Manage system account users and roles.</p>
+                        </div>
+                        <button type="button" class="btn btn-add-user" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                            <i class="bi bi-person-plus me-2"></i>Add User
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Search and Filter Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <form method="get" class="row g-3">
-                        <div class="col-md-8">
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bi bi-search"></i>
-                                </span>
-                                <input type="text" 
-                                       class="form-control" 
-                                       placeholder="Search by username or email..." 
-                                       name="SearchTerm" 
-                                       value="@Model.SearchTerm" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-search me-1"></i>Search
-                                </button>
-                                @if (!string.IsNullOrEmpty(Model.SearchTerm))
-                                {
-                                    <a href="/Admin/ManageUsers" class="btn btn-outline-secondary">
-                                        <i class="bi bi-x-circle me-1"></i>Clear
-                                    </a>
-                                }
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add New User Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom">
-                    <h5 class="mb-0">
-                        <i class="bi bi-person-plus me-2"></i>Add New User
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form method="post" asp-page-handler="AddUser">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label asp-for="NewUser.Username" class="form-label">Username</label>
-                                <input type="text" asp-for="NewUser.Username" class="form-control" />
-                                <span asp-validation-for="NewUser.Username" class="text-danger"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="NewUser.Email" class="form-label">Email</label>
-                                <input type="email" asp-for="NewUser.Email" class="form-control" />
-                                <span asp-validation-for="NewUser.Email" class="text-danger"></span>
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-success">
-                                    <i class="bi bi-plus-circle me-1"></i>Add User
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Users Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-table me-2"></i>Users List
-                        </h5>
-                        <div class="text-muted small">
-                            Showing @Model.Users.Count user(s)
+            <!-- Search and Filter Row -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                        <div class="card-body p-3">
+                            <form method="get" class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label small text-muted mb-1">Search</label>
+                                    <div class="input-group" style="border-radius: 8px;">
+                                        <span class="input-group-text bg-white border-end-0" style="border-radius: 8px 0 0 8px;">
+                                            <i class="bi bi-search text-muted"></i>
+                                        </span>
+                                        <input type="text" 
+                                               class="form-control border-start-0" 
+                                               placeholder="Search users..." 
+                                               name="SearchTerm" 
+                                               value="@Model.SearchTerm"
+                                               style="border-radius: 0 8px 8px 0;" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted mb-1">Role</label>
+                                    <select class="form-select" name="RoleFilter" style="border-radius: 8px;">
+                                        <option value="All" selected="@(Model.RoleFilter == null || Model.RoleFilter == "All")">All</option>
+                                        <option value="Admin" selected="@(Model.RoleFilter == "Admin")">Admin</option>
+                                        <option value="Tenant" selected="@(Model.RoleFilter == "Tenant")">User</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted mb-1">Status</label>
+                                    <select class="form-select" name="StatusFilter" style="border-radius: 8px;">
+                                        <option value="All" selected="@(Model.StatusFilter == null || Model.StatusFilter == "All")">All</option>
+                                        <option value="Active" selected="@(Model.StatusFilter == "Active")">Active</option>
+                                        <option value="Inactive" selected="@(Model.StatusFilter == "Inactive")">Inactive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-search w-100" style="border-radius: 8px;">
+                                        <i class="bi bi-search me-1"></i>Search
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    @if (Model.Users.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0 data-table" id="usersTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="border-0">
-                                            <i class="bi bi-person me-1"></i>User
-                                        </th>
-                                        <th class="border-0">
-                                            <i class="bi bi-envelope me-1"></i>Email
-                                        </th>
-                                        <th class="border-0">
-                                            <i class="bi bi-shield me-1"></i>Role
-                                        </th>
-                                        <th class="border-0">
-                                            <i class="bi bi-calendar me-1"></i>Created
-                                        </th>
-                                        <th class="border-0 text-center">
-                                            <i class="bi bi-gear me-1"></i>Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var user in Model.Users)
-                                    {
-                                        <tr>
-                                            <td class="align-middle">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">
-                                                        <i class="bi bi-person-fill"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="fw-semibold">@user.Username</div>
-                                                        <small class="text-muted">ID: @user.Id</small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="align-middle">
-                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="@user.Email">
-                                                    @user.Email
-                                                </span>
-                                            </td>
-                                            <td class="align-middle">
-                                                @{
-                                                    var roleClass = user.Role switch
-                                                    {
-                                                        UserRoles.Admin => "bg-danger",
-                                                        // Manager role removed
-                                                        UserRoles.Tenant => "bg-info",
-                                                        _ => "bg-secondary"
-                                                    };
-                                                }
-                                                <span class="badge @roleClass">
-                                                    <i class="bi bi-shield-check me-1"></i>@user.Role
-                                                </span>
-                                            </td>
-                                            <td class="align-middle">
-                                                <div class="text-muted small">
-                                                    @user.CreationDate.ToString("MMM dd, yyyy")
-                                                </div>
-                                                <div class="text-muted small">
-                                                    @user.CreationDate.ToString("HH:mm")
-                                                </div>
-                                            </td>
-                                            <td class="align-middle text-center">
-                                                <div class="btn-group" role="group">
-                                                    @if (user.Role != UserRoles.Admin)
-                                                    {
-                                                        @if (user.Role == UserRoles.Tenant)
-                                                        {
-                                                            <form method="post" asp-page-handler="UpdateRole" class="d-inline" id="promoteForm_@user.Id">
-                                                                <input type="hidden" name="userId" value="@user.Id" />
-                                                                <input type="hidden" name="newRole" value="Admin" />
-                                                                <button type="button" 
-                                                                        class="btn btn-danger btn-sm" 
-                                                                        title="Promote to Admin"
-                                                                        onclick="confirmPromote('@user.Username', '@user.Id')">
-                                                                    <i class="bi bi-arrow-up"></i>
-                                                                </button>
-                                                            </form>
-                                                        }
-                                                        // Manager role removed - no longer supported
+            </div>
 
-                                                        <form method="post" asp-page-handler="DeleteUser" class="d-inline" id="deleteForm_@user.Id">
-                                                            <input type="hidden" name="userId" value="@user.Id" />
-                                                            <button type="button" 
-                                                                    class="btn btn-danger btn-sm" 
-                                                                    title="Delete User"
-                                                                    onclick="confirmDeleteUser('@user.Username', '@user.Id')">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        </form>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-muted small">
-                                                            <i class="bi bi-shield-check me-1"></i>Admin
+            <!-- Users Table -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                        <div class="card-body p-0">
+                            @if (Model.Users.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0 data-table" id="usersTable">
+                                        <thead class="table-light" style="border-bottom: 2px solid #f1f3f4;">
+                                            <tr>
+                                                <th class="border-0 ps-4" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Username</th>
+                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Email</th>
+                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Role</th>
+                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Status</th>
+                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Created</th>
+                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Last Login</th>
+                                                <th class="border-0 text-center pe-4" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var user in Model.Users)
+                                            {
+                                                <tr class="user-row" data-user-id="@user.Id" style="cursor: pointer;" onclick="openUserDrawer(@user.Id, '@user.Username', '@user.Email', '@user.Role', '@(user.Status ?? "Active")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("HH:mm") ?? "Never")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("MMM dd, yyyy HH:mm") ?? "Never")', @(user.Role == UserRoles.Admin ? "true" : "false"))">
+                                                    <td class="align-middle ps-4">
+                                                        <div class="fw-semibold" style="color: #202124;">@user.Username</div>
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        <span class="text-truncate d-inline-block" style="max-width: 250px; color: #5f6368;" title="@user.Email">
+                                                            @user.Email
                                                         </span>
-                                                    }
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        @{
+                                                            var roleBadgeClass = user.Role switch
+                                                            {
+                                                                UserRoles.Admin => "badge-gold",
+                                                                UserRoles.Tenant => "badge-green",
+                                                                _ => "badge-secondary"
+                                                            };
+                                                        }
+                                                        <span class="badge @roleBadgeClass">
+                                                            @user.Role
+                                                        </span>
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        @{
+                                                            var statusBadgeClass = (user.Status?.ToLower() == "active" || user.Status == null) ? "badge-green" : "badge-gray";
+                                                            var statusText = (user.Status?.ToLower() == "active" || user.Status == null) ? "Active" : "Inactive";
+                                                        }
+                                                        <span class="badge @statusBadgeClass">
+                                                            @statusText
+                                                        </span>
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        <div class="text-muted small">@user.CreationDate.ToString("MMM dd")</div>
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        <div class="text-muted small">@(user.LastLogin?.ToString("HH:mm") ?? "Never")</div>
+                                                    </td>
+                                                    <td class="align-middle text-center pe-4">
+                                                        <div class="dropdown" onclick="event.stopPropagation();">
+                                                            <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                <i class="bi bi-three-dots-vertical" style="font-size: 1.2rem;"></i>
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="border-radius: 8px; border: none;" onclick="event.stopPropagation();">
+                                                                <li>
+                                                                    <a class="dropdown-item" href="#" onclick="event.stopPropagation(); openUserDrawer(@user.Id, '@user.Username', '@user.Email', '@user.Role', '@(user.Status ?? "Active")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("HH:mm") ?? "Never")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("MMM dd, yyyy HH:mm") ?? "Never")', @(user.Role == UserRoles.Admin ? "true" : "false")); return false;">
+                                                                        <i class="bi bi-eye me-2"></i>View Profile
+                                                                    </a>
+                                                                </li>
+                                                                @if (user.Role != UserRoles.Admin)
+                                                                {
+                                                                    <li><hr class="dropdown-divider"></li>
+                                                                    <li>
+                                                                        <a class="dropdown-item text-danger" href="#" onclick="event.stopPropagation(); confirmDeleteUser('@user.Username', @user.Id); return false;">
+                                                                            <i class="bi bi-trash me-2"></i>Delete
+                                                                        </a>
+                                                                    </li>
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                @* Standardized Empty State *@
+                                ViewData["EmptyIcon"] = "bi-person-x";
+                                ViewData["EmptyTitle"] = "No Users Found";
+                                ViewData["EmptyMessage"] = !string.IsNullOrEmpty(Model.SearchTerm) 
+                                    ? "No users match your search criteria. Try adjusting your search terms." 
+                                    : "There are no users in the system yet.";
+                                @await Html.PartialAsync("_EmptyStatePartial")
+                            }
                         </div>
-                    }
-                    else
-                    {
-                        @* Standardized Empty State *@
-                        ViewData["EmptyIcon"] = "bi-person-x";
-                        ViewData["EmptyTitle"] = "No Users Found";
-                        ViewData["EmptyMessage"] = !string.IsNullOrEmpty(Model.SearchTerm) 
-                            ? "No users match your search criteria. Try adjusting your search terms." 
-                            : "There are no users in the system yet.";
-                        @await Html.PartialAsync("_EmptyStatePartial")
-                    }
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Quick Stats -->
-    <div class="row mt-4">
-        <div class="col-md-3">
-            <div class="card border-0 bg-primary text-white">
-                <div class="card-body text-center">
-                    <i class="bi bi-people-fill display-6"></i>
-                    <h5 class="mt-2">@Model.Users.Count</h5>
-                    <small>Total Users</small>
+            <!-- Stats Cards -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm stats-card" style="border-radius: 12px; background: linear-gradient(135deg, #6BB57C 0%, #5aa368 100%);">
+                        <div class="card-body text-center text-white p-4">
+                            <div class="display-6 mb-2">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <h3 class="mb-1" style="font-weight: 700; font-size: 2.5rem;">@Model.Users.Count</h3>
+                            <small style="font-size: 0.9rem; opacity: 0.95;">Total Users</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm stats-card" style="border-radius: 12px; background: linear-gradient(135deg, #6BB57C 0%, #5aa368 100%);">
+                        <div class="card-body text-center text-white p-4">
+                            <div class="display-6 mb-2">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <h3 class="mb-1" style="font-weight: 700; font-size: 2.5rem;">@Model.Users.Count(u => u.Status?.ToLower() == "active" || u.Status == null)</h3>
+                            <small style="font-size: 0.9rem; opacity: 0.95;">Active Users</small>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 bg-warning text-white">
-                <div class="card-body text-center">
-                    <i class="bi bi-shield-check display-6"></i>
-                    @* Manager role removed *@
-                    <h5 class="mt-2">0</h5>
-                    <small>Managers</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 bg-info text-white">
-                <div class="card-body text-center">
-                    <i class="bi bi-person display-6"></i>
-                    <h5 class="mt-2">@Model.Users.Count(u => u.Role == UserRoles.Tenant)</h5>
-                    <small>Regular Users</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 bg-success text-white">
-                <div class="card-body text-center">
-                    <i class="bi bi-calendar-check display-6"></i>
-                    <h5 class="mt-2">@Model.Users.Count(u => u.CreationDate.Date == DateTime.Today)</h5>
-                    <small>New Today</small>
-                </div>
-            </div>
-        </div>
-    </div>
         </div>
     </div>
 </div>
 
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="border-radius: 12px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <div class="modal-header border-0 pb-0" style="padding: 1.5rem 1.5rem 0.5rem;">
+                <h5 class="modal-title" id="addUserModalLabel" style="font-weight: 600;">Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <form method="post" asp-page-handler="AddUser" id="addUserForm">
+                    <div class="mb-3">
+                        <label asp-for="NewUser.Username" class="form-label small text-muted mb-1">Username</label>
+                        <input type="text" asp-for="NewUser.Username" class="form-control" style="border-radius: 8px;" placeholder="Enter username" />
+                        <span asp-validation-for="NewUser.Username" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewUser.Email" class="form-label small text-muted mb-1">Email</label>
+                        <input type="email" asp-for="NewUser.Email" class="form-control" style="border-radius: 8px;" placeholder="Enter email address" />
+                        <span asp-validation-for="NewUser.Email" class="text-danger small"></span>
+                    </div>
+                    <div class="alert alert-info small mb-0" style="border-radius: 8px; background-color: #e8f4f8; border-color: #bee5eb;">
+                        <i class="bi bi-info-circle me-2"></i>A temporary password will be generated and sent via email.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pt-0" style="padding: 0.5rem 1.5rem 1.5rem;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                <button type="submit" form="addUserForm" class="btn btn-add-user" style="border-radius: 8px;">
+                    <i class="bi bi-plus-circle me-1"></i>Add User
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Profile Drawer -->
+<div class="user-drawer" id="userDrawer">
+    <div class="drawer-overlay" onclick="closeUserDrawer()"></div>
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <h5 class="mb-0" style="font-weight: 600;">User Profile</h5>
+            <button type="button" class="btn-close" onclick="closeUserDrawer()" aria-label="Close"></button>
+        </div>
+        <div class="drawer-body">
+            <div class="mb-4">
+                <label class="form-label small text-muted mb-1">Name</label>
+                <div class="fw-semibold" id="drawerUsername" style="color: #202124; font-size: 1.1rem;"></div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label small text-muted mb-1">Email</label>
+                <div id="drawerEmail" style="color: #5f6368;"></div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label small text-muted mb-1">Role</label>
+                <div id="drawerRole"></div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label small text-muted mb-1">Status</label>
+                <div id="drawerStatus"></div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label small text-muted mb-1">Created</label>
+                <div id="drawerCreated" style="color: #5f6368;"></div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label small text-muted mb-1">Last Login</label>
+                <div id="drawerLastLogin" style="color: #5f6368;"></div>
+            </div>
+            <hr class="my-4">
+            <div class="d-grid gap-2" id="drawerActions">
+                <form method="post" asp-page-handler="ResetPassword" class="d-inline" id="resetPasswordForm">
+                    <input type="hidden" name="userId" id="resetPasswordUserId" />
+                    <button type="button" class="btn btn-outline-primary w-100 mb-2" style="border-radius: 8px;" onclick="confirmResetPassword()">
+                        <i class="bi bi-lock me-2"></i>Reset Password
+                    </button>
+                </form>
+                <form method="post" asp-page-handler="ToggleStatus" class="d-inline" id="toggleStatusForm" style="display: none;">
+                    <input type="hidden" name="userId" id="toggleStatusUserId" />
+                    <button type="button" class="btn btn-outline-secondary w-100" style="border-radius: 8px;" onclick="confirmToggleStatus()">
+                        <i class="bi bi-toggle-on me-2" id="toggleStatusIcon"></i><span id="toggleStatusText">Activate/Deactivate</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Delete Form -->
+<form method="post" asp-page-handler="DeleteUser" id="deleteUserForm" style="display: none;">
+    <input type="hidden" name="userId" id="deleteUserFormUserId" />
+</form>
+
+
 <style>
-    .avatar-sm {
-        width: 40px;
-        height: 40px;
-        font-size: 1rem;
+    /* Modern Button Styles */
+    .btn-add-user {
+        background-color: #6BB57C;
+        border: none;
+        color: white;
+        font-weight: 500;
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
     }
-    
-    .table th {
-        font-weight: 600;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+
+    .btn-add-user:hover {
+        background-color: #5aa368;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(107, 181, 124, 0.3);
     }
-    
+
+    .btn-search {
+        background-color: #6BB57C;
+        border: none;
+        color: white;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-search:hover {
+        background-color: #5aa368;
+        color: white;
+    }
+
+    /* Badge Styles */
+    .badge-green {
+        background-color: #6BB57C;
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+
+    .badge-gold {
+        background-color: #f4a261;
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+
+    .badge-gray {
+        background-color: #9e9e9e;
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+
+    /* Table Styles */
+    .table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
     .table td {
-        vertical-align: middle;
         border-top: 1px solid #f1f3f4;
+        padding: 1rem 0.75rem;
     }
-    
-    .btn-group .btn {
-        margin: 0 2px;
+
+    /* Stats Card Hover Effect */
+    .stats-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    
-    .card {
-        transition: transform 0.2s ease-in-out;
-    }
-    
-    .card:hover {
+
+    .stats-card:hover {
         transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Drawer Styles */
+    .user-drawer {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1050;
+    }
+
+    .user-drawer.active {
+        display: flex;
+    }
+
+    .drawer-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+    }
+
+    .drawer-content {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 400px;
+        height: 100%;
+        background-color: white;
+        box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        z-index: 1051;
+        animation: slideIn 0.3s ease;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+
+    .drawer-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #f1f3f4;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .drawer-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    /* Card Shadows */
+    .card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        transition: box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    /* Dropdown Menu */
+    .dropdown-menu {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 0.5rem;
+    }
+
+    .dropdown-item {
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        transition: background-color 0.2s ease;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* DataTables Controls Alignment */
+    #usersTable_wrapper .dataTables_length {
+        padding-left: 1rem;
+    }
+
+    #usersTable_wrapper .dataTables_length label {
+        margin-bottom: 0;
+    }
+
+    #usersTable_wrapper .dataTables_info {
+        padding-left: 1rem;
+    }
+
+    #usersTable_wrapper .dataTables_filter {
+        padding-right: 1rem;
     }
 </style>
 
 @section Scripts {
     <script>
-        // Promote to Manager confirmation
-        function confirmPromote(username, userId) {
+        let currentUserId = null;
+        let currentUserStatus = null;
+        let currentUserIsAdmin = false;
+
+        // Open user drawer
+        function openUserDrawer(userId, username, email, role, status, createdShort, lastLoginShort, createdFull, lastLoginFull, isAdmin) {
+            currentUserId = userId;
+            currentUserStatus = status;
+            currentUserIsAdmin = isAdmin === true || isAdmin === 'true';
+
+            document.getElementById('drawerUsername').textContent = username;
+            document.getElementById('drawerEmail').textContent = email;
+            
+            // Set role badge
+            const roleBadgeClass = role === 'Admin' ? 'badge-gold' : 'badge-green';
+            document.getElementById('drawerRole').innerHTML = `<span class="badge ${roleBadgeClass}">${role}</span>`;
+            
+            // Set status badge
+            const statusBadgeClass = (status.toLowerCase() === 'active') ? 'badge-green' : 'badge-gray';
+            const statusText = (status.toLowerCase() === 'active') ? 'Active' : 'Inactive';
+            document.getElementById('drawerStatus').innerHTML = `<span class="badge ${statusBadgeClass}">${statusText}</span>`;
+            
+            document.getElementById('drawerCreated').textContent = createdFull;
+            document.getElementById('drawerLastLogin').textContent = lastLoginFull;
+
+            // Set form user IDs
+            document.getElementById('resetPasswordUserId').value = userId;
+            document.getElementById('toggleStatusUserId').value = userId;
+
+            // Show/hide actions based on user role
+            const toggleStatusForm = document.getElementById('toggleStatusForm');
+            
+            if (currentUserIsAdmin) {
+                // Hide Toggle Status for Admin users
+                toggleStatusForm.style.display = 'none';
+            } else {
+                // Show Toggle Status for non-Admin users
+                toggleStatusForm.style.display = '';
+                
+                // Update toggle button text and icon
+                const toggleText = document.getElementById('toggleStatusText');
+                const toggleIcon = document.getElementById('toggleStatusIcon');
+                if (status.toLowerCase() === 'active') {
+                    toggleText.textContent = 'Deactivate';
+                    toggleIcon.className = 'bi bi-toggle-off me-2';
+                } else {
+                    toggleText.textContent = 'Activate';
+                    toggleIcon.className = 'bi bi-toggle-on me-2';
+                }
+            }
+
+            // Show drawer
+            document.getElementById('userDrawer').classList.add('active');
+        }
+
+        // Close user drawer
+        function closeUserDrawer() {
+            document.getElementById('userDrawer').classList.remove('active');
+        }
+
+        // Close drawer on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeUserDrawer();
+            }
+        });
+
+        // Confirm reset password
+        function confirmResetPassword() {
+            const username = document.getElementById('drawerUsername').textContent;
             showAlert.confirm(
-                'Promote User',
-                `Are you sure you want to promote <strong>${username}</strong> to Manager?`,
-                'Yes, Promote',
+                'Reset Password',
+                `Are you sure you want to reset the password for <strong>${username}</strong>? A new temporary password will be sent via email.`,
+                'Yes, Reset',
                 'Cancel'
             ).then((confirmed) => {
                 if (confirmed) {
-                    document.getElementById(`promoteForm_${userId}`).submit();
+                    document.getElementById('resetPasswordForm').submit();
                 }
             });
         }
 
-        // Demote to User confirmation
-        function confirmDemote(username, userId) {
+        // Confirm toggle status
+        function confirmToggleStatus() {
+            const username = document.getElementById('drawerUsername').textContent;
+            const action = currentUserStatus.toLowerCase() === 'active' ? 'deactivate' : 'activate';
             showAlert.confirm(
-                'Demote User',
-                `Are you sure you want to demote <strong>${username}</strong> to User?`,
-                'Yes, Demote',
+                `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+                `Are you sure you want to ${action} <strong>${username}</strong>?`,
+                `Yes, ${action.charAt(0).toUpperCase() + action.slice(1)}`,
                 'Cancel'
             ).then((confirmed) => {
                 if (confirmed) {
-                    document.getElementById(`demoteForm_${userId}`).submit();
+                    document.getElementById('toggleStatusForm').submit();
                 }
             });
         }
@@ -359,10 +611,10 @@
                 `Are you sure you want to delete user <strong>${username}</strong>? This action cannot be undone!`
             ).then((confirmed) => {
                 if (confirmed) {
-                    document.getElementById(`deleteForm_${userId}`).submit();
+                    document.getElementById('deleteUserFormUserId').value = userId;
+                    document.getElementById('deleteUserForm').submit();
                 }
             });
         }
     </script>
 }
-

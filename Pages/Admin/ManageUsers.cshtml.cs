@@ -24,8 +24,13 @@ namespace Apartment.Pages.Admin
         
 
                 [BindProperty(SupportsGet = true)]
-
                 public string? SearchTerm { get; set; }
+
+                [BindProperty(SupportsGet = true)]
+                public string? RoleFilter { get; set; }
+
+                [BindProperty(SupportsGet = true)]
+                public string? StatusFilter { get; set; }
 
         
 
@@ -83,6 +88,24 @@ namespace Apartment.Pages.Admin
                 );
             }
 
+            // Apply role filter
+            if (!string.IsNullOrEmpty(RoleFilter) && RoleFilter != "All")
+            {
+                if (Enum.TryParse<UserRoles>(RoleFilter, true, out var roleFilter))
+                {
+                    query = query.Where(u => u.Role == roleFilter);
+                }
+            }
+
+            // Apply status filter
+            if (!string.IsNullOrEmpty(StatusFilter) && StatusFilter != "All")
+            {
+                query = query.Where(u => 
+                    (StatusFilter == "Active" && (u.Status == null || u.Status.ToLower() == "active")) ||
+                    (StatusFilter == "Inactive" && u.Status != null && u.Status.ToLower() == "inactive")
+                );
+            }
+
             // Execute the query and project the data into the safe UserList 
             var usersFromDb = await query.ToListAsync();
 
@@ -93,7 +116,9 @@ namespace Apartment.Pages.Admin
                     Username = u.Username,
                     Email = u.Email,
                     Role = u.Role,
-                    CreationDate = u.CreatedAt
+                    CreationDate = u.CreatedAt,
+                    Status = u.Status ?? "Active", // Default to Active if null
+                    LastLogin = u.UpdatedAt // Using UpdatedAt as proxy for LastLogin
                 })
                 .OrderBy(u => u.Role)
                 .ThenBy(u => u.Id)
@@ -316,6 +341,108 @@ namespace Apartment.Pages.Admin
             await dbData.SaveChangesAsync();
 
             SuccessMessage = $"User {userToDelete.Username} (ID: {userToDelete.Id}) has been permanently deleted.";
+            return RedirectToPage();
+        }
+
+        // POST Method: Reset user password
+        public async Task<IActionResult> OnPostResetPasswordAsync(int userId)
+        {
+            var userToReset = await dbData.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var adminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int currentAdminIdInt = -1;
+            if (string.IsNullOrEmpty(adminIdString) || !int.TryParse(adminIdString, out currentAdminIdInt))
+            {
+                ErrorMessage = "Could not identify the administrator performing the action.";
+                return RedirectToPage();
+            }
+
+            if (userToReset == null)
+            {
+                ErrorMessage = "User not found.";
+                return RedirectToPage();
+            }
+
+            var temporaryPassword = GenerateTemporaryPassword();
+            userToReset.HasedPassword = PasswordHasher.HashPassword(temporaryPassword);
+            userToReset.MustChangePassword = true;
+            userToReset.UpdatedAt = DateTime.UtcNow;
+
+            dbData.Users.Update(userToReset);
+            await dbData.SaveChangesAsync();
+
+            // Log audit action
+            await _auditService.LogAsync(
+                action: AuditActionType.UpdateUser,
+                userId: currentAdminIdInt,
+                details: $"Admin reset password for user {userToReset.Username} (ID: {userToReset.Id}).",
+                entityId: userToReset.Id,
+                entityType: "User"
+            );
+
+            // Send email with new password
+            try
+            {
+                await _emailService.SendPasswordResetEmailAsync(userToReset.Email, userToReset.Username, temporaryPassword);
+                SuccessMessage = $"Password reset for {userToReset.Username}. An email with a new temporary password has been sent.";
+            }
+            catch (Exception ex)
+            {
+                await _auditService.LogAsync(
+                    action: AuditActionType.SystemError,
+                    userId: currentAdminIdInt,
+                    details: $"Failed to send password reset email to {userToReset.Email}. Error: {ex.ToString()}",
+                    entityId: userToReset.Id,
+                    entityType: "Email"
+                );
+                ErrorMessage = $"Password reset for {userToReset.Username}, but the email could not be sent. Please check the email configuration.";
+            }
+
+            return RedirectToPage();
+        }
+
+        // POST Method: Toggle user status (Activate/Deactivate)
+        public async Task<IActionResult> OnPostToggleStatusAsync(int userId)
+        {
+            var userToToggle = await dbData.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var adminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int currentAdminIdInt = -1;
+            if (string.IsNullOrEmpty(adminIdString) || !int.TryParse(adminIdString, out currentAdminIdInt))
+            {
+                ErrorMessage = "Could not identify the administrator performing the action.";
+                return RedirectToPage();
+            }
+
+            if (userToToggle == null)
+            {
+                ErrorMessage = "User not found.";
+                return RedirectToPage();
+            }
+
+            // Security: Prevent admin from deactivating themselves
+            if (userToToggle.Id == currentAdminIdInt)
+            {
+                ErrorMessage = "You cannot change your own status. Please ask another administrator to do this.";
+                return RedirectToPage();
+            }
+
+            var oldStatus = userToToggle.Status ?? "Active";
+            var newStatus = (oldStatus.ToLower() == "active") ? "Inactive" : "Active";
+            userToToggle.Status = newStatus;
+            userToToggle.UpdatedAt = DateTime.UtcNow;
+
+            dbData.Users.Update(userToToggle);
+            await dbData.SaveChangesAsync();
+
+            // Log audit action
+            await _auditService.LogAsync(
+                action: AuditActionType.UpdateUser,
+                userId: currentAdminIdInt,
+                details: $"Admin changed status for user {userToToggle.Username} (ID: {userToToggle.Id}) from {oldStatus} to {newStatus}.",
+                entityId: userToToggle.Id,
+                entityType: "User"
+            );
+
+            SuccessMessage = $"{userToToggle.Username}'s status updated to {newStatus}.";
             return RedirectToPage();
         }
 
