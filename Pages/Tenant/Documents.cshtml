@@ -42,9 +42,21 @@
                                 }
                             </p>
                         }
-                        <button class="btn btn-primary" onclick="alert('In production, this would open or download your lease agreement PDF.')">
-                            <i class="bi bi-download me-2"></i>View Lease Agreement
-                        </button>
+                        @if (Model.ActiveLease != null)
+                        {
+                            <form method="post" asp-page-handler="DownloadLease">
+                                <input type="hidden" name="leaseId" value="@Model.ActiveLease.Id" />
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-download me-2"></i>View Lease Agreement
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary" type="button" disabled>
+                                <i class="bi bi-download me-2"></i>No Active Lease Available
+                            </button>
+                        }
                     </div>
                 </div>
             </div>
