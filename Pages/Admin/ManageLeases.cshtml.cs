@@ -16,11 +16,13 @@ namespace Apartment.Pages.Admin
     {
         private readonly ApplicationDbContext _context;
         private readonly IAuditService _auditService;
+        private readonly LeasePdfService _leasePdfService; // Inject LeasePdfService
 
-        public ManageLeasesModel(ApplicationDbContext context, IAuditService auditService)
+        public ManageLeasesModel(ApplicationDbContext context, IAuditService auditService, LeasePdfService leasePdfService)
         {
             _context = context;
             _auditService = auditService;
+            _leasePdfService = leasePdfService; // Initialize LeasePdfService
         }
 
         // List of leases for display
@@ -46,6 +48,48 @@ namespace Apartment.Pages.Admin
             await LoadDropdownsAsync();
         }
 
+        public async Task<IActionResult> OnPostExportLeasesPdfAsync([FromForm] List<int> selectedLeaseIds)
+        {
+            if (selectedLeaseIds == null || !selectedLeaseIds.Any())
+            {
+                ErrorMessage = "No leases selected for PDF export.";
+                return RedirectToPage();
+            }
+
+            var leasesToExport = await _context.Leases
+                .Where(l => selectedLeaseIds.Contains(l.Id))
+                .Include(l => l.User)
+                .Include(l => l.Apartment)
+                .ToListAsync();
+
+            if (!leasesToExport.Any())
+            {
+                ErrorMessage = "Selected leases not found.";
+                return RedirectToPage();
+            }
+
+            try
+            {
+                var pdfBytes = _leasePdfService.GenerateLeasesPdf(leasesToExport);
+
+                if (pdfBytes == null || pdfBytes.Length == 0)
+                {
+                    ErrorMessage = "Failed to generate PDF for selected leases.";
+                    return RedirectToPage();
+                }
+
+                var fileName = $"LeaseSummary_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (using _auditService or ILogger)
+                ErrorMessage = $"An error occurred during PDF generation: {ex.Message}";
+                return RedirectToPage();
+            }
+        }
+    
+    // add an empty line here to make the change more readable
         private async Task LoadLeasesAsync()
         {
             var leases = await _context.Leases
@@ -64,6 +108,9 @@ namespace Apartment.Pages.Admin
                 ApartmentStatus = l.Apartment?.IsOccupied == true ? "Occupied" : "Available",
                 MonthlyRent = l.MonthlyRent,
                 SecurityDeposit = l.SecurityDeposit,
+                LateFeeAmount = l.LateFeeAmount,
+                LateFeeDays = l.LateFeeDays,
+                PetsAllowed = l.PetsAllowed,
                 LeaseStart = l.LeaseStart,
                 LeaseEnd = l.LeaseEnd,
                 LeaseStatus = GetLeaseStatus(l.LeaseStart, l.LeaseEnd, now),
@@ -188,6 +235,9 @@ namespace Apartment.Pages.Admin
                 LeaseEnd = LeaseInput.LeaseEnd,
                 MonthlyRent = LeaseInput.MonthlyRent,
                 SecurityDeposit = LeaseInput.SecurityDeposit,
+                LateFeeAmount = LeaseInput.LateFeeAmount,
+                LateFeeDays = LeaseInput.LateFeeDays,
+                PetsAllowed = LeaseInput.PetsAllowed,
                 UnitNumber = apartment.UnitNumber
             };
 
@@ -278,6 +328,9 @@ namespace Apartment.Pages.Admin
             lease.LeaseEnd = LeaseInput.LeaseEnd;
             lease.MonthlyRent = LeaseInput.MonthlyRent;
             lease.SecurityDeposit = LeaseInput.SecurityDeposit;
+            lease.LateFeeAmount = LeaseInput.LateFeeAmount;
+            lease.LateFeeDays = LeaseInput.LateFeeDays;
+            lease.PetsAllowed = LeaseInput.PetsAllowed;
             lease.UnitNumber = apartment.UnitNumber;
 
             // Update apartment occupancy
@@ -395,7 +448,7 @@ namespace Apartment.Pages.Admin
     }
 
     // ViewModel for displaying leases
-    public class LeaseViewModel
+        public class LeaseViewModel
     {
         public int Id { get; set; }
         public string TenantName { get; set; } = string.Empty;
@@ -404,6 +457,9 @@ namespace Apartment.Pages.Admin
         public string ApartmentStatus { get; set; } = string.Empty;
         public decimal MonthlyRent { get; set; }
         public decimal SecurityDeposit { get; set; }
+        public decimal LateFeeAmount { get; set; }
+        public int LateFeeDays { get; set; }
+        public bool PetsAllowed { get; set; }
         public DateTime LeaseStart { get; set; }
         public DateTime LeaseEnd { get; set; }
         public string LeaseStatus { get; set; } = string.Empty;
@@ -421,6 +477,9 @@ namespace Apartment.Pages.Admin
         public DateTime LeaseEnd { get; set; } = DateTime.UtcNow.AddYears(1);
         public decimal MonthlyRent { get; set; }
         public decimal SecurityDeposit { get; set; }
+        public decimal LateFeeAmount { get; set; }
+        public int LateFeeDays { get; set; }
+        public bool PetsAllowed { get; set; } = true;
     }
 }
 

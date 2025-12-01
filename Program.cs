@@ -25,6 +25,7 @@ namespace Apartment
             builder.Services.AddHttpClient<ILogSnagClient, LogSnagClient>();
             // TenantLinkingService removed - functionality merged into User model
             builder.Services.AddScoped<InvoicePdfService>();
+            builder.Services.AddScoped<LeasePdfService>();
             builder.Services.AddScoped<AdminReportingService>();
             builder.Services.AddScoped<ExcelExportService>();
             builder.Services.AddScoped<AuditLogPdfService>();

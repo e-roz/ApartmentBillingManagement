@@ -7,12 +7,12 @@
     var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
-<div class="d-flex">
+<div class="d-flex matcha-shell">
     @await Html.PartialAsync("_AdminSidebar")
 
     <!-- Main Content -->
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem; background-color: #FAFAF5; min-height: 100vh;">
-        <div class="container-fluid">
+    <div class="main-content leases-main">
+        <div class="container-fluid leases-container">
             @* Standardized Messages *@
             @{
                 ViewData["SuccessMessage"] = Model.SuccessMessage;
@@ -23,14 +23,23 @@
             <!-- Page Header -->
             <div class="row mb-4">
                 <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h2 class="mb-1" style="font-weight: 600; color: #2c3e50;">Lease Management</h2>
-                            <p class="text-muted mb-0" style="font-size: 0.95rem;">Create, view, edit, and delete lease agreements.</p>
+                    <div class="leases-header card border-0 shadow-sm">
+                        <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-3">
+                            <div>
+                                <h1 class="leases-title mb-1">
+                                    <i class="bi bi-file-earmark-text me-2"></i>Lease Management
+                                </h1>
+                                <p class="leases-subtitle mb-0">Create, view, edit, and print lease agreements.</p>
+                            </div>
+                            <div class="d-flex gap-3 flex-wrap">
+                                <button type="button" class="btn btn-matcha-secondary" id="printLeasesBtn">
+                                    <i class="bi bi-printer me-1"></i>Print selected
+                                </button>
+                                <button type="button" class="btn btn-matcha-primary" data-bs-toggle="modal" data-bs-target="#leaseModal" onclick="resetLeaseForm()">
+                                    <i class="bi bi-plus-circle me-2"></i>Create new lease
+                                </button>
+                            </div>
                         </div>
-                        <button type="button" class="btn btn-success btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#leaseModal" onclick="resetLeaseForm()">
-                            <i class="bi bi-plus-circle me-2"></i>Create New Lease
-                        </button>
                     </div>
                 </div>
             </div>
@@ -38,22 +47,26 @@
             <!-- Leases Table -->
             <div class="row mb-4">
                 <div class="col-12">
-                    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                    <div class="card border-0 shadow-sm leases-table-card">
                         <div class="card-body p-0">
                             @if (Model.Leases.Any())
                             {
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0 data-table" id="leasesTable">
-                                        <thead class="table-light" style="border-bottom: 2px solid #f1f3f4;">
+                                <div class="leases-table-wrapper">
+                                    <table class="table table-hover mb-0 data-table leases-table" id="leasesTable">
+                                        <thead class="leases-table-head">
                                             <tr>
-                                                <th class="border-0 ps-4" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Tenant</th>
-                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Unit</th>
-                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Monthly Rent</th>
-                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Security Deposit</th>
-                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Start Date</th>
-                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">End Date</th>
-                                                <th class="border-0" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Status</th>
-                                                <th class="border-0 text-center pe-4" style="font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368;">Actions</th>
+                                                <th class="border-0 ps-4 leases-th"></th>
+                                                <th class="border-0 leases-th">Tenant</th>
+                                                <th class="border-0 leases-th">Unit</th>
+                                                <th class="border-0 leases-th text-end">Monthly Rent</th>
+                                                <th class="border-0 leases-th text-end">Security Deposit</th>
+                                                <th class="border-0 leases-th text-end">Late Fee</th>
+                                                <th class="border-0 leases-th">Late Days</th>
+                                                <th class="border-0 leases-th">Pets</th>
+                                                <th class="border-0 leases-th">Start Date</th>
+                                                <th class="border-0 leases-th">End Date</th>
+                                                <th class="border-0 leases-th">Status</th>
+                                                <th class="border-0 text-center pe-4 leases-th">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -61,11 +74,14 @@
                                             {
                                                 <tr>
                                                     <td class="align-middle ps-4">
-                                                        <div class="fw-semibold" style="color: #202124;">@lease.TenantName</div>
+                                                        <input type="checkbox" class="lease-select" value="@lease.Id" />
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        <div class="fw-semibold leases-tenant">@lease.TenantName</div>
                                                         <div class="text-muted small">@lease.TenantEmail</div>
                                                     </td>
                                                     <td class="align-middle">
-                                                        <span class="fw-medium" style="color: #202124;">@lease.ApartmentUnit</span>
+                                                        <span class="fw-medium leases-unit">@lease.ApartmentUnit</span>
                                                         <div class="text-muted small">
                                                             @if (lease.ApartmentStatus == "Occupied")
                                                             {
@@ -77,17 +93,33 @@
                                                             }
                                                         </div>
                                                     </td>
-                                                    <td class="align-middle">
-                                                        <span class="text-success fw-semibold">@lease.MonthlyRent.ToString("C", pesoCulture)</span>
+                                                    <td class="align-middle text-end">
+                                                        <span class="leases-money leases-money-strong">@lease.MonthlyRent.ToString("C", pesoCulture)</span>
+                                                    </td>
+                                                    <td class="align-middle text-end">
+                                                        <span class="leases-money">@lease.SecurityDeposit.ToString("C", pesoCulture)</span>
+                                                    </td>
+                                                    <td class="align-middle text-end">
+                                                        <span class="leases-money">@lease.LateFeeAmount.ToString("C", pesoCulture)</span>
                                                     </td>
                                                     <td class="align-middle">
-                                                        <span class="fw-medium">@lease.SecurityDeposit.ToString("C", pesoCulture)</span>
+                                                        <span class="leases-mono">@lease.LateFeeDays</span>
                                                     </td>
                                                     <td class="align-middle">
-                                                        <div class="text-muted small">@lease.LeaseStart.ToString("MMM dd, yyyy")</div>
+                                                        @if (lease.PetsAllowed)
+                                                        {
+                                                            <span class="badge badge-green">Allowed</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge badge-gray">Not Allowed</span>
+                                                        }
                                                     </td>
                                                     <td class="align-middle">
-                                                        <div class="text-muted small">@lease.LeaseEnd.ToString("MMM dd, yyyy")</div>
+                                                        <div class="text-muted small leases-mono">@lease.LeaseStart.ToString("MMM dd, yyyy")</div>
+                                                    </td>
+                                                    <td class="align-middle">
+                                                        <div class="text-muted small leases-mono">@lease.LeaseEnd.ToString("MMM dd, yyyy")</div>
                                                     </td>
                                                     <td class="align-middle">
                                                         @{
@@ -144,20 +176,20 @@
 <div class="modal fade" id="leaseModal" tabindex="-1" aria-labelledby="leaseModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="border-radius: 12px;">
-            <div class="modal-header bg-primary text-white" style="border-radius: 12px 12px 0 0;">
+            <div class="modal-header matcha-modal-header text-white">
                 <h5 class="modal-title fw-bold" id="leaseModalLabel">
                     <i class="bi bi-file-earmark-text me-2"></i><span id="modalTitle">CREATE NEW LEASE</span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="leaseForm" method="post" action="?handler=CreateLease">
-                <div class="modal-body p-4" style="background-color: #FAFAF5;">
+            <form id="leaseForm" method="post" asp-page-handler="CreateLease">
+                <div class="modal-body p-4 matcha-modal-body">
                     <input type="hidden" id="leaseId" asp-for="LeaseInput.Id" />
 
                     <!-- Tenant Information Section -->
                     <div class="mb-4">
-                        <div class="card border-0 shadow-sm" style="border-radius: 8px;">
-                            <div class="card-header bg-success text-white" style="border-radius: 8px 8px 0 0; padding: 0.75rem 1rem;">
+                        <div class="card border-0 shadow-sm matcha-card">
+                            <div class="card-header matcha-card-header text-white">
                                 <h6 class="mb-0 fw-semibold">
                                     <i class="bi bi-person-fill me-2"></i>Tenant Information
                                 </h6>
@@ -193,8 +225,8 @@
 
                     <!-- Apartment Information Section -->
                     <div class="mb-4">
-                        <div class="card border-0 shadow-sm" style="border-radius: 8px;">
-                            <div class="card-header bg-success text-white" style="border-radius: 8px 8px 0 0; padding: 0.75rem 1rem;">
+                        <div class="card border-0 shadow-sm matcha-card">
+                            <div class="card-header matcha-card-header text-white">
                                 <h6 class="mb-0 fw-semibold">
                                     <i class="bi bi-house-door-fill me-2"></i>Apartment Information
                                 </h6>
@@ -287,6 +319,43 @@
                         </div>
                     </div>
 
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="LeaseInput.LateFeeAmount" class="form-label fw-semibold">
+                                <i class="bi bi-cash-coin me-1"></i>Late Fee Amount
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">₱</span>
+                                <input asp-for="LeaseInput.LateFeeAmount"
+                                       type="number"
+                                       step="0.01"
+                                       min="0"
+                                       class="form-control"
+                                       placeholder="0.00" />
+                            </div>
+                            <span asp-validation-for="LeaseInput.LateFeeAmount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="LeaseInput.LateFeeDays" class="form-label fw-semibold">
+                                <i class="bi bi-clock-history me-1"></i>Late After (Days)
+                            </label>
+                            <input asp-for="LeaseInput.LateFeeDays"
+                                   type="number"
+                                   min="0"
+                                   class="form-control"
+                                   placeholder="0" />
+                            <span asp-validation-for="LeaseInput.LateFeeDays" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="LeaseInput.PetsAllowed" />
+                                <label class="form-check-label fw-semibold" asp-for="LeaseInput.PetsAllowed">
+                                    <i class="bi bi-paw me-1"></i>Pets Allowed
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">
                             <i class="bi bi-info-circle me-1"></i>Lease Status
@@ -299,9 +368,9 @@
                                style="background-color: #f8f9fa;">
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid #e0e0e0;">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success" id="saveLeaseBtn">
+                <div class="modal-footer matcha-modal-footer">
+                    <button type="button" class="btn btn-matcha-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-matcha-primary" id="saveLeaseBtn">
                         <i class="bi bi-check-circle me-2"></i>Save Lease
                     </button>
                 </div>
@@ -313,8 +382,8 @@
 <!-- Delete Lease Modal -->
 <div class="modal fade" id="deleteLeaseModal" tabindex="-1" aria-labelledby="deleteLeaseModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content" style="border-radius: 12px;">
-            <div class="modal-header bg-danger text-white" style="border-radius: 12px 12px 0 0;">
+        <div class="modal-content matcha-danger-modal">
+            <div class="modal-header matcha-danger-header text-white">
                 <h5 class="modal-title fw-bold" id="deleteLeaseModalLabel">
                     <i class="bi bi-exclamation-triangle me-2"></i>Delete Lease
                 </h5>
@@ -333,9 +402,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">
+                <div class="modal-footer matcha-modal-footer">
+                    <button type="button" class="btn btn-matcha-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-matcha-danger">
                         <i class="bi bi-trash me-2"></i>Delete Lease
                     </button>
                 </div>
@@ -508,6 +577,248 @@
                 form.action = '?handler=CreateLease';
             }
         });
+
+        // Export selected leases to PDF via server-side handler
+        document.getElementById('printLeasesBtn')?.addEventListener('click', function () {
+            const selectedLeaseIds = Array.from(document.querySelectorAll('.lease-select:checked'))
+                .map(cb => cb.value);
+
+            if (selectedLeaseIds.length === 0) {
+                alert('Please select at least one lease to export to PDF.');
+                return;
+            }
+
+            // Create a form dynamically to submit the selected IDs to the server
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = '?handler=ExportLeasesPdf';
+            form.style.display = 'none'; // Hide the form
+
+            // Include the existing anti-forgery token so the POST is valid
+            const existingToken = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (existingToken) {
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = existingToken.value;
+                form.appendChild(tokenInput);
+            }
+
+            selectedLeaseIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'selectedLeaseIds';
+                input.value = id;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form); // Append to the document body
+            form.submit(); // Submit the form
+            document.body.removeChild(form); // Clean up the form after submission
+        });
     </script>
 }
+
+<style>
+    .matcha-shell {
+        background: #F9F8F3;
+    }
+
+    .leases-main {
+        margin-left: 280px;
+        width: calc(100% - 280px);
+        padding: 32px;
+        min-height: 100vh;
+        background: #F9F8F3;
+        font-family: "Inter", "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #2C2C2C;
+    }
+
+    .leases-container {
+        max-width: 1240px;
+    }
+
+    .leases-header {
+        border-radius: 16px;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        border-top: 4px solid #D7A85A;
+        box-shadow: 0 18px 35px rgba(139, 111, 71, 0.12);
+    }
+
+    .leases-title {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 700;
+        font-size: 30px;
+        color: #4A6F47;
+        letter-spacing: 0.03em;
+    }
+
+    .leases-subtitle {
+        font-size: 16px;
+        color: #7B7B7B;
+    }
+
+    .leases-table-card {
+        border-radius: 16px;
+        overflow: hidden;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        box-shadow: 0 18px 35px rgba(44, 44, 44, 0.06);
+    }
+
+    .leases-table-head {
+        background-color: #F3F6F1;
+        color: #2C2C2C;
+        border-bottom: 2px solid #E7E5D8;
+    }
+
+    .leases-table-wrapper {
+        overflow-x: visible;
+    }
+
+    .leases-th {
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #2C2C2C;
+    }
+
+    .leases-table tbody tr:nth-child(even) {
+        background-color: #F3F6F1;
+    }
+
+    .leases-table tbody tr:nth-child(odd) {
+        background-color: #FFFFFF;
+    }
+
+    .leases-table tbody tr:hover {
+        background-color: #E3EDD9;
+        transition: background-color 200ms ease-out;
+    }
+
+    .leases-tenant,
+    .leases-unit {
+        color: #2C2C2C;
+    }
+
+    .leases-money {
+        font-family: "JetBrains Mono", Consolas, monospace;
+        font-size: 0.9rem;
+    }
+
+    .leases-money-strong {
+        font-weight: 600;
+    }
+
+    .leases-mono {
+        font-family: "JetBrains Mono", Consolas, monospace;
+    }
+
+    .badge-green {
+        background-color: #4A6F47;
+        color: #F9F8F3;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+
+    .badge-gray {
+        background-color: #E7E5D8;
+        color: #7B7B7B;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+
+    .btn-matcha-primary {
+        background-color: #4A6F47;
+        border-color: #4A6F47;
+        color: #FFFFFF;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: background-color 180ms ease-out, box-shadow 180ms ease-out, transform 180ms ease-out;
+    }
+
+    .btn-matcha-primary:hover {
+        background-color: #7DA26C;
+        border-color: #7DA26C;
+        color: #FFFFFF;
+        box-shadow: 0 10px 20px rgba(74, 111, 71, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .btn-matcha-secondary {
+        background-color: transparent;
+        color: #4A6F47;
+        border-radius: 8px;
+        border: 1px solid #4A6F47;
+        padding: 10px 18px;
+        font-weight: 500;
+        transition: background-color 180ms ease-out, color 180ms ease-out, border-color 180ms ease-out;
+    }
+
+    .btn-matcha-secondary:hover {
+        background-color: #A8C3A0;
+        color: #2C2C2C;
+        border-color: #4A6F47;
+    }
+
+    .btn-matcha-danger {
+        background-color: #B35A5A;
+        border-color: #B35A5A;
+        color: #FFFFFF;
+        border-radius: 8px;
+        padding: 10px 18px;
+        font-weight: 600;
+        transition: background-color 180ms ease-out, box-shadow 180ms ease-out;
+    }
+
+    .btn-matcha-danger:hover {
+        background-color: #8F4141;
+        border-color: #8F4141;
+        box-shadow: 0 10px 20px rgba(179, 90, 90, 0.25);
+    }
+
+    .matcha-modal-header {
+        background: linear-gradient(135deg, #4A6F47, #7DA26C);
+        border-radius: 12px 12px 0 0;
+        border-bottom: none;
+    }
+
+    .matcha-modal-body {
+        background-color: #F9F8F3;
+    }
+
+    .matcha-modal-footer {
+        border-top: 1px solid #E7E5D8;
+        background-color: #F9F8F3;
+    }
+
+    .matcha-card {
+        border-radius: 12px;
+        background-color: #FFFFFF;
+        border: 1px solid #E7E5D8;
+    }
+
+    .matcha-card-header {
+        background: #4A6F47;
+        border-radius: 12px 12px 0 0;
+        padding: 0.75rem 1rem;
+    }
+
+    .matcha-danger-modal {
+        border-radius: 16px;
+        background-color: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        box-shadow: 0 18px 35px rgba(179, 90, 90, 0.2);
+    }
+
+    .matcha-danger-header {
+        background: #B35A5A;
+        border-radius: 16px 16px 0 0;
+    }
+</style>
 
