@@ -33,9 +33,6 @@ namespace Apartment.Migrations
                     b.Property<bool>("IsOccupied")
                         .HasColumnType("bit");
 
-                    b.Property<decimal>("MonthlyRent")
-                        .HasColumnType("decimal(18, 2)");
-
                     b.Property<string>("UnitNumber")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -254,8 +251,17 @@ namespace Apartment.Migrations
                     b.Property<DateTime>("LeaseStart")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal>("LateFeeAmount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int>("LateFeeDays")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("MonthlyRent")
                         .HasColumnType("decimal(18, 2)");
+
+                    b.Property<bool>("PetsAllowed")
+                        .HasColumnType("bit");
 
                     b.Property<decimal>("SecurityDeposit")
                         .HasColumnType("decimal(18, 2)");

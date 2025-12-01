@@ -90,7 +90,7 @@ namespace Apartment.Pages.Admin
                     Id = l.Apartment.Id,
                     UnitNumber = l.Apartment.UnitNumber,
                     TenantName = l.User.Username,
-                    MonthlyRent = l.Apartment.MonthlyRent
+                    MonthlyRent = l.MonthlyRent // use lease-level monthly rent
                 })
                 .DistinctBy(a => a.Id) // Remove duplicates if same apartment has multiple leases
                 .ToList();

@@ -15,11 +15,6 @@ namespace Apartment.Model
         [Display(Name = "Unit Number")]
         public string UnitNumber { get; set; } = string.Empty;
 
-        [Required]
-        [Column(TypeName = "decimal(18, 2)")]
-        [Display(Name = "Monthly Rent")]
-        public decimal MonthlyRent { get; set; }
-
         [Display(Name = "Is Occupied")]
         public bool IsOccupied { get; set; }
 

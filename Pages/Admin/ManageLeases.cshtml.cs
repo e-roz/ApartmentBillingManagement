@@ -97,7 +97,8 @@ namespace Apartment.Pages.Admin
 
             AvailableTenants = new SelectList(tenantItems, "Value", "Text");
 
-            // Load apartments - show all apartments, but mark occupied ones
+            // Load apartments - show all apartments, but mark occupied ones.
+            // Monthly rent is now a lease-level field, so we no longer display apartment-level rent here.
             var apartments = await _context.Apartments
                 .OrderBy(a => a.UnitNumber)
                 .ToListAsync();
@@ -105,7 +106,7 @@ namespace Apartment.Pages.Admin
             var apartmentItems = apartments.Select(a => new SelectListItem
             {
                 Value = a.Id.ToString(),
-                Text = $"{a.UnitNumber} - ${a.MonthlyRent:N2}/month {(a.IsOccupied ? "(Occupied)" : "")}",
+                Text = $"{a.UnitNumber} {(a.IsOccupied ? "(Occupied)" : "(Vacant)")}", 
                 Disabled = false // Allow selection of all apartments for editing
             }).ToList();
 
@@ -131,7 +132,7 @@ namespace Apartment.Pages.Admin
                 return Page();
             }
 
-            // Check if apartment is available
+            // Check if apartment exists
             var apartment = await _context.Apartments
                 .Include(a => a.Leases)
                 .FirstOrDefaultAsync(a => a.Id == LeaseInput.ApartmentId);
@@ -144,7 +145,19 @@ namespace Apartment.Pages.Admin
                 return Page();
             }
 
-            // Check for overlapping leases
+            // Enforce that the apartment is currently vacant (no active lease "right now")
+            var now = DateTime.UtcNow;
+            var currentlyActiveLease = apartment.Leases.Any(l =>
+                l.LeaseStart <= now && l.LeaseEnd >= now);
+            if (currentlyActiveLease)
+            {
+                await LoadLeasesAsync();
+                await LoadDropdownsAsync();
+                ErrorMessage = "Selected apartment is currently occupied. Please choose a vacant unit.";
+                return Page();
+            }
+
+            // Check for overlapping leases within the requested lease period
             var overlappingLease = apartment.Leases.Any(l =>
                 (LeaseInput.LeaseStart >= l.LeaseStart && LeaseInput.LeaseStart <= l.LeaseEnd) ||
                 (LeaseInput.LeaseEnd >= l.LeaseStart && LeaseInput.LeaseEnd <= l.LeaseEnd) ||
@@ -181,7 +194,6 @@ namespace Apartment.Pages.Admin
             _context.Leases.Add(newLease);
 
             // Update apartment occupancy if lease is active
-            var now = DateTime.UtcNow;
             if (LeaseInput.LeaseStart <= now && LeaseInput.LeaseEnd >= now)
             {
                 apartment.IsOccupied = true;

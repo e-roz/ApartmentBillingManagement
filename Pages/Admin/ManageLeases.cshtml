@@ -349,6 +349,8 @@
         // Reset form when creating new lease
         function resetLeaseForm() {
             const form = document.getElementById('leaseForm');
+            const apartmentSelect = document.getElementById('apartmentSelect');
+
             form.action = '?handler=CreateLease';
             document.getElementById('modalTitle').textContent = 'CREATE NEW LEASE';
             document.getElementById('leaseId').value = '0';
@@ -357,6 +359,20 @@
             document.getElementById('apartmentStatusDisplay').value = '';
             document.getElementById('leaseStatusDisplay').value = '';
             document.getElementById('saveLeaseBtn').innerHTML = '<i class="bi bi-check-circle me-2"></i>Save Lease';
+
+            // For CREATE mode: only allow selecting apartments that are currently vacant.
+            // We infer vacancy from the option text "(Vacant)" vs "(Occupied)".
+            if (apartmentSelect) {
+                for (let i = 0; i < apartmentSelect.options.length; i++) {
+                    const opt = apartmentSelect.options[i];
+                    if (!opt.value) continue; // skip placeholder
+                    const text = opt.text || '';
+                    opt.disabled = text.includes('(Occupied)');
+                }
+                // Reset selection
+                apartmentSelect.value = '';
+                updateApartmentStatus();
+            }
         }
 
         // Load lease data for editing
@@ -371,6 +387,7 @@
                 }
 
                 const form = document.getElementById('leaseForm');
+                const apartmentSelect = document.getElementById('apartmentSelect');
                 form.action = '?handler=EditLease';
                 document.getElementById('modalTitle').textContent = 'EDIT LEASE';
                 document.getElementById('leaseId').value = data.id;
@@ -382,6 +399,14 @@
                 document.getElementById('LeaseInput_SecurityDeposit').value = data.securityDeposit;
                 document.getElementById('leaseStatusDisplay').value = data.status;
                 document.getElementById('saveLeaseBtn').innerHTML = '<i class="bi bi-check-circle me-2"></i>Update Lease';
+
+                // For EDIT mode: allow selecting any apartment (including occupied),
+                // since we're modifying an existing lease and may need to keep or move it.
+                if (apartmentSelect) {
+                    for (let i = 0; i < apartmentSelect.options.length; i++) {
+                        apartmentSelect.options[i].disabled = false;
+                    }
+                }
 
                 // Update tenant email display
                 updateTenantEmail();

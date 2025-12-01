@@ -36,6 +36,16 @@ namespace Apartment.Model
         [Column(TypeName = "decimal(18, 2)")]
         public decimal SecurityDeposit { get; set; }
 
+        // Flat late fee amount for overdue payments
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal LateFeeAmount { get; set; }
+
+        // Number of days after due date before late fee applies
+        public int LateFeeDays { get; set; }
+
+        // Whether pets are allowed for this lease
+        public bool PetsAllowed { get; set; } = true;
+
         // Unit number for this lease
         [Required]
         [StringLength(10)]

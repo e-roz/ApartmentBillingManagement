@@ -25,12 +25,10 @@ namespace Apartment.Pages.Admin
 
 
         // BindProperty for the form data (Used for Add/Edit)
+        // Note: Apartments are now created WITHOUT monthly rent or tenant assignment.
+        // Monthly rent and tenant are handled via leases on the ManageLeases page.
         [BindProperty]
         public ApartmentModel ApartmentInput { get; set; } = new ApartmentModel();
-
-        // Separate property for tenant selection (since ApartmentModel no longer has TenantId)
-        [BindProperty]
-        public int? SelectedTenantId { get; set; }
 
         //property to hold the search term
         [BindProperty(SupportsGet = true)]
@@ -39,9 +37,6 @@ namespace Apartment.Pages.Admin
 
         //holding the list of available apartments for the main table view
         public List<ViewModels.ApartmentList> Apartments { get; set; } = new List<ViewModels.ApartmentList>();
-
-        //hold the list of available tenants for the dropdown
-        public SelectList AvailableTenants { get; set; } = new SelectList(new List<SelectListItem>());
 
 
         [TempData]
@@ -54,54 +49,6 @@ namespace Apartment.Pages.Admin
         {
             dbData = context;
             _auditService = auditService;
-        }
-
-        private async Task CreateLeaseAsync(User user, ApartmentModel apartment, DateTime? leaseStart = null, DateTime? leaseEnd = null)
-        {
-            // End any existing active leases for this apartment
-            var existingLeases = await dbData.Leases
-                .Where(l => l.ApartmentId == apartment.Id && l.LeaseEnd >= DateTime.UtcNow)
-                .ToListAsync();
-            
-            foreach (var lease in existingLeases)
-            {
-                lease.LeaseEnd = DateTime.UtcNow.AddDays(-1); // End existing lease
-            }
-
-            // Create new lease
-            var newLease = new Lease
-            {
-                UserId = user.Id,
-                ApartmentId = apartment.Id,
-                LeaseStart = leaseStart ?? DateTime.UtcNow,
-                LeaseEnd = leaseEnd ?? DateTime.UtcNow.AddYears(1),
-                MonthlyRent = apartment.MonthlyRent,
-                UnitNumber = apartment.UnitNumber
-            };
-
-            dbData.Leases.Add(newLease);
-            apartment.IsOccupied = true;
-            dbData.Apartments.Update(apartment);
-        }
-
-        private async Task EndLeaseAsync(int apartmentId)
-        {
-            // End all active leases for this apartment
-            var activeLeases = await dbData.Leases
-                .Where(l => l.ApartmentId == apartmentId && l.LeaseEnd >= DateTime.UtcNow)
-                .ToListAsync();
-            
-            foreach (var lease in activeLeases)
-            {
-                lease.LeaseEnd = DateTime.UtcNow.AddDays(-1);
-            }
-
-            var apartment = await dbData.Apartments.FindAsync(apartmentId);
-            if (apartment != null)
-            {
-                apartment.IsOccupied = false;
-                dbData.Apartments.Update(apartment);
-            }
         }
 
         // -- Core Logic for the Manage Apartments Page will go here --
@@ -151,7 +98,6 @@ namespace Apartment.Pages.Admin
                 {
                     Id = a.Id,
                     UnitNumber = a.UnitNumber,
-                    MonthlyRent = a.MonthlyRent,
                     StatusDisplay = isOccupied ? "Occupied" : "Vacant",
                     TenantName = activeLease?.User != null ? (activeLease.User.Username ?? activeLease.User.Email) : "N/A",
                     TenantId = activeLease?.UserId
@@ -161,42 +107,9 @@ namespace Apartment.Pages.Admin
             // Save any IsOccupied flag updates
             await dbData.SaveChangesAsync();
 
-            //Load available tenants for the dropdown
-            await LoadAvailableTenantsAsync();
         }
 
-        private async Task LoadAvailableTenantsAsync()
-        {
-            var now = DateTime.UtcNow;
-            
-            // Get all users with active leases
-            var usersWithActiveLeases = await dbData.Leases
-                .Where(l => l.LeaseEnd >= now)
-                .Select(l => l.UserId)
-                .Distinct()
-                .ToListAsync();
-
-            //Fetch users (tenants) who don't have active leases
-            var unassignedUsers = await dbData.Users
-                .Where(u => u.Role == UserRoles.Tenant && 
-                           (u.Status == "Active" || u.Status == null) &&
-                           !usersWithActiveLeases.Contains(u.Id))
-                .OrderBy(u => u.Username)
-                .ToListAsync();
-
-            //create a select list for the dropdown
-            var selectListItems = unassignedUsers
-                .Select(u => new SelectListItem
-                {
-                    Value = u.Id.ToString(),
-                    Text = u.Username ?? u.Email
-                })
-                .ToList();
-
-            // Add a default "Vacant" option. This is how we handle unassignment/vacant status.
-            selectListItems.Insert(0, new SelectListItem { Value = "0", Text = "Vacant", Selected = true });
-            AvailableTenants = new SelectList(selectListItems, "Value", "Text");
-        }
+        
 
 
         //ADD APARTMENT LOGIC
@@ -206,7 +119,7 @@ namespace Apartment.Pages.Admin
             {
                 await OnGetAsync(); //Reload data for the page
                 ErrorMessage = "Invalid apartment data. Please check the inputs.";
-                return RedirectToPage();
+                return Page();
             }
             //Ensure UnitNumber is unique
             if(await dbData.Apartments.AnyAsync(a => a.UnitNumber == ApartmentInput.UnitNumber))
@@ -234,18 +147,7 @@ namespace Apartment.Pages.Admin
             
             await dbData.SaveChangesAsync();
 
-            // If SelectedTenantId was provided, create a lease for the user (tenant)
-            if (SelectedTenantId.HasValue && SelectedTenantId.Value > 0)
-            {
-                var user = await dbData.Users.FindAsync(SelectedTenantId.Value);
-                if (user != null)
-                {
-                    await CreateLeaseAsync(user, ApartmentInput);
-                    await dbData.SaveChangesAsync();
-                }
-            }
-
-            SuccessMessage = $"Apartment '{ApartmentInput.UnitNumber}' added successfully.";
+            SuccessMessage = $"Apartment '{ApartmentInput.UnitNumber}' added successfully. You can now create a lease for this unit from the Lease Management page.";
             return RedirectToPage();
         }
 
@@ -307,63 +209,10 @@ namespace Apartment.Pages.Admin
             }              
         }
 
-        //Post handler for assigning a user (tenant) to an apartment unit
-        public async Task<IActionResult> OnPostAssignTenantAsync(int apartmentId, int tenantId)
-        {
-            var apartment = await dbData.Apartments.FindAsync(apartmentId);
-            var user = await dbData.Users.FindAsync(tenantId);
-
-            if (apartment == null || user == null)
-            {
-                ErrorMessage = "Apartment or User not found.";
-                return RedirectToPage();
-            }
-
-            var now = DateTime.UtcNow;
-            // Check if the apartment is already occupied by a different active lease
-            var existingLease = await dbData.Leases
-                .Include(l => l.User)
-                .FirstOrDefaultAsync(l => l.ApartmentId == apartmentId && l.LeaseEnd >= now && l.UserId != tenantId);
-
-            if (existingLease != null)
-            {
-                // End the previous lease
-                existingLease.LeaseEnd = now.AddDays(-1);
-                SuccessMessage = $"Apartment {apartment.UnitNumber} was previously occupied by {existingLease.User.Username ?? existingLease.User.Email}. Lease has been ended.";
-            }
-            else
-            {
-                SuccessMessage = $"User '{user.Username ?? user.Email}' assigned to apartment '{apartment.UnitNumber}' successfully.";
-            }
-
-            // Create new lease for the user
-            await CreateLeaseAsync(user, apartment);
-            await dbData.SaveChangesAsync();
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostVacateApartmentAsync(int id)
-        {
-            var apartment = await dbData.Apartments.FindAsync(id);
-
-            if(apartment == null)
-            {
-                ErrorMessage = "Apartment not found for vacating";
-                return RedirectToPage();
-            }
-
-            // End all active leases for this apartment
-            await EndLeaseAsync(id);
-            await dbData.SaveChangesAsync();
-
-            SuccessMessage = $"Apartment '{apartment.UnitNumber}' has been marked as vacant.";
-            return RedirectToPage();
-        }
-
         // EDIT APARTMENT LOGIC
-        public async Task<IActionResult> OnPostEditApartmentAsync(int ApartmentId, string UnitNumber, decimal MonthlyRent, int? TenantId)
+        public async Task<IActionResult> OnPostEditApartmentAsync(int ApartmentId, string UnitNumber)
         {
-            if (string.IsNullOrWhiteSpace(UnitNumber) || MonthlyRent < 0)
+            if (string.IsNullOrWhiteSpace(UnitNumber))
             {
                 ErrorMessage = "Invalid apartment data. Please check the inputs.";
                 return RedirectToPage();
@@ -386,38 +235,6 @@ namespace Apartment.Pages.Admin
             }
 
             apartment.UnitNumber = UnitNumber;
-            apartment.MonthlyRent = MonthlyRent;
-
-            // Handle user (tenant) assignment/unassignment via leases
-            var now = DateTime.UtcNow;
-            if (TenantId.HasValue && TenantId.Value > 0)
-            {
-                var user = await dbData.Users.FindAsync(TenantId.Value);
-                if (user != null)
-                {
-                    // End any existing active leases for this apartment (except for the same user)
-                    var existingLeases = await dbData.Leases
-                        .Where(l => l.ApartmentId == ApartmentId && l.LeaseEnd >= now && l.UserId != TenantId.Value)
-                        .ToListAsync();
-                    
-                    foreach (var lease in existingLeases)
-                    {
-                        lease.LeaseEnd = now.AddDays(-1);
-                    }
-
-                    // Create new lease for the user
-                    await CreateLeaseAsync(user, apartment);
-                }
-                else
-                {
-                    await EndLeaseAsync(ApartmentId);
-                }
-            }
-            else
-            {
-                // End all active leases for this apartment
-                await EndLeaseAsync(ApartmentId);
-            }
 
             dbData.Apartments.Update(apartment);
             await dbData.SaveChangesAsync();
