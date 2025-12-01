@@ -31,6 +31,11 @@ namespace Apartment.Model
         [Column(TypeName = "decimal(18, 2)")]
         public decimal MonthlyRent { get; set; }
 
+        // Security deposit amount
+        [Required]
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal SecurityDeposit { get; set; }
+
         // Unit number for this lease
         [Required]
         [StringLength(10)]

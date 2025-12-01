@@ -8,6 +8,7 @@
     var isAuditLogs = currentPage.Contains("AuditLogs");
     var isManageTenants = currentPage.Contains("ManageTenants");
     var isManageApartments = currentPage.Contains("ManageApartments");
+    var isManageLeases = currentPage.Contains("ManageLeases");
     var isGenerateBills = currentPage.Contains("GenerateBills");
     var isRecordPayments = currentPage.Contains("RecordPayments");
     var isBillingSummary = currentPage.Contains("BillingSummary");
@@ -133,6 +134,19 @@
                     </span>
                     <span class="nav-label">Unit Management</span>
                     @if (isManageApartments)
+                    {
+                        <span class="nav-indicator"></span>
+                    }
+                </a>
+
+                <a asp-page="/Admin/ManageLeases" 
+                   class="nav-item @(isManageLeases ? "active" : "")"
+                   aria-current="@(isManageLeases ? "page" : null)">
+                    <span class="nav-icon">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </span>
+                    <span class="nav-label">Lease Management</span>
+                    @if (isManageLeases)
                     {
                         <span class="nav-indicator"></span>
                     }
