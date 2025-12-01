@@ -169,7 +169,13 @@ namespace Apartment.Pages.Admin
             await dbData.SaveChangesAsync();
 
             // Log the user creation
-            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var adminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(adminIdStr) || !int.TryParse(adminIdStr, out int adminId))
+            {
+                ErrorMessage = "Unable to identify administrator.";
+                await OnGetAsync();
+                return Page();
+            }
             await _auditService.LogAsync(
                 action: AuditActionType.CreateUser,
                 userId: adminId,
@@ -260,7 +266,8 @@ namespace Apartment.Pages.Admin
         public async Task<IActionResult> OnPostDeleteUserAsync(int userId)
         {
             var userToDelete = await dbData.Users
-                .Include(u => u.Apartment)
+                .Include(u => u.Leases)
+                    .ThenInclude(l => l.Apartment)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (userToDelete == null)
@@ -277,8 +284,12 @@ namespace Apartment.Pages.Admin
                 return RedirectToPage();
             }
 
-            // Check for dependencies before deletion
-            if (userToDelete.ApartmentId.HasValue)
+            // Check for dependencies before deletion - check for active leases
+            var now = DateTime.UtcNow;
+            var hasActiveLease = await dbData.Leases
+                .AnyAsync(l => l.UserId == userToDelete.Id && l.LeaseEnd >= now);
+            
+            if (hasActiveLease)
             {
                 var tenantId = userToDelete.Id;
 

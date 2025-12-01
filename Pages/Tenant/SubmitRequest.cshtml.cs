@@ -45,7 +45,8 @@ namespace Apartment.Pages.Tenant
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Apartment)
+                    .Include(u => u.Leases)
+                        .ThenInclude(l => l.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user != null)
@@ -72,7 +73,8 @@ namespace Apartment.Pages.Tenant
             }
 
             var user = await _context.Users
-                .Include(u => u.Apartment)
+                .Include(u => u.Leases)
+                    .ThenInclude(l => l.Apartment)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -91,7 +93,7 @@ namespace Apartment.Pages.Tenant
                 Status = Enums.RequestStatus.Submitted,
                 DateSubmitted = DateTime.UtcNow,
                 SubmittedByUserId = user.Id,
-                ApartmentId = user.ApartmentId
+                ApartmentId = user.Leases?.FirstOrDefault(l => l.LeaseEnd >= DateTime.UtcNow)?.ApartmentId
             };
 
             try

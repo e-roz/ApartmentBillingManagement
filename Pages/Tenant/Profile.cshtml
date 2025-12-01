@@ -9,112 +9,202 @@
 <div class="d-flex">
     @await Html.PartialAsync("_TenantSidebar")
 
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">Profile & Settings</h1>
-        <p class="text-muted mb-4">Update your personal information and account settings.</p>
+    <!-- Main Content -->
+    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem; background-color: #FAFAF5; min-height: 100vh;">
+        <div class="container-fluid">
+            @* Standardized Messages *@
+            @if (TempData["SuccessMessage"] != null)
+            {
+                ViewData["SuccessMessage"] = TempData["SuccessMessage"];
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                ViewData["ErrorMessage"] = TempData["ErrorMessage"];
+            }
+            @await Html.PartialAsync("_MessagePartial")
 
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        <div class="row">
-            <!-- Update Profile -->
-            <div class="col-md-6 mb-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title mb-4">Update Contact Details</h5>
-                        <form method="post" asp-page-handler="UpdateProfile">
-                            <div class="mb-3">
-                                <label asp-for="Input.Email" class="form-label">Email Address</label>
-                                <input asp-for="Input.Email" class="form-control" type="email" />
-                                <span asp-validation-for="Input.Email" class="text-danger"></span>
-                            </div>
-
-                            <div class="mb-3">
-                                <label asp-for="Input.PhoneNumber" class="form-label">Phone Number</label>
-                                <input asp-for="Input.PhoneNumber" class="form-control" type="tel" />
-                                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-2"></i>Update Profile
-                            </button>
-                        </form>
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="mb-1" style="font-weight: 600; color: #2c3e50;">Profile & Settings</h2>
+                            <p class="text-muted mb-0" style="font-size: 0.95rem;">Manage your personal information and account settings.</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Change Password -->
-            <div class="col-md-6 mb-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title mb-4">Change Password</h5>
-                        <form method="post" asp-page-handler="ChangePassword">
-                            <div class="mb-3">
-                                <label asp-for="PasswordInput.CurrentPassword" class="form-label">Current Password</label>
-                                <input asp-for="PasswordInput.CurrentPassword" class="form-control" type="password" />
-                                <span asp-validation-for="PasswordInput.CurrentPassword" class="text-danger"></span>
-                            </div>
+            <div class="row">
+                <!-- Profile Information Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                        <div class="card-header bg-white border-bottom" style="border-radius: 12px 12px 0 0;">
+                            <h5 class="mb-0" style="font-weight: 600;">
+                                <i class="bi bi-person-circle me-2 text-primary"></i>Profile Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.UserInfo != null)
+                            {
+                                <div class="mb-4">
+                                    <label class="form-label small text-muted mb-1">Username</label>
+                                    <div class="fw-semibold" style="color: #202124; font-size: 1.1rem;">@Model.UserInfo.Username</div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label small text-muted mb-1">Email</label>
+                                    <div style="color: #5f6368;">@Model.UserInfo.Email</div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label small text-muted mb-1">Unit Number</label>
+                                    <div style="color: #5f6368;">@(Model.ActiveLease?.UnitNumber ?? "Not Assigned")</div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label small text-muted mb-1">Status</label>
+                                    <div>
+                                        @{
+                                            var statusBadgeClass = (Model.UserInfo.Status?.ToLower() == "active" || Model.UserInfo.Status == null) ? "badge-green" : "badge-gray";
+                                            var statusText = (Model.UserInfo.Status?.ToLower() == "active" || Model.UserInfo.Status == null) ? "Active" : "Inactive";
+                                        }
+                                        <span class="badge @statusBadgeClass">@statusText</span>
+                                    </div>
+                                </div>
+                                @if (Model.ActiveLease != null)
+                                {
+                                    <hr class="my-4">
+                                    <div class="mb-4">
+                                        <label class="form-label small text-muted mb-1">Lease Period</label>
+                                        <div style="color: #5f6368;">
+                                            <div>Start: @Model.ActiveLease.LeaseStart.ToString("MMM dd, yyyy")</div>
+                                            <div>End: @Model.ActiveLease.LeaseEnd.ToString("MMM dd, yyyy")</div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="form-label small text-muted mb-1">Monthly Rent</label>
+                                        <div style="color: #5f6368; font-weight: 500;">@Model.ActiveLease.MonthlyRent.ToString("C", pesoCulture)</div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
 
-                            <div class="mb-3">
-                                <label asp-for="PasswordInput.NewPassword" class="form-label">New Password</label>
-                                <input asp-for="PasswordInput.NewPassword" class="form-control" type="password" />
-                                <span asp-validation-for="PasswordInput.NewPassword" class="text-danger"></span>
-                                <small class="text-muted">Minimum 6 characters</small>
-                            </div>
+                <!-- Change Password Card -->
+                <div class="col-md-6 mb-4">
+                    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                        <div class="card-header bg-white border-bottom" style="border-radius: 12px 12px 0 0;">
+                            <h5 class="mb-0" style="font-weight: 600;">
+                                <i class="bi bi-key me-2 text-primary"></i>Change Password
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" asp-page-handler="ChangePassword">
+                                <div class="mb-3">
+                                    <label asp-for="PasswordInput.CurrentPassword" class="form-label small text-muted mb-1">Current Password</label>
+                                    <input asp-for="PasswordInput.CurrentPassword" class="form-control" type="password" style="border-radius: 8px;" placeholder="Enter current password" />
+                                    <span asp-validation-for="PasswordInput.CurrentPassword" class="text-danger small"></span>
+                                </div>
 
-                            <div class="mb-3">
-                                <label asp-for="PasswordInput.ConfirmPassword" class="form-label">Confirm New Password</label>
-                                <input asp-for="PasswordInput.ConfirmPassword" class="form-control" type="password" />
-                                <span asp-validation-for="PasswordInput.ConfirmPassword" class="text-danger"></span>
-                            </div>
+                                <div class="mb-3">
+                                    <label asp-for="PasswordInput.NewPassword" class="form-label small text-muted mb-1">New Password</label>
+                                    <input asp-for="PasswordInput.NewPassword" class="form-control" type="password" style="border-radius: 8px;" placeholder="Enter new password" />
+                                    <span asp-validation-for="PasswordInput.NewPassword" class="text-danger small"></span>
+                                    <small class="text-muted" style="font-size: 0.8rem;">Minimum 6 characters</small>
+                                </div>
 
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-key me-2"></i>Change Password
-                            </button>
-                        </form>
+                                <div class="mb-4">
+                                    <label asp-for="PasswordInput.ConfirmPassword" class="form-label small text-muted mb-1">Confirm New Password</label>
+                                    <input asp-for="PasswordInput.ConfirmPassword" class="form-control" type="password" style="border-radius: 8px;" placeholder="Confirm new password" />
+                                    <span asp-validation-for="PasswordInput.ConfirmPassword" class="text-danger small"></span>
+                                </div>
+
+                                <button type="submit" class="btn btn-change-password w-100" style="border-radius: 8px;">
+                                    <i class="bi bi-key me-2"></i>Change Password
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        @if (Model.UserInfo != null)
-        {
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Account Information</h5>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Name:</strong> @Model.UserInfo.Username</p>
-                            <p><strong>Unit Number:</strong> @(Model.UserInfo.UnitNumber ?? "Not Assigned")</p>
-                            <p><strong>Status:</strong> <span class="badge bg-info">@(Model.UserInfo.Status ?? "Not Set")</span></p>
-                        </div>
-                        <div class="col-md-6">
-                            @if (Model.UserInfo.LeaseStart.HasValue)
-                            {
-                                <p><strong>Lease Start:</strong> @Model.UserInfo.LeaseStart.Value.ToString("MM/dd/yyyy")</p>
-                            }
-                            @if (Model.UserInfo.LeaseEnd.HasValue)
-                            {
-                                <p><strong>Lease End:</strong> @Model.UserInfo.LeaseEnd.Value.ToString("MM/dd/yyyy")</p>
-                            }
-                            <p><strong>Monthly Rent:</strong> @(Model.UserInfo.MonthlyRent?.ToString("C", pesoCulture) ?? "N/A")</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
     </div>
 </div>
 
 <style>
-    .main-content {
-        min-height: 100vh;
-        background: #f8f9fa;
+    /* Modern Button Styles */
+    .btn-change-password {
+        background-color: #6BB57C;
+        border: none;
+        color: white;
+        font-weight: 500;
+        padding: 0.6rem 1.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-change-password:hover {
+        background-color: #5aa368;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(107, 181, 124, 0.3);
+    }
+
+    /* Badge Styles */
+    .badge-green {
+        background-color: #6BB57C;
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+
+    .badge-gray {
+        background-color: #9e9e9e;
+        color: white;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+
+    /* Card Styles */
+    .card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+        transform: translateY(-2px);
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Form Control Styles */
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-control:focus {
+        border-color: #6BB57C;
+        box-shadow: 0 0 0 0.2rem rgba(107, 181, 124, 0.25);
+    }
+
+    /* Label Styles */
+    .form-label {
+        font-weight: 500;
+        color: #5f6368;
     }
 </style>
 
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

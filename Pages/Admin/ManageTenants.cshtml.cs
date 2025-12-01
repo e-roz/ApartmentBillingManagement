@@ -24,6 +24,7 @@ namespace Apartment.Pages.Admin
 
         // Properties for Details - Read-only
         public Model.User? UserDetails { get; private set; }
+        public Lease? ActiveLease { get; private set; }
 
         [TempData]
         public string? SuccessMessage { get; set; }
@@ -34,23 +35,30 @@ namespace Apartment.Pages.Admin
         // ========== INDEX (List View) - Read-only ==========
         public async Task OnGetAsync()
         {
+            var now = DateTime.UtcNow;
             // Show all Users with role Tenant (read-only view)
-            Tenants = await _context.Users
+            var users = await _context.Users
                 .AsNoTracking()
-                .Include(u => u.Apartment)
+                .Include(u => u.Leases)
+                    .ThenInclude(l => l.Apartment)
                 .Where(u => u.Role == UserRoles.Tenant)
                 .OrderBy(u => u.Username)
-                .Select(u => new TenantListViewModel
+                .ToListAsync();
+
+            Tenants = users.Select(u =>
+            {
+                var activeLease = u.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
+                return new TenantListViewModel
                 {
                     Id = u.Id,
                     FullName = u.Username,
                     PrimaryEmail = u.Email,
                     PrimaryPhone = "N/A", // User model doesn't have phone
-                    MonthlyRent = u.MonthlyRent ?? 0m,
+                    MonthlyRent = activeLease?.MonthlyRent ?? 0m,
                     LeaseStatus = u.Status ?? "Unknown",
-                    AssignedUnit = u.UnitNumber ?? "Unassigned"
-                })
-                .ToListAsync();
+                    AssignedUnit = activeLease?.UnitNumber ?? "Unassigned"
+                };
+            }).ToList();
         }
 
         // ========== DETAILS (Single View) - Read-only ==========
@@ -63,12 +71,17 @@ namespace Apartment.Pages.Admin
 
             UserDetails = await _context.Users
                 .AsNoTracking()
+                .Include(u => u.Leases)
+                    .ThenInclude(l => l.Apartment)
                 .FirstOrDefaultAsync(m => m.Id == id.Value && m.Role == UserRoles.Tenant);
 
             if (UserDetails == null)
             {
                 return NotFound();
             }
+
+            var now = DateTime.UtcNow;
+            ActiveLease = UserDetails.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
 
             return Page();
         }

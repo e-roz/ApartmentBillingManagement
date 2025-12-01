@@ -31,27 +31,12 @@ namespace Apartment.Model
 
         public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Tenant properties merged from Tenants table
-        public int? ApartmentId { get; set; }
-
-        public DateTime? LeaseStart { get; set; }
-
-        public DateTime? LeaseEnd { get; set; }
-
-        [StringLength(10)]
-        public string? UnitNumber { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal? MonthlyRent { get; set; }
-
         [StringLength(32)]
         public string? Status { get; set; }
 
         // Navigation properties
-        [ForeignKey(nameof(ApartmentId))]
-        public ApartmentModel? Apartment { get; set; }
-
         public ICollection<Bill>? Bills { get; set; } // Added for User-Bills relationship
+        public ICollection<Lease> Leases { get; set; } = new List<Lease>(); // Added for User-Leases relationship
 
         public bool MustChangePassword { get; set; } = false;
     }

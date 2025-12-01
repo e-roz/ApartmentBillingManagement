@@ -30,17 +30,14 @@
                         @if (Model.UserInfo != null)
                         {
                             <p class="text-muted">
-                                <strong>Unit:</strong> @(Model.UserInfo.Apartment?.UnitNumber ?? "Not Assigned")<br />
+                                <strong>Unit:</strong> @(Model.ActiveLease?.UnitNumber ?? "Not Assigned")<br />
                                 @{
-                                    if (Model.UserInfo.LeaseStart.HasValue && Model.UserInfo.LeaseEnd.HasValue)
+                                    if (Model.ActiveLease != null)
                                     {
-                                        var leaseStart = Model.UserInfo.LeaseStart.Value.ToString("MM/dd/yyyy");
-                                        var leaseEnd = Model.UserInfo.LeaseEnd.Value.ToString("MM/dd/yyyy");
+                                        var leaseStart = Model.ActiveLease.LeaseStart.ToString("MM/dd/yyyy");
+                                        var leaseEnd = Model.ActiveLease.LeaseEnd.ToString("MM/dd/yyyy");
                                         <text><strong>Lease Period:</strong> @leaseStart - @leaseEnd<br /></text>
-                                    }
-                                    if (Model.UserInfo.Apartment != null)
-                                    {
-                                        <text><strong>Monthly Rent:</strong> @Model.UserInfo.Apartment.MonthlyRent.ToString("C", pesoCulture)</text>
+                                        <text><strong>Monthly Rent:</strong> @Model.ActiveLease.MonthlyRent.ToString("C", pesoCulture)</text>
                                     }
                                 }
                             </p>

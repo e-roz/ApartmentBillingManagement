@@ -26,7 +26,8 @@ namespace Apartment.Pages.Tenant
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Apartment)
+                    .Include(u => u.Leases)
+                        .ThenInclude(l => l.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user != null)

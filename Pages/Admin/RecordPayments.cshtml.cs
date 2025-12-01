@@ -355,7 +355,8 @@ namespace Apartment.Pages.Admin
         private async Task<PaymentSummaryViewModel> ComputePaymentSummaryAsync(int tenantUserId)
         {
             var tenantUser = await _context.Users
-                .Include(u => u.Apartment)
+                .Include(u => u.Leases)
+                    .ThenInclude(l => l.Apartment)
                 .FirstOrDefaultAsync(u => u.Id == tenantUserId && u.Role == UserRoles.Tenant);
 
             if (tenantUser == null)
@@ -407,11 +408,13 @@ namespace Apartment.Pages.Admin
 
             var status = DetermineOverallStatus(totalRent, totalPaid, bills);
 
+            var now = DateTime.UtcNow;
+            var activeLease = tenantUser.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
             return new PaymentSummaryViewModel
             {
                 TenantId = tenantUserId,
                 TenantName = tenantUser.Username,
-                UnitNumber = tenantUser.Apartment?.UnitNumber ?? "Unassigned",
+                UnitNumber = activeLease?.UnitNumber ?? "Unassigned",
                 TotalRent = totalRent,
                 AmountPaid = totalPaid,
                 RemainingBalance = remainingBalance,
@@ -468,8 +471,10 @@ namespace Apartment.Pages.Admin
 
         private async Task LoadTenantSummariesAsync()
         {
+            var now = DateTime.UtcNow;
             var query = _context.Users
-                .Include(u => u.Apartment)
+                .Include(u => u.Leases)
+                    .ThenInclude(l => l.Apartment)
                 .Where(u => u.Role == UserRoles.Tenant)
                 .AsQueryable();
 
@@ -485,7 +490,7 @@ namespace Apartment.Pages.Admin
                 
                 query = query.Where(u => 
                     u.Username.Contains(sanitizedTerm) || 
-                    (u.Apartment != null && u.Apartment.UnitNumber.Contains(sanitizedTerm)) ||
+                    (u.Leases != null && u.Leases.Any(l => l.LeaseEnd >= now && l.Apartment.UnitNumber.Contains(sanitizedTerm))) ||
                     u.Email.Contains(sanitizedTerm));
             }
 
@@ -558,12 +563,13 @@ namespace Apartment.Pages.Admin
 
                 lastPayments.TryGetValue(u.Id, out var lastPayment);
 
+                var activeLease = u.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
                 return new TenantPaymentSummary
                 {
                     TenantId = u.Id,
                     TenantName = u.Username,
-                    UnitNumber = u.Apartment?.UnitNumber ?? "Unassigned",
-                    MonthlyRent = u.Apartment?.MonthlyRent ?? 0m,
+                    UnitNumber = activeLease?.UnitNumber ?? "Unassigned",
+                    MonthlyRent = activeLease?.MonthlyRent ?? 0m,
                     TotalPaid = totalPaidAllBills, // Total paid across ALL bills for accurate display
                     RemainingBalance = remainingBalance,
                     PaymentStatus = DetermineOverallStatus(totalRentAllBills, totalPaidAllBills, bills),
@@ -662,14 +668,20 @@ namespace Apartment.Pages.Admin
         private async Task PopulateFilterOptionsAsync()
         {
             // Tenant user options
+            var now = DateTime.UtcNow;
             var tenantUsers = await _context.Users
-                .Include(u => u.Apartment)
+                .Include(u => u.Leases)
+                    .ThenInclude(l => l.Apartment)
                 .Where(u => u.Role == UserRoles.Tenant)
-                .OrderBy(u => u.Username)
-                .Select(u => new { u.Id, u.Username, UnitNumber = u.Apartment != null ? u.Apartment.UnitNumber : "Unassigned" })
                 .ToListAsync();
 
-            TenantOptions = tenantUsers.Select(u => new SelectListItem
+            var tenantUserOptions = tenantUsers.Select(u =>
+            {
+                var activeLease = u.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
+                return new { u.Id, u.Username, UnitNumber = activeLease?.UnitNumber ?? "Unassigned" };
+            }).OrderBy(u => u.Username).ToList();
+
+            TenantOptions = tenantUserOptions.Select(u => new SelectListItem
             {
                 Value = u.Id.ToString(),
                 Text = $"{u.Username} - {u.UnitNumber}",

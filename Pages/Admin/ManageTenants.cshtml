@@ -230,25 +230,22 @@
                     <div class="card-body">
                         <dl class="row mb-0">
                             <dt class="col-sm-4 fw-semibold">Monthly Rent</dt>
-                            <dd class="col-sm-8 text-success fw-semibold">@(Model.UserDetails.MonthlyRent?.ToString("C", pesoCulture) ?? "N/A")</dd>
+                            <dd class="col-sm-8 text-success fw-semibold">@(Model.ActiveLease?.MonthlyRent.ToString("C", pesoCulture) ?? "N/A")</dd>
 
-                            @if (Model.UserDetails.LeaseStart.HasValue)
+                            @if (Model.ActiveLease != null)
                             {
                                 <dt class="col-sm-4 fw-semibold">Lease Start</dt>
-                                <dd class="col-sm-8">@Model.UserDetails.LeaseStart.Value.ToString("MMM dd, yyyy")</dd>
-                            }
+                                <dd class="col-sm-8">@Model.ActiveLease.LeaseStart.ToString("MMM dd, yyyy")</dd>
 
-                            @if (Model.UserDetails.LeaseEnd.HasValue)
-                            {
                                 <dt class="col-sm-4 fw-semibold">Lease End</dt>
-                                <dd class="col-sm-8">@Model.UserDetails.LeaseEnd.Value.ToString("MMM dd, yyyy")</dd>
+                                <dd class="col-sm-8">@Model.ActiveLease.LeaseEnd.ToString("MMM dd, yyyy")</dd>
                             }
 
                             <dt class="col-sm-4 fw-semibold">Assigned Apartment</dt>
                             <dd class="col-sm-8">
-                                @if (!string.IsNullOrEmpty(Model.UserDetails.UnitNumber))
+                                @if (!string.IsNullOrEmpty(Model.ActiveLease?.UnitNumber))
                                 {
-                                    <span class="badge bg-primary fs-6">@Model.UserDetails.UnitNumber</span>
+                                    <span class="badge bg-primary fs-6">@Model.ActiveLease.UnitNumber</span>
                                 }
                                 else
                                 {

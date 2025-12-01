@@ -19,13 +19,13 @@ namespace Apartment.Pages
         private readonly IAuditService _auditService;
 
         [BindProperty]
-        public ChangePasswordViewModel Input { get; set; }
+        public ChangePasswordViewModel Input { get; set; } = new();
 
         [TempData]
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
         
         [TempData]
-        public string SuccessMessage { get; set; }
+        public string? SuccessMessage { get; set; }
 
         public ChangePasswordModel(ApplicationDbContext context, IAuditService auditService)
         {
@@ -35,8 +35,13 @@ namespace Apartment.Pages
 
         public async Task<IActionResult> OnGetAsync()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _context.Users.FindAsync(int.Parse(userId));
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return RedirectToPage("/Login");
+            }
+
+            var user = await _context.Users.FindAsync(userId);
 
             if (user == null || !user.MustChangePassword)
             {
@@ -54,8 +59,14 @@ namespace Apartment.Pages
                 return Page();
             }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _context.Users.FindAsync(int.Parse(userId));
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                ModelState.AddModelError("", "Unable to identify user. Please log in again.");
+                return Page();
+            }
+
+            var user = await _context.Users.FindAsync(userId);
 
             if (user == null)
             {

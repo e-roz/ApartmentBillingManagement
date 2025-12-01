@@ -245,9 +245,10 @@ namespace Apartment.Services
                 return $"Apartment {invoice.Apartment.UnitNumber}";
             }
 
-            if (invoice.TenantUser?.Apartment != null && !string.IsNullOrWhiteSpace(invoice.TenantUser.Apartment.UnitNumber))
+            // Try to get unit number from Bill's Apartment
+            if (invoice.Bill?.Apartment != null && !string.IsNullOrWhiteSpace(invoice.Bill.Apartment.UnitNumber))
             {
-                return $"Apartment {invoice.TenantUser.Apartment.UnitNumber}";
+                return $"Apartment {invoice.Bill.Apartment.UnitNumber}";
             }
 
             return "Not available";

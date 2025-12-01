@@ -21,18 +21,10 @@ namespace Apartment.Pages.Tenant
         }
 
         [BindProperty]
-        public ProfileInputModel Input { get; set; } = new();
-
-        [BindProperty]
         public PasswordChangeModel PasswordInput { get; set; } = new();
 
         public Model.User? UserInfo { get; set; }
-
-        public class ProfileInputModel
-        {
-            public string? PhoneNumber { get; set; }
-            public string? Email { get; set; }
-        }
+        public Lease? ActiveLease { get; set; }
 
         public class PasswordChangeModel
         {
@@ -56,40 +48,6 @@ namespace Apartment.Pages.Tenant
             await LoadUserDataAsync();
         }
 
-        public async Task<IActionResult> OnPostUpdateProfileAsync()
-        {
-            if (!ModelState.IsValid)
-            {
-                await LoadUserDataAsync();
-                return Page();
-            }
-
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-            {
-                var user = await _context.Users
-                    .Include(u => u.Apartment)
-                    .FirstOrDefaultAsync(u => u.Id == userId);
-
-                if (user != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(Input.Email))
-                    {
-                        user.Email = Input.Email;
-                    }
-
-                    user.UpdatedAt = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
-
-                    TempData["SuccessMessage"] = "Profile updated successfully.";
-                    return RedirectToPage();
-                }
-            }
-
-            ModelState.AddModelError("", "Unable to update profile. Please try again.");
-            await LoadUserDataAsync();
-            return Page();
-        }
 
         public async Task<IActionResult> OnPostChangePasswordAsync()
         {
@@ -135,13 +93,15 @@ namespace Apartment.Pages.Tenant
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Apartment)
+                    .Include(u => u.Leases)
+                        .ThenInclude(l => l.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user != null)
                 {
                     UserInfo = user;
-                    Input.Email = user.Email;
+                    var now = DateTime.UtcNow;
+                    ActiveLease = user.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
                 }
             }
         }

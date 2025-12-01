@@ -4,6 +4,7 @@ using Apartment.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apartment.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251130231826_AddLeaseModel")]
+    partial class AddLeaseModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,12 +39,18 @@ namespace Apartment.Migrations
                     b.Property<decimal>("MonthlyRent")
                         .HasColumnType("decimal(18, 2)");
 
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("int");
+
                     b.Property<string>("UnitNumber")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Apartments_TenantId");
 
                     b.HasIndex("UnitNumber")
                         .IsUnique();
@@ -412,6 +421,9 @@ namespace Apartment.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ApartmentId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -424,6 +436,15 @@ namespace Apartment.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<DateTime?>("LeaseEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LeaseStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("MonthlyRent")
+                        .HasColumnType("decimal(18, 2)");
+
                     b.Property<bool>("MustChangePassword")
                         .HasColumnType("bit");
 
@@ -433,6 +454,10 @@ namespace Apartment.Migrations
                     b.Property<string>("Status")
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("UnitNumber")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -444,10 +469,23 @@ namespace Apartment.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApartmentId")
+                        .HasDatabaseName("IX_Users_ApartmentId");
+
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Apartment.Model.ApartmentModel", b =>
+                {
+                    b.HasOne("Apartment.Model.User", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Apartment.Model.AuditLog", b =>
@@ -515,13 +553,13 @@ namespace Apartment.Migrations
             modelBuilder.Entity("Apartment.Model.Lease", b =>
                 {
                     b.HasOne("Apartment.Model.ApartmentModel", "Apartment")
-                        .WithMany("Leases")
+                        .WithMany()
                         .HasForeignKey("ApartmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Apartment.Model.User", "User")
-                        .WithMany("Leases")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -582,11 +620,19 @@ namespace Apartment.Migrations
                     b.Navigation("SubmittedByUser");
                 });
 
+            modelBuilder.Entity("Apartment.Model.User", b =>
+                {
+                    b.HasOne("Apartment.Model.ApartmentModel", "Apartment")
+                        .WithMany()
+                        .HasForeignKey("ApartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Apartment");
+                });
+
             modelBuilder.Entity("Apartment.Model.ApartmentModel", b =>
                 {
                     b.Navigation("Bills");
-
-                    b.Navigation("Leases");
                 });
 
             modelBuilder.Entity("Apartment.Model.BillingPeriod", b =>
@@ -597,8 +643,6 @@ namespace Apartment.Migrations
             modelBuilder.Entity("Apartment.Model.User", b =>
                 {
                     b.Navigation("Bills");
-
-                    b.Navigation("Leases");
                 });
 #pragma warning restore 612, 618
         }

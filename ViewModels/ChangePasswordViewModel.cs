@@ -8,11 +8,11 @@ namespace Apartment.ViewModels
         [DataType(DataType.Password)]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters long.")]
         [Display(Name = "New Password")]
-        public string NewPassword { get; set; }
+        public string NewPassword { get; set; } = string.Empty;
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm New Password")]
         [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; }
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

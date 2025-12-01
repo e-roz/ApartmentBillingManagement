@@ -18,6 +18,7 @@ namespace Apartment.Pages.Tenant
         }
 
         public Model.User? UserInfo { get; set; }
+        public Lease? ActiveLease { get; set; }
 
         public async Task OnGetAsync()
         {
@@ -25,12 +26,15 @@ namespace Apartment.Pages.Tenant
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
                 var user = await _context.Users
-                    .Include(u => u.Apartment)
+                    .Include(u => u.Leases)
+                        .ThenInclude(l => l.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user != null)
                 {
                     UserInfo = user;
+                    var now = DateTime.UtcNow;
+                    ActiveLease = user.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
                 }
             }
         }

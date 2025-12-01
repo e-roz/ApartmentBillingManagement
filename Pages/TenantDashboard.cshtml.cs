@@ -20,6 +20,7 @@ namespace Apartment.Pages
 
         public string Username { get; set; } = string.Empty;
         public Model.User? UserInfo { get; set; }
+        public Lease? ActiveLease { get; set; }
         public decimal OutstandingBalance { get; set; }
         public int PendingBills { get; set; }
         public decimal TotalPaid { get; set; }
@@ -48,14 +49,17 @@ namespace Apartment.Pages
                     .CountAsync(m => m.ReceiverUserId == userId && !m.IsRead);
                 ViewData["UnreadMessagesCount"] = unreadMessagesCount;
 
-                // Get user with apartment information
+                // Get user with active lease information
                 var user = await _context.Users
-                    .Include(u => u.Apartment)
+                    .Include(u => u.Leases)
+                        .ThenInclude(l => l.Apartment)
                     .FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user != null)
                 {
                     UserInfo = user;
+                    var now = DateTime.UtcNow;
+                    ActiveLease = user.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
                     // Get bills for this user
                     var bills = await _context.Bills
                         .Include(b => b.BillingPeriod)

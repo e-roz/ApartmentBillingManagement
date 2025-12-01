@@ -75,23 +75,24 @@ namespace Apartment.Pages.Admin
 
         private async Task LoadOccupiedApartmentsAsync()
         {
-            // Get active tenant users with apartments assigned
-            var activeTenantUsers = await dbData.Users
-                .Include(u => u.Apartment)
-                .Where(u => u.Role == UserRoles.Tenant && 
-                           u.ApartmentId.HasValue &&
-                           (u.Status == "Active" || u.Status == null))
+            var now = DateTime.UtcNow;
+            // Get active leases with users and apartments
+            var activeLeases = await dbData.Leases
+                .Include(l => l.User)
+                .Include(l => l.Apartment)
+                .Where(l => l.LeaseEnd >= now && 
+                           (l.User.Status == "Active" || l.User.Status == null))
                 .ToListAsync();
 
-            OccupiedApartments = activeTenantUsers
-                .Where(u => u.Apartment != null)
-                .Select(u => new ViewModels.ApartmentList
+            OccupiedApartments = activeLeases
+                .Select(l => new ViewModels.ApartmentList
                 {
-                    Id = u.Apartment!.Id,
-                    UnitNumber = u.Apartment.UnitNumber,
-                    TenantName = u.Username,
-                    MonthlyRent = u.Apartment.MonthlyRent
+                    Id = l.Apartment.Id,
+                    UnitNumber = l.Apartment.UnitNumber,
+                    TenantName = l.User.Username,
+                    MonthlyRent = l.Apartment.MonthlyRent
                 })
+                .DistinctBy(a => a.Id) // Remove duplicates if same apartment has multiple leases
                 .ToList();
         }
 
@@ -179,24 +180,25 @@ namespace Apartment.Pages.Admin
                     billingPeriod = existingPeriod;
                 }
 
-                // Fetch Active Leases: Query for all Users with Tenant role where lease is active
-                var activeTenantUsers = await dbData.Users
-                    .Include(u => u.Apartment)
-                    .Where(u => u.Role == UserRoles.Tenant && 
-                               u.ApartmentId.HasValue &&
-                               (u.Status == "Active" || u.Status == null))
+                // Fetch Active Leases: Query for all active leases
+                var now = DateTime.UtcNow;
+                var activeLeases = await dbData.Leases
+                    .Include(l => l.User)
+                    .Include(l => l.Apartment)
+                    .Where(l => l.LeaseEnd >= now && 
+                               (l.User.Status == "Active" || l.User.Status == null))
                     .ToListAsync();
 
 
                 // Filter by selected apartment IDs if provided
-                var usersToBill = activeTenantUsers
-                    .Where(u => u.Apartment != null && selectedApartmentIds.Contains(u.Apartment.Id))
+                var leasesToBill = activeLeases
+                    .Where(l => selectedApartmentIds.Contains(l.ApartmentId))
                     .ToList();
 
-                if (!usersToBill.Any())
+                if (!leasesToBill.Any())
                 {
                     await transaction.RollbackAsync();
-                    ModelState.AddModelError("Input.SelectedApartmentIds", "No active tenant users matched the selected units. Please review your selection.");
+                    ModelState.AddModelError("Input.SelectedApartmentIds", "No active leases matched the selected units. Please review your selection.");
                     await LoadOccupiedApartmentsAsync();
                     return Page();
                 }
@@ -211,32 +213,29 @@ namespace Apartment.Pages.Admin
                 var billsCreate = new List<Bill>();
                 var dueDate = Input.DueDate.Value;
 
-                // Generate bills for each active tenant user
-                foreach (var user in usersToBill)
+                // Generate bills for each active lease
+                foreach (var lease in leasesToBill)
                 {
                     // Check if a Bill already exists for this TenantUserId and the current BillingPeriodId
-                    if (billedTenantUserIds.Contains(user.Id))
+                    if (billedTenantUserIds.Contains(lease.UserId))
                     {
                         // Skip this tenant user if bill already exists
                         continue;
                     }
 
                     // Create a new Bill entity
-                    if (user.Apartment != null)
+                    var newBill = new Bill
                     {
-                        var newBill = new Bill
-                        {
-                            ApartmentId = user.Apartment.Id,
-                            TenantUserId = user.Id,
-                            BillingPeriodId = billingPeriod.Id,
-                            AmountDue = user.Apartment.MonthlyRent, // Use Apartment.MonthlyRent
-                            AmountPaid = 0.00m, // Will be calculated from invoices
-                            DueDate = dueDate,
+                        ApartmentId = lease.ApartmentId,
+                        TenantUserId = lease.UserId,
+                        BillingPeriodId = billingPeriod.Id,
+                        AmountDue = lease.MonthlyRent, // Use Lease.MonthlyRent
+                        AmountPaid = 0.00m, // Will be calculated from invoices
+                        DueDate = dueDate,
                             GeneratedDate = DateTime.UtcNow,
                             PaymentDate = null
-                        };
-                        billsCreate.Add(newBill);
-                    }
+                    };
+                    billsCreate.Add(newBill);
                 }
 
                 // Save all generated bills to the database
@@ -264,7 +263,7 @@ namespace Apartment.Pages.Admin
                 {
                     PeriodKey = periodKey,
                     BillsCreated = billsCreate.Count,
-                    OccupiedUnits = usersToBill.Count,
+                    OccupiedUnits = leasesToBill.Select(l => l.ApartmentId).Distinct().Count(),
                     AlreadyExists = false,
                     TotalAmountBilled = billsCreate.Sum(b => b.AmountDue)
                 };

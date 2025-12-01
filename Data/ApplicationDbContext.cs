@@ -30,6 +30,9 @@ namespace Apartment.Data
         // Audit Log Table
         public DbSet<AuditLog> AuditLogs { get; set; }
 
+        // Lease Table
+        public DbSet<Lease> Leases { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -39,12 +42,6 @@ namespace Apartment.Data
                 .Property(u => u.Role)
                 .HasConversion<int>();
 
-            // Configure User-Apartment relationship
-            modelBuilder.Entity<User>()
-                .HasOne(u => u.Apartment)
-                .WithMany()
-                .HasForeignKey(u => u.ApartmentId)
-                .OnDelete(DeleteBehavior.SetNull);
 
             // Configure the AuditActionType enum to be stored as a string
             modelBuilder.Entity<AuditLog>()
@@ -77,12 +74,19 @@ namespace Apartment.Data
                 .HasForeignKey(b => b.TenantUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure ApartmentModel-User relationship
+            // Configure ApartmentModel-Lease relationship (one-to-many)
             modelBuilder.Entity<ApartmentModel>()
-                .HasOne(a => a.Tenant)
-                .WithMany()
-                .HasForeignKey(a => a.TenantId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasMany(a => a.Leases)
+                .WithOne(l => l.Apartment)
+                .HasForeignKey(l => l.ApartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure User-Lease relationship (one-to-many)
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.Leases)
+                .WithOne(l => l.User)
+                .HasForeignKey(l => l.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.Status)
@@ -136,15 +140,24 @@ namespace Apartment.Data
                 .HasIndex(i => i.PaymentDate)
                 .HasDatabaseName("IX_Invoices_PaymentDate");
 
-            // Indexes for User tenant properties
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.ApartmentId)
-                .HasDatabaseName("IX_Users_ApartmentId");
 
-            // Index for ApartmentModel-User relationship
-            modelBuilder.Entity<ApartmentModel>()
-                .HasIndex(a => a.TenantId)
-                .HasDatabaseName("IX_Apartments_TenantId");
+
+            // Performance indexes for Lease
+            modelBuilder.Entity<Lease>()
+                .HasIndex(l => l.UserId)
+                .HasDatabaseName("IX_Leases_UserId");
+
+            modelBuilder.Entity<Lease>()
+                .HasIndex(l => l.ApartmentId)
+                .HasDatabaseName("IX_Leases_ApartmentId");
+
+            modelBuilder.Entity<Lease>()
+                .HasIndex(l => l.LeaseStart)
+                .HasDatabaseName("IX_Leases_LeaseStart");
+
+            modelBuilder.Entity<Lease>()
+                .HasIndex(l => l.LeaseEnd)
+                .HasDatabaseName("IX_Leases_LeaseEnd");
 
         }
 
