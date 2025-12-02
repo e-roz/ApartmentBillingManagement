@@ -5,36 +5,59 @@
     Layout = "_Layout";
 }
 
-<div class="d-flex">
+<div class="d-flex matcha-shell">
     @await Html.PartialAsync("_AdminSidebar")
 
     <!-- Main Content -->
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <div class="container-fluid">
+    <div class="main-content requests-main">
+        <div class="container-fluid requests-container">
             <!-- Header -->
             <div class="row mb-4">
                 <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h1 class="display-5 fw-bold text-primary mb-0">
-                            <i class="bi bi-patch-question me-3"></i>Request Details
-                        </h1>
-                        <a asp-page="/Admin/ViewAllRequests" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-2"></i>Back to All Requests
-                        </a>
+                    <div class="card border-0 shadow-sm requests-header">
+                        <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-3">
+                            <div>
+                                <h2 class="requests-title mb-1">
+                                    <i class="bi bi-patch-question me-2"></i>Request Details
+                                </h2>
+                                <p class="requests-subtitle mb-0">
+                                    Review the tenant’s request and send a calm, clear reply.
+                                </p>
+                            </div>
+                            <div class="d-flex flex-column align-items-end gap-2">
+                                <a asp-page="/Admin/ViewAllRequests" class="matcha-btn-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Back to All Requests
+                                </a>
+                                @if (Model.TenantRequest != null)
+                                {
+                                    <div class="requests-chips text-end">
+                                        <span class="badge requests-badge-type">
+                                            @Model.TenantRequest.RequestType
+                                        </span>
+                                        <span class="badge requests-badge-priority @GetPriorityBadgeClass(Model.TenantRequest.Priority)">
+                                            @Model.TenantRequest.Priority
+                                        </span>
+                                        <span class="badge requests-badge-status @GetStatusBadgeClass(Model.TenantRequest.Status)">
+                                            @Model.TenantRequest.Status
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             @if (!string.IsNullOrEmpty(Model.SuccessMessage))
             {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="alert alert-success alert-dismissible fade show no-toast" role="alert">
                     @Model.SuccessMessage
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
             @if (!string.IsNullOrEmpty(Model.ErrorMessage))
             {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show no-toast" role="alert">
                     @Model.ErrorMessage
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -43,13 +66,19 @@
             @if (Model.TenantRequest != null)
             {
                 <div class="row">
-                    <div class="col-lg-8">
-                        <div class="card shadow-lg rounded-4 border-0 mb-4">
-                            <div class="card-header bg-primary text-white py-3">
-                                <h5 class="mb-0">Request Information - @Model.TenantRequest.Title</h5>
+                    <!-- Left: Request information -->
+                    <div class="col-lg-7 mb-4">
+                        <div class="card border-0 shadow-sm requests-detail-card h-100">
+                            <div class="card-header requests-detail-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-file-earmark-text me-2"></i>Request Information
+                                </h5>
                             </div>
-                            <div class="card-body p-4">
+                            <div class="card-body">
                                 <dl class="row mb-0">
+                                    <dt class="col-sm-4 fw-semibold">Title</dt>
+                                    <dd class="col-sm-8">@Model.TenantRequest.Title</dd>
+
                                     <dt class="col-sm-4 fw-semibold">Description</dt>
                                     <dd class="col-sm-8">@Model.TenantRequest.Description</dd>
 
@@ -61,55 +90,75 @@
 
                                     <dt class="col-sm-4 fw-semibold">Request Type</dt>
                                     <dd class="col-sm-8">
-                                        <span class="badge bg-secondary">@Model.TenantRequest.RequestType</span>
+                                        <span class="badge requests-badge-type">@Model.TenantRequest.RequestType</span>
                                     </dd>
 
                                     <dt class="col-sm-4 fw-semibold">Priority</dt>
                                     <dd class="col-sm-8">
-                                        <span class="badge @GetPriorityBadgeClass(Model.TenantRequest.Priority)">@Model.TenantRequest.Priority</span>
+                                        <span class="badge requests-badge-priority @GetPriorityBadgeClass(Model.TenantRequest.Priority)">
+                                            @Model.TenantRequest.Priority
+                                        </span>
                                     </dd>
 
                                     <dt class="col-sm-4 fw-semibold">Status</dt>
                                     <dd class="col-sm-8">
-                                        <span class="badge @GetStatusBadgeClass(Model.TenantRequest.Status)">@Model.TenantRequest.Status</span>
+                                        <span class="badge requests-badge-status @GetStatusBadgeClass(Model.TenantRequest.Status)">
+                                            @Model.TenantRequest.Status
+                                        </span>
                                     </dd>
 
                                     <dt class="col-sm-4 fw-semibold">Date Submitted</dt>
-                                    <dd class="col-sm-8">@Model.TenantRequest.DateSubmitted.ToString("MMM dd, yyyy hh:mm tt")</dd>
+                                    <dd class="col-sm-8">
+                                        @Model.TenantRequest.DateSubmitted.ToString("MMM dd, yyyy hh:mm tt")
+                                    </dd>
                                 </dl>
                             </div>
                         </div>
+                    </div>
 
+                    <!-- Right: Reply + actions -->
+                    <div class="col-lg-5">
                         <!-- Reply Form -->
-                        <div class="card shadow-lg rounded-4 border-0 mb-4">
-                            <div class="card-header bg-success text-white py-3">
-                                <h5 class="mb-0">Send a Reply</h5>
+                        <div class="card border-0 shadow-sm requests-reply-card mb-4">
+                            <div class="card-header requests-reply-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-envelope-open-heart me-2"></i>Send a Reply
+                                </h5>
                             </div>
-                            <div class="card-body p-4">
+                            <div class="card-body">
                                 <form method="post">
                                     <input type="hidden" asp-for="Id" />
                                     <div class="mb-3">
                                         <label asp-for="ReplyContent" class="form-label">Your Message</label>
-                                        <textarea asp-for="ReplyContent" class="form-control" rows="5" placeholder="Type your reply here..." required></textarea>
+                                        <textarea asp-for="ReplyContent"
+                                                  class="form-control"
+                                                  rows="5"
+                                                  placeholder="Type a calm, clear update for the tenant..."
+                                                  required></textarea>
                                         <span asp-validation-for="ReplyContent" class="text-danger"></span>
                                     </div>
-                                    <button type="submit" class="btn btn-primary btn-lg">
+                                    <button type="submit" class="matcha-btn-primary">
                                         <i class="bi bi-send me-2"></i>Send Reply
                                     </button>
                                 </form>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-lg-4">
-                        <!-- Other panels or actions can go here -->
-                        <div class="card shadow-lg rounded-4 border-0 mb-4">
-                            <div class="card-header bg-light py-3">
+                        <!-- Request Actions -->
+                        <div class="card border-0 shadow-sm requests-actions-card mb-4">
+                            <div class="card-header requests-actions-header">
                                 <h5 class="mb-0">Request Actions</h5>
                             </div>
-                            <div class="card-body">
-                                <button class="btn btn-warning w-100 mb-2">Change Status</button>
-                                <button class="btn btn-danger w-100">Close Request</button>
+                            <div class="card-body d-grid gap-2">
+                                <button type="button" class="matcha-btn-secondary w-100" disabled>
+                                    <i class="bi bi-arrow-repeat me-2"></i>Change Status
+                                </button>
+                                <button type="button" class="matcha-btn-danger w-100" disabled>
+                                    <i class="bi bi-x-circle me-2"></i>Close Request
+                                </button>
+                                <small class="text-muted matcha-body-s">
+                                    Status management is currently informational only. Use replies to keep tenants updated.
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -117,7 +166,7 @@
             }
             else
             {
-                <div class="alert alert-warning">
+                <div class="alert alert-warning no-toast">
                     <i class="bi bi-exclamation-triangle me-2"></i>Request not found.
                 </div>
             }
@@ -151,39 +200,196 @@
 }
 
 <style>
-    .main-content {
+    .matcha-shell {
+        background: #F9F8F3;
+    }
+
+    .requests-main {
+        margin-left: 280px;
+        width: calc(100% - 280px);
+        padding: 32px;
         min-height: 100vh;
-        background: #f8f9fa;
+        background: #F9F8F3;
+        font-family: "Inter", "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #2C2C2C;
+    }
+
+    .requests-container {
+        max-width: 1240px;
+    }
+
+    .requests-header {
+        border-radius: 16px;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        border-top: 4px solid #D7A85A;
+        box-shadow: 0 18px 35px rgba(139, 111, 71, 0.12);
+    }
+
+    .requests-title {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 700;
+        font-size: 30px;
+        color: #4A6F47;
+        letter-spacing: 0.03em;
+    }
+
+    .requests-subtitle {
+        font-size: 0.95rem;
+        color: #7B7B7B;
+    }
+
+    .requests-chips .badge {
+        margin-left: 0.25rem;
+    }
+
+    .requests-badge-type {
+        background-color: #E5F2F2;
+        color: #336666;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 0.78rem;
+    }
+
+    .requests-badge-priority,
+    .requests-badge-status {
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 0.78rem;
+    }
+
+    .requests-detail-card {
+        border-radius: 16px;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        overflow: hidden;
+    }
+
+    .requests-detail-header {
+        padding: 0.85rem 1.25rem;
+        background: #4A6F47;
+        color: #FFFFFF;
+    }
+
+    .requests-detail-card dl dt {
+        color: #7B7B7B;
+        font-size: 0.9rem;
+    }
+
+    .requests-detail-card dl dd {
+        color: #2C2C2C;
+        font-size: 0.95rem;
+    }
+
+    .requests-reply-card {
+        border-radius: 16px;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        overflow: hidden;
+    }
+
+    .requests-reply-header {
+        padding: 0.85rem 1.25rem;
+        background: #7DA26C;
+        color: #FFFFFF;
+    }
+
+    .requests-actions-card {
+        border-radius: 16px;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        overflow: hidden;
+    }
+
+    .requests-actions-header {
+        padding: 0.85rem 1.25rem;
+        background: #F9F8F3;
+        color: #2C2C2C;
+    }
+
+    .matcha-btn-primary {
+        background-color: #4A6F47;
+        color: #FFFFFF;
+        border-radius: 8px;
+        border: none;
+        padding: 0.6rem 1.4rem;
+        font-weight: 500;
+        transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
+    }
+
+    .matcha-btn-primary:hover {
+        background-color: #7DA26C;
+        color: #FFFFFF;
+        box-shadow: 0 10px 22px rgba(74, 111, 71, 0.25);
+    }
+
+    .matcha-btn-secondary {
+        border-radius: 8px;
+        border: 1px solid #4A6F47;
+        color: #4A6F47;
+        padding: 0.5rem 1.3rem;
+        background-color: transparent;
+        font-weight: 500;
+        transition: background-color 150ms ease-out, color 150ms ease-out;
+    }
+
+    .matcha-btn-secondary:hover {
+        background-color: #E3EDD9;
+        color: #2C2C2C;
+    }
+
+    .matcha-btn-danger {
+        border-radius: 8px;
+        border: none;
+        background-color: #B35A5A;
+        color: #FFFFFF;
+        padding: 0.5rem 1.3rem;
+        font-weight: 500;
+        transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
+    }
+
+    .matcha-btn-danger:hover {
+        background-color: #934545;
+        color: #FFFFFF;
+        box-shadow: 0 10px 22px rgba(179, 90, 90, 0.25);
     }
     .message-history {
         max-height: 400px;
         overflow-y: auto;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #E7E5D8;
         margin-bottom: 1rem;
     }
+
     .message-item {
         padding: 0.75rem 1rem;
         border-radius: 0.5rem;
         margin-bottom: 0.5rem;
     }
+
     .tenant-message {
-        background-color: #e9f7ef; /* Light green */
-        border: 1px solid #c3e6cb;
-        margin-right: 20%; /* Pushes tenant message to left */
+        background-color: #E3EDD9;
+        border: 1px solid #C3E6CB;
+        margin-right: 20%;
     }
+
     .manager-message {
-        background-color: #e0f2f7; /* Light blue */
-        border: 1px solid #b3e5fc;
-        margin-left: 20%; /* Pushes manager message to right */
+        background-color: #E0F2F7;
+        border: 1px solid #B3E5FC;
+        margin-left: 20%;
         text-align: right;
     }
+
     .manager-message p {
         text-align: right;
     }
+
     .tenant-message small.fw-semibold {
-        color: #28a745; /* Green */
+        color: #4A6F47;
     }
+
     .manager-message small.fw-semibold {
-        color: #007bff; /* Blue */
+        color: #0D6EFD;
     }
 </style>

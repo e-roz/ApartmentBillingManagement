@@ -2,7 +2,7 @@
 @model Apartment.Pages.RegisterModel
 @{
     ViewData["Title"] = "Register - Apartment Management";
-    Layout = null; // Remove header and footer by using no layout
+    Layout = null; // Dedicated full-screen matcha layout
 }
 
 <!DOCTYPE html>
@@ -12,238 +12,352 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <!-- Bootstrap Icons CDN for beautiful icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
-    
-    <!-- UI Enhancement Libraries - CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/ui-libraries.css" asp-append-version="true" />
+
     <style>
-        /* Custom styles for clean registration page - matches login design */
+        /* MATCHA DESIGN SYSTEM – Registration */
         body {
-            background: linear-gradient(135deg, #c5dcc0 0%, #b8d4b3 30%, #9fbf9f 70%, #7aa378 100%);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: #F9F8F3;
+            font-family: "Inter", "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #2C2C2C;
         }
-        .register-container {
+
+        .register-shell {
             min-height: 100vh;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .register-hero {
+            flex: 1;
+            background: linear-gradient(135deg, #A8C3A0, #7DA26C);
+            padding: 40px 48px;
+            color: #F9F8F3;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .register-hero-brand {
+            max-width: 360px;
+        }
+
+        .register-hero-title {
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .register-hero-subtitle {
+            font-size: 16px;
+            color: rgba(249, 248, 243, 0.85);
+        }
+
+        .register-hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(249, 248, 243, 0.12);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .register-hero-list {
+            margin-top: 24px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .register-hero-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .register-hero-list i {
+            color: #F9F8F3;
+        }
+
+        .register-main {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px 0;
+            padding: 32px;
         }
+
         .register-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 480px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 1px solid #E7E5D8;
+            border-top: 4px solid #D7A85A;
+            box-shadow: 0 18px 35px rgba(139, 111, 71, 0.12);
         }
+
+        .register-card-body {
+            padding: 32px 32px 28px;
+        }
+
+        .register-title {
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-weight: 700;
+            font-size: 28px;
+            color: #4A6F47;
+            letter-spacing: 0.03em;
+        }
+
+        .register-subtitle {
+            font-size: 14px;
+            color: #7B7B7B;
+        }
+
         .form-control {
             border-radius: 10px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
+            border: 1px solid #E7E5D8;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            transition: border-color 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
         }
+
         .form-control:focus {
-            border-color: #9fbf9f;
-            box-shadow: 0 0 0 0.2rem rgba(159, 191, 159, 0.25);
+            border-color: #4A6F47;
+            box-shadow: 0 0 0 0.12rem rgba(74, 111, 71, 0.15);
         }
+
         .btn-primary {
-            background: linear-gradient(135deg, #b8d4b3 0%, #9fbf9f 50%, #7aa378 100%);
-            border: none;
+            background-color: #4A6F47;
+            border-color: #4A6F47;
             border-radius: 10px;
-            padding: 12px 24px;
+            padding: 12px 20px;
             font-weight: 600;
-            transition: all 0.3s ease;
-            color: #ffffff;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-size: 0.85rem;
         }
+
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(159, 191, 159, 0.4);
-            background: linear-gradient(135deg, #9fbf9f 0%, #7aa378 50%, #6a9370 100%);
+            background-color: #7DA26C;
+            border-color: #7DA26C;
+            box-shadow: 0 10px 20px rgba(74, 111, 71, 0.25);
         }
+
         .btn-outline-primary {
-            border-color: #9fbf9f;
-            color: #9fbf9f;
+            border-radius: 999px;
+            border-color: #4A6F47;
+            color: #4A6F47;
+            font-size: 0.85rem;
         }
+
         .btn-outline-primary:hover {
-            background-color: #9fbf9f;
-            border-color: #9fbf9f;
-            color: #ffffff;
+            background-color: #A8C3A0;
+            border-color: #4A6F47;
+            color: #2C2C2C;
         }
+
         .password-strength {
             font-size: 0.8rem;
             margin-top: 5px;
         }
-        .strength-weak { color: #dc3545; }
-        .strength-medium { color: #ffc107; }
-        .strength-strong { color: #28a745; }
+
+        .strength-weak {
+            color: #B35A5A;
+        }
+
+        .strength-medium {
+            color: #D7A85A;
+        }
+
+        .strength-strong {
+            color: #4A6F47;
+        }
+
+        .register-footer-text {
+            font-size: 0.8rem;
+            color: #7B7B7B;
+        }
+
+        @@media (max-width: 992px) {
+            .register-shell {
+                flex-direction: column;
+            }
+
+            .register-hero {
+                padding: 24px 20px;
+                min-height: 220px;
+            }
+
+            .register-main {
+                padding: 24px 16px 32px;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- 
-        CLEAN REGISTRATION PAGE - Minimal Design
-        This page creates a clean, minimal registration form without header/footer.
-        The form syncs perfectly with your RegisterModel logic.
-    -->
-    
-    <div class="register-container">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-6">
-                    <!-- Clean Registration Form Card -->
-                    <div class="card register-card border-0">
-                        <div class="card-body p-5">
-                            <!-- Simple Header -->
-                            <div class="text-center mb-4">
-                                <h3 class="fw-bold text-dark mb-2">Create Account</h3>
-                                <p class="text-muted small">Join our apartment management system</p>
+    <div class="register-shell">
+        <!-- Left hero panel – brand / benefits -->
+        <aside class="register-hero d-none d-lg-flex">
+            <div class="register-hero-brand">
+                <div class="register-hero-pill mb-3">
+                    <i class="bi bi-leaf"></i>
+                    <span>Matcha Apartment</span>
+                </div>
+                <h1 class="register-hero-title mb-3">Calm billing for modern apartments.</h1>
+                <p class="register-hero-subtitle mb-0">
+                    Keep rent, late fees, and payments clear and stress-free for your tenants—
+                    all in one warm, minimal dashboard.
+                </p>
+                <ul class="register-hero-list">
+                    <li><i class="bi bi-check-circle-fill"></i><span>Clean invoices with clear late-fee breakdowns</span></li>
+                    <li><i class="bi bi-check-circle-fill"></i><span>Tenant-friendly dashboards and payment history</span></li>
+                    <li><i class="bi bi-check-circle-fill"></i><span>Matcha-inspired UI for calm financial decisions</span></li>
+                </ul>
+            </div>
+            <div class="text-end small">
+                <span>Designed with the Matcha Design System</span>
+            </div>
+        </aside>
+
+        <!-- Right panel – registration form -->
+        <main class="register-main">
+            <div class="register-card">
+                <div class="register-card-body">
+                    <div class="mb-4 text-center">
+                        <h2 class="register-title mb-1">Create your account</h2>
+                        <p class="register-subtitle mb-0">
+                            Start managing leases, bills, and payments in a calm matcha workspace.
+                        </p>
+                    </div>
+
+                    <!-- Display Success/Error Messages -->
+                    @if (!string.IsNullOrEmpty(Model.Message))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                            <i class="bi bi-check-circle me-2"></i>
+                            @Model.Message
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            @Model.ErrorMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Registration form -->
+                    <form method="post" novalidate>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="Input_Username" class="form-label fw-semibold text-dark">
+                                    <i class="bi bi-person me-1"></i>Username
+                                </label>
+                                <input asp-for="Input.Username"
+                                       class="form-control @(ViewData.ModelState["Input.Username"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                       placeholder="Choose a username"
+                                       autocomplete="username" />
+                                <span asp-validation-for="Input.Username" class="invalid-feedback"></span>
                             </div>
 
-                            <!-- Display Success/Error Messages -->
-                            <!-- These TempData properties sync with your RegisterModel logic -->
-                            @if (!string.IsNullOrEmpty(Model.Message))
-                            {
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <i class="bi bi-check-circle me-2"></i>
-                                    @Model.Message
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            }
-
-                            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                            {
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    @Model.ErrorMessage
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            }
-
-                            <!-- Clean Registration Form -->
-                            <!-- This form posts to OnPostAsync() method in your RegisterModel -->
-                            <form method="post" novalidate>
-                                <div class="row">
-                                    <!-- Username Field -->
-                                    <!-- Uses Input.Username property from your RegisterUser model -->
-                                    <!-- Note: Username is NOT unique - only for display purposes -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="Input_Username" class="form-label fw-semibold text-dark">
-                                            <i class="bi bi-person me-1"></i>Username
-                                        </label>
-                                        <input asp-for="Input.Username" 
-                                               class="form-control @(ViewData.ModelState["Input.Username"]?.Errors.Count > 0 ? "is-invalid" : "")" 
-                                               placeholder="Choose a username"
-                                               autocomplete="username" />
-                                        <!-- Display validation errors for username -->
-                                        <span asp-validation-for="Input.Username" class="invalid-feedback"></span>
-                                    </div>
-
-                                    <!-- Email Field -->
-                                    <!-- Uses Input.Email property from your RegisterUser model -->
-                                    <!-- Email is the unique identifier used for login -->
-                                    <div class="col-md-6 mb-3">
-                                        <label for="Input_Email" class="form-label fw-semibold text-dark">
-                                            <i class="bi bi-envelope me-1"></i>Email Address
-                                        </label>
-                                        <input asp-for="Input.Email" 
-                                               type="email"
-                                               class="form-control @(ViewData.ModelState["Input.Email"]?.Errors.Count > 0 ? "is-invalid" : "")" 
-                                               placeholder="Enter your email"
-                                               autocomplete="email" />
-                                        <!-- Display validation errors for email -->
-                                        <span asp-validation-for="Input.Email" class="invalid-feedback"></span>
-                                    </div>
-                                </div>
-
-                                <!-- Password Field -->
-                                <!-- Uses Input.Password property from your RegisterUser model -->
-                                <div class="mb-3">
-                                    <label for="Input_Password" class="form-label fw-semibold text-dark">
-                                        <i class="bi bi-lock me-1"></i>Password
-                                    </label>
-                                    <div class="input-group">
-                                        <input asp-for="Input.Password" 
-                                               class="form-control @(ViewData.ModelState["Input.Password"]?.Errors.Count > 0 ? "is-invalid" : "")" 
-                                               placeholder="Create a strong password"
-                                               autocomplete="new-password" 
-                                               id="passwordInput" />
-                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                            <i class="bi bi-eye" id="toggleIcon"></i>
-                                        </button>
-                                    </div>
-                                    <!-- Password strength indicator -->
-                                    <div class="password-strength" id="passwordStrength"></div>
-                                    <!-- Display validation errors for password -->
-                                    <span asp-validation-for="Input.Password" class="invalid-feedback"></span>
-                                </div>
-
-                                <!-- Confirm Password Field -->
-                                <!-- Uses Input.ConfirmPassword property from your RegisterUser model -->
-                                <div class="mb-4">
-                                    <label for="Input_ConfirmPassword" class="form-label fw-semibold text-dark">
-                                        <i class="bi bi-lock-fill me-1"></i>Confirm Password
-                                    </label>
-                                    <div class="input-group">
-                                        <input asp-for="Input.ConfirmPassword" 
-                                               class="form-control @(ViewData.ModelState["Input.ConfirmPassword"]?.Errors.Count > 0 ? "is-invalid" : "")" 
-                                               placeholder="Confirm your password"
-                                               autocomplete="new-password" 
-                                               id="confirmPasswordInput" />
-                                        <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
-                                            <i class="bi bi-eye" id="toggleConfirmIcon"></i>
-                                        </button>
-                                    </div>
-                                    <!-- Password match indicator -->
-                                    <div class="password-strength" id="passwordMatch"></div>
-                                    <!-- Display validation errors for confirm password -->
-                                    <span asp-validation-for="Input.ConfirmPassword" class="invalid-feedback"></span>
-                                </div>
-
-                                <!-- Terms and Conditions -->
-                                <div class="mb-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="termsCheck" required>
-                                        <label class="form-check-label text-muted small" for="termsCheck">
-                                            I agree to the <a href="#" class="text-primary" style="color: #9fbf9f !important;">Terms of Service</a> and <a href="#" class="text-primary" style="color: #9fbf9f !important;">Privacy Policy</a>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Register Button -->
-                                <!-- This triggers the OnPostAsync() method in your RegisterModel -->
-                                <button type="submit" class="btn btn-primary w-100 mb-3">
-                                    <i class="bi bi-person-plus me-2"></i>Create Account
-                                </button>
-                            </form>
-
-                            <!-- Login Link -->
-                            <!-- Links back to your Login page -->
-                            <div class="text-center">
-                                <p class="text-muted mb-0 small">Already have an account?</p>
-                                <a asp-page="/Login" class="btn btn-outline-primary btn-sm mt-2">
-                                    <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
-                                </a>
+                            <div class="col-md-6">
+                                <label for="Input_Email" class="form-label fw-semibold text-dark">
+                                    <i class="bi bi-envelope me-1"></i>Email address
+                                </label>
+                                <input asp-for="Input.Email"
+                                       type="email"
+                                       class="form-control @(ViewData.ModelState["Input.Email"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                       placeholder="name@example.com"
+                                       autocomplete="email" />
+                                <span asp-validation-for="Input.Email" class="invalid-feedback"></span>
                             </div>
                         </div>
+
+                        <div class="mb-3 mt-3">
+                            <label for="Input_Password" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-lock me-1"></i>Password
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="Input.Password"
+                                       class="form-control @(ViewData.ModelState["Input.Password"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                       placeholder="Create a strong password"
+                                       autocomplete="new-password"
+                                       id="passwordInput" />
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="bi bi-eye" id="toggleIcon"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="passwordStrength"></div>
+                            <span asp-validation-for="Input.Password" class="invalid-feedback"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Input_ConfirmPassword" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-lock-fill me-1"></i>Confirm password
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="Input.ConfirmPassword"
+                                       class="form-control @(ViewData.ModelState["Input.ConfirmPassword"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                                       placeholder="Re-enter your password"
+                                       autocomplete="new-password"
+                                       id="confirmPasswordInput" />
+                                <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                    <i class="bi bi-eye" id="toggleConfirmIcon"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="passwordMatch"></div>
+                            <span asp-validation-for="Input.ConfirmPassword" class="invalid-feedback"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                <label class="form-check-label register-footer-text" for="termsCheck">
+                                    I agree to the
+                                    <a href="#" class="text-decoration-none" style="color: #4A6F47;">Terms of Service</a>
+                                    and
+                                    <a href="#" class="text-decoration-none" style="color: #4A6F47;">Privacy Policy</a>.
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            <i class="bi bi-person-plus me-2"></i>Create account
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-2">
+                        <p class="register-footer-text mb-1">Already have an account?</p>
+                        <a asp-page="/Login" class="btn btn-outline-primary btn-sm mt-1">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Sign in
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- Core Libraries -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- UI Enhancement Libraries - JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -254,16 +368,9 @@
     <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
-    <!-- Application Scripts -->
     <script src="~/js/ui-utils.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-
-    <!-- 
-        JAVASCRIPT FOR ENHANCED UX
-        This script adds password visibility toggle, strength indicator, and form validation
-    -->
     <script>
-        // Password visibility toggle functionality
         document.getElementById('togglePassword').addEventListener('click', function() {
             const passwordInput = document.getElementById('passwordInput');
             const toggleIcon = document.getElementById('toggleIcon');
@@ -277,7 +384,6 @@
             }
         });
 
-        // Confirm password visibility toggle
         document.getElementById('toggleConfirmPassword').addEventListener('click', function() {
             const confirmPasswordInput = document.getElementById('confirmPasswordInput');
             const toggleConfirmIcon = document.getElementById('toggleConfirmIcon');
@@ -291,7 +397,6 @@
             }
         });
 
-        // Password strength indicator
         document.getElementById('passwordInput').addEventListener('input', function() {
             const password = this.value;
             const strengthDiv = document.getElementById('passwordStrength');
@@ -325,7 +430,6 @@
             strengthDiv.innerHTML = `<span class="${strengthClass}">${strengthText}</span>`;
         });
 
-        // Password match indicator
         document.getElementById('confirmPasswordInput').addEventListener('input', function() {
             const password = document.getElementById('passwordInput').value;
             const confirmPassword = this.value;
@@ -343,7 +447,6 @@
             }
         });
 
-        // Auto-dismiss alerts after 5 seconds
         setTimeout(function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
@@ -352,7 +455,6 @@
             });
         }, 5000);
 
-        // Form validation feedback
         document.querySelector('form').addEventListener('submit', function(e) {
             const inputs = this.querySelectorAll('input[required]');
             inputs.forEach(function(input) {

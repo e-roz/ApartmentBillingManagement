@@ -64,8 +64,7 @@ namespace Apartment.Services
                 {
                     ("Name", invoice.TenantUser?.Username ?? "Not available"),
                     ("Address", ResolveTenantAddress(invoice)),
-                    ("Email", invoice.TenantUser?.Email ?? "Not available"),
-                    ("Phone", "Not available")
+                    ("Email", invoice.TenantUser?.Email ?? "Not available")
                 }, labelFont, valueFont));
 
                 AddSectionHeader(document, "Apartment Details", sectionFont);
@@ -164,6 +163,9 @@ namespace Apartment.Services
                     }
                 }
 
+                // Detect whether this invoice payment includes any late fee amounts
+                var lateFeeInfo = await ResolveLateFeeInfoAsync(invoice);
+
                 document.Add(CreateTwoColumnTable(new[]
                 {
                     ("Description", description),
@@ -171,7 +173,9 @@ namespace Apartment.Services
                     ("Amount Due", FormatCurrency(bill?.AmountDue ?? invoice.AmountDue)),
                     ("Amount Paid (this invoice)", FormatCurrency(invoice.AmountDue)),
                     ("Remaining Balance (this bill)", FormatCurrency(remaining)),
-                    ("Overall Remaining Balance", FormatCurrency(overallRemainingBalance))
+                    ("Overall Remaining Balance", FormatCurrency(overallRemainingBalance)),
+                    // If a late fee was part of this payment, add an informational note
+                    ("Late Fee Note", lateFeeInfo ?? "No late fee was included in this payment.")
                 }, labelFont, valueFont));
 
                 document.Close();
@@ -423,6 +427,58 @@ namespace Apartment.Services
             // Fallback: try to get monthly rent from lease if available
             // This is a last resort if no allocations exist
             return invoice.AmountDue;
+        }
+
+        private async Task<string?> ResolveLateFeeInfoAsync(Invoice invoice)
+        {
+            try
+            {
+                // Look at all bills touched by this invoice's payment allocations
+                var allocations = await _context.PaymentAllocations
+                    .Include(pa => pa.Bill)
+                    .ThenInclude(b => b.BillingPeriod)
+                    .Where(pa => pa.InvoiceId == invoice.Id)
+                    .ToListAsync();
+
+                if (!allocations.Any())
+                {
+                    return null;
+                }
+
+                // Sum all amounts applied to LateFee bills as part of this invoice
+                var totalLateFeePaid = allocations
+                    .Where(pa => pa.Bill != null && pa.Bill.Type == Enums.BillType.LateFee)
+                    .Sum(pa => pa.AmountApplied);
+
+                if (totalLateFeePaid <= 0)
+                {
+                    return null;
+                }
+
+                // Optional: build a short context string showing which periods the late fees came from
+                var lateFeePeriods = allocations
+                    .Where(pa => pa.Bill != null &&
+                                 pa.Bill.Type == Enums.BillType.LateFee &&
+                                 pa.Bill.BillingPeriod != null)
+                    .Select(pa => $"{pa.Bill.BillingPeriod.MonthName} {pa.Bill.BillingPeriod.Year}")
+                    .Distinct()
+                    .ToList();
+
+                var lateFeeAmountText = FormatCurrency(totalLateFeePaid);
+
+                if (lateFeePeriods.Any())
+                {
+                    var periodsText = string.Join(", ", lateFeePeriods);
+                    return $"{lateFeeAmountText} is a late fee added for overdue rent ({periodsText}).";
+                }
+
+                return $"{lateFeeAmountText} is a late fee added as part of this payment.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to resolve late fee information for InvoiceId {InvoiceId}", invoice.Id);
+                return null;
+            }
         }
 
         private static string FormatDate(DateTime date) =>

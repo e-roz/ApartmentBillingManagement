@@ -13,15 +13,16 @@
     var hasTrendData = Model.Summary.RevenueTrend.Any();
 }
 
-<div class="d-flex">
+<div class="matcha-dashboard d-flex">
     @await Html.PartialAsync("_AdminSidebar")
 
     <!-- Main Content -->
-    <div class="main-content p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div class="matcha-main">
+        <!-- Page Header -->
+        <header class="matcha-header d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-                <h1 class="h3 mb-1">Billing Summary</h1>
-                <p class="text-muted mb-0">High-level performance overview for @Model.Summary.PeriodLabel.</p>
+                <h1 class="matcha-h1 mb-1">Billing Summary</h1>
+                <p class="matcha-subtitle mb-0">High-level performance overview for @Model.Summary.PeriodLabel.</p>
             </div>
             <form method="get" class="d-flex gap-3 flex-wrap align-items-end">
                 <div>
@@ -35,12 +36,12 @@
                     </select>
                 </div>
                 <div class="align-self-end">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="matcha-btn-primary">
                         <i class="bi bi-filter me-2"></i>Apply
                     </button>
                 </div>
                 <div class="align-self-end">
-                    <a class="btn btn-outline-secondary"
+                    <a class="matcha-btn-secondary"
                        asp-page-handler="Export"
                        asp-route-SelectedPeriodKey="@Model.SelectedPeriodKey"
                        asp-route-SelectedApartmentId="@Model.SelectedApartmentId">
@@ -48,149 +49,150 @@
                     </a>
                 </div>
             </form>
-        </div>
+        </header>
 
         <!-- KPI Cards -->
-        <div class="row g-4 mb-4">
-            <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <p class="text-muted text-uppercase small mb-1">Total Billed</p>
-                        <h3>@Model.Summary.TotalBilled.ToString("C", pesoCulture)</h3>
-                        <small class="text-muted">Invoices issued for selected scope</small>
-                    </div>
+        <section class="matcha-section mb-4">
+            <div class="row g-4">
+                <div class="col-xl-3 col-md-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <p class="matcha-body-s text-muted text-uppercase mb-1">Total Billed</p>
+                            <div class="matcha-amount">@Model.Summary.TotalBilled.ToString("C", pesoCulture)</div>
+                            <p class="matcha-body-s text-muted mb-0">Invoices issued for selected scope</p>
+                        </div>
+                    </article>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <p class="matcha-body-s text-muted text-uppercase mb-1">Collected</p>
+                            <div class="matcha-amount text-success">@Model.Summary.TotalCollected.ToString("C", pesoCulture)</div>
+                            <p class="matcha-body-s text-muted mb-0">Payments received</p>
+                        </div>
+                    </article>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <p class="matcha-body-s text-muted text-uppercase mb-1">Outstanding</p>
+                            <div class="matcha-amount text-danger">@Model.Summary.TotalOutstanding.ToString("C", pesoCulture)</div>
+                            <p class="matcha-body-s text-muted mb-0">Still to be collected</p>
+                        </div>
+                    </article>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <p class="matcha-body-s text-muted text-uppercase mb-1">Collection Efficiency</p>
+                            <div class="matcha-amount">@Model.Summary.CollectionEfficiency.ToString("0.##")%</div>
+                            <p class="matcha-body-s mb-0 @(Model.Summary.MonthOverMonthChange >= 0 ? "text-success" : "text-danger")">
+                                MoM change: @Model.Summary.MonthOverMonthChange.ToString("0.##")%
+                            </p>
+                        </div>
+                    </article>
                 </div>
             </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <p class="text-muted text-uppercase small mb-1">Collected</p>
-                        <h3 class="text-success">@Model.Summary.TotalCollected.ToString("C", pesoCulture)</h3>
-                        <small class="text-muted">Payments received</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <p class="text-muted text-uppercase small mb-1">Outstanding</p>
-                        <h3 class="text-danger">@Model.Summary.TotalOutstanding.ToString("C", pesoCulture)</h3>
-                        <small class="text-muted">Still to be collected</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <p class="text-muted text-uppercase small mb-1">Collection Efficiency</p>
-                        <h3>@Model.Summary.CollectionEfficiency.ToString("0.##")%</h3>
-                        <small class="@(Model.Summary.MonthOverMonthChange >= 0 ? "text-success" : "text-danger")">
-                            MoM change: @Model.Summary.MonthOverMonthChange.ToString("0.##")%
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </section>
 
         <!-- Charts -->
-        <div class="row g-4 mb-4">
-            <div class="col-xl-12">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Revenue Trend</h5>
-                            <small class="text-muted">Billed vs. collected</small>
-                        </div>
-                        @if (hasTrendData)
-                        {
-                            <div class="chart-wrapper">
-                                <canvas id="trendChart"></canvas>
+        <section class="matcha-section mb-4">
+            <div class="row g-4">
+                <div class="col-xl-12">
+                    <article class="matcha-card h-100">
+                        <header class="matcha-card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="matcha-card-title mb-0">Revenue Trend</h2>
+                                <p class="matcha-body-s text-muted mb-0">Billed vs. collected over time.</p>
                             </div>
-                        }
-                        else
-                        {
-                            <p class="text-muted mb-0">No billing data for this selection.</p>
-                        }
-                    </div>
+                        </header>
+                        <div class="matcha-card-body">
+                            @if (hasTrendData)
+                            {
+                                <div class="chart-wrapper">
+                                    <canvas id="trendChart"></canvas>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="matcha-body-s text-muted mb-0">No billing data for this selection.</p>
+                            }
+                        </div>
+                    </article>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Tables -->
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Portfolio Health</h5>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <div>
-                                <p class="text-muted mb-1">Occupied Units</p>
-                                <h4>@Model.Summary.OccupiedUnits</h4>
+        <section class="matcha-section">
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h2 class="matcha-card-title mb-0">Portfolio Health</h2>
                             </div>
-                            <div>
-                                <p class="text-muted mb-1">Vacant Units</p>
-                                <h4>@Model.Summary.VacantUnits</h4>
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>
+                                    <p class="matcha-body-s text-muted mb-1">Occupied Units</p>
+                                    <div class="matcha-amount">@Model.Summary.OccupiedUnits</div>
+                                </div>
+                                <div>
+                                    <p class="matcha-body-s text-muted mb-1">Vacant Units</p>
+                                    <div class="matcha-amount">@Model.Summary.VacantUnits</div>
+                                </div>
                             </div>
+                            <p class="matcha-body-s text-muted mb-0">Track vacancies to anticipate revenue dips.</p>
                         </div>
-                        <p class="text-muted small mb-0">Track vacancies to anticipate revenue dips.</p>
-                    </div>
+                    </article>
                 </div>
-            </div>
 
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Top Overdue Tenants</h5>
-                            <small class="text-muted">Highest outstanding balances</small>
-                        </div>
-                        @if (Model.Summary.TopOverdueTenants.Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle data-table" id="overdueTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Tenant</th>
-                                            <th>Unit</th>
-                                            <th class="text-end">Outstanding</th>
-                                            <th class="text-end">Days</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var tenant in Model.Summary.TopOverdueTenants)
-                                        {
-                                            <tr>
-                                                <td>@tenant.TenantName</td>
-                                                <td>@tenant.UnitNumber</td>
-                                                <td class="text-end">@tenant.OutstandingAmount.ToString("C", pesoCulture)</td>
-                                                <td class="text-end">@tenant.DaysOverdue</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                <div class="col-lg-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h2 class="matcha-card-title mb-0">Top Overdue Tenants</h2>
+                                <small class="matcha-body-s text-muted">Highest outstanding balances</small>
                             </div>
-                        }
-                        else
-                        {
-                            <p class="text-muted mb-0">Great news! No overdue balances detected.</p>
-                        }
-                    </div>
+                            @if (Model.Summary.TopOverdueTenants.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle billing-table data-table" id="overdueTable">
+                                        <thead class="billing-table-head">
+                                            <tr>
+                                                <th>Tenant</th>
+                                                <th>Unit</th>
+                                                <th class="text-end">Outstanding</th>
+                                                <th class="text-end">Days</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var tenant in Model.Summary.TopOverdueTenants)
+                                            {
+                                                <tr>
+                                                    <td>@tenant.TenantName</td>
+                                                    <td>@tenant.UnitNumber</td>
+                                                    <td class="text-end billing-table-money">@tenant.OutstandingAmount.ToString("C", pesoCulture)</td>
+                                                    <td class="text-end">@tenant.DaysOverdue</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="matcha-body-s text-muted mb-0">Great news! No overdue balances detected.</p>
+                            }
+                        </div>
+                    </article>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 
 <style>
-    .main-content {
-        margin-left: 280px;
-        width: calc(100% - 280px);
-        background: #f8f9fa;
-        min-height: 100vh;
-    }
-
     .chart-wrapper {
         position: relative;
         height: 320px;
@@ -206,10 +208,38 @@
         height: 260px;
     }
 
-    @@media (max-width: 992px) {
-        .chart-wrapper {
-            height: 260px;
-        }
+    .billing-table {
+        font-size: 0.9rem;
+    }
+
+    .billing-table-head {
+        background-color: #4A6F47; /* Matcha Deep Green */
+        color: #FFFFFF;
+    }
+
+    .billing-table-head th {
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        border-bottom: none;
+    }
+
+    .billing-table tbody tr:nth-child(even) {
+        background-color: #F9F8F3; /* Fresh Cream White */
+    }
+
+    .billing-table tbody tr:nth-child(odd) {
+        background-color: #FFFFFF;
+    }
+
+    .billing-table tbody tr:hover {
+        background-color: #E3EDD9;
+        transition: background-color 200ms ease-out;
+    }
+
+    .billing-table-money {
+        font-family: "JetBrains Mono", Consolas, monospace;
     }
 </style>
 

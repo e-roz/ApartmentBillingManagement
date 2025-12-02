@@ -5,10 +5,10 @@
     // Determine which view to show based on the handler parameter
     var handler = Request.Query["handler"].ToString().ToLower();
     var hasId = !string.IsNullOrEmpty(Request.Query["id"].ToString());
-    
+
     // Determine view based on handler - Read-only, only Details view
     var isDetails = handler == "details";
-    
+
     // Default to Index if no specific handler
     if (string.IsNullOrEmpty(handler) && !isDetails)
     {
@@ -18,266 +18,520 @@
     var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
-<div class="d-flex">
+<div class="d-flex matcha-shell">
     @await Html.PartialAsync("_AdminSidebar")
 
     <!-- Main Content -->
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
+    <div class="main-content tenants-main">
 
-@* INDEX VIEW - Tenant List (Read-Only) *@
-@if (!isDetails)
-{
-    <div class="container-fluid">
-        <!-- Modern Header Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
-                    <h1 class="display-5 fw-bold text-primary mb-0">
-                        <i class="bi bi-people me-3"></i>Tenant Management (Read-Only)
-                    </h1>
-                    <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <small>Tenants are automatically shown here when created with Tenant role. Use <a asp-page="/Admin/ManageUsers">Manage Users</a> to create new tenant accounts.</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Success/Error Messages -->
-        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        @* INDEX VIEW - Tenant List (Read-Only) *@
+        @if (!isDetails)
         {
-            <div class="alert alert-success alert-dismissible fade show" role="alert" data-auto-toast="true">
-                <i class="bi bi-check-circle me-2"></i>
-                @Model.SuccessMessage
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert" data-auto-toast="true">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                @Model.ErrorMessage
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        <!-- Modern Table Card -->
-        <div class="card shadow-lg rounded-4 border-0">
-            <div class="card-header bg-light border-0 py-3">
-                <h5 class="card-title mb-0 text-dark fw-semibold">
-                    <i class="bi bi-list-ul me-2"></i>Tenants (@Model.Tenants.Count)
-                </h5>
-            </div>
-            <div class="card-body p-0">
-                @if (Model.Tenants.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 data-table">
-                            <thead class="table-primary">
-                                <tr>
-                                    <th class="fw-semibold">Full Name</th>
-                                    <th class="fw-semibold">Email</th>
-                                    <th class="fw-semibold">Phone</th>
-                                    <th class="fw-semibold">Monthly Rent</th>
-                                    <th class="fw-semibold">Status</th>
-                                    <th class="fw-semibold">Assigned Unit</th>
-                                    <th class="fw-semibold text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var tenant in Model.Tenants)
-                                {
-                                    <tr>
-                                        <td class="fw-medium">@tenant.FullName</td>
-                                        <td>@tenant.PrimaryEmail</td>
-                                        <td>@tenant.PrimaryPhone</td>
-                                        <td class="text-success fw-semibold">@tenant.MonthlyRent.ToString("C", pesoCulture)</td>
-                                        <td>
-                                            <span class="badge bg-info fs-6">@tenant.LeaseStatus</span>
-                                        </td>
-                                        <td>
-                                            @if (tenant.AssignedUnit == "Unassigned")
-                                            {
-                                                <span class="badge bg-secondary fs-6">@tenant.AssignedUnit</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-primary fs-6">@tenant.AssignedUnit</span>
-                                            }
-                                        </td>
-                                        <td class="text-center">
-                                            <a asp-page="/Admin/ManageTenants" asp-page-handler="Details" asp-route-id="@tenant.Id" class="btn btn-outline-info btn-sm" title="View Details">
-                                                <i class="bi bi-eye"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="empty-state-card">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">
-                                <i class="bi bi-people"></i>
-                            </div>
-                            <h3 class="empty-state-title">No Tenants Found</h3>
-                            <p class="empty-state-message">
-                                You haven't added any tenants yet. Start by adding your first tenant to the system.
-                            </p>
-                            <div class="empty-state-action">
-                                <a asp-page="/Admin/ManageTenants" asp-page-handler="Create" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-2"></i>Add First Tenant
-                                </a>
+            <div class="container-fluid tenants-container">
+                <!-- Page Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm tenants-header">
+                            <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                <div>
+                                    <h2 class="tenants-title mb-1">
+                                        <i class="bi bi-people me-2"></i>Tenant Management
+                                        <span class="tenants-tag">Read-only</span>
+                                    </h2>
+                                    <p class="tenants-subtitle mb-0">
+                                        View all tenants linked to user accounts with the Tenant role.
+                                    </p>
+                                </div>
+                                <div class="tenants-info-pill">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <span>
+                                        Tenants are created from
+                                        <a asp-page="/Admin/ManageUsers" class="tenants-link">Manage Users</a>
+                                        by assigning the <strong>Tenant</strong> role.
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                @* Standardized Messages *@
+                @{
+                    ViewData["SuccessMessage"] = Model.SuccessMessage;
+                    ViewData["ErrorMessage"] = Model.ErrorMessage;
                 }
-            </div>
-        </div>
-    </div>
+                @await Html.PartialAsync("_MessagePartial")
 
-    @section Scripts {
-        <script>
-            // Auto-dismiss alerts after 5 seconds
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                });
-            }, 5000);
-
-            function confirmDeleteTenant(tenantName, tenantId) {
-                showAlert.delete('Delete Tenant', `Are you sure you want to delete tenant '<strong>${tenantName}</strong>'? This action cannot be undone.`)
-                    .then((result) => {
-                        if (result) {
-                            document.getElementById(`deleteTenantForm_${tenantId}`).submit();
-                        }
-                    });
-            }
-        </script>
-    }
-}
-
-@* DETAILS VIEW - Single Tenant View (Read-Only) *@
-@if (isDetails && Model.UserDetails != null)
-{
-    ViewData["Title"] = "Tenant Details (Read-Only)";
-    
-    <div class="container-fluid">
-        <!-- Header Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h1 class="display-5 fw-bold text-primary mb-0">
-                        <i class="bi bi-person-circle me-3"></i>Tenant Details (Read-Only)
-                    </h1>
-                    <div class="d-flex gap-2">
-                        <a asp-page="/Admin/ManageUsers" asp-page-handler="Edit" asp-route-id="@Model.UserDetails.Id" class="btn btn-primary">
-                            <i class="bi bi-pencil-square me-2"></i>Edit User
-                        </a>
-                        <a asp-page="/Admin/ManageTenants" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-2"></i>Back to List
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- Personal Information Card -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-lg border-0 h-100">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-person me-2"></i>Personal Information
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4 fw-semibold">Username</dt>
-                            <dd class="col-sm-8">@Model.UserDetails.Username</dd>
-
-                            <dt class="col-sm-4 fw-semibold">Email</dt>
-                            <dd class="col-sm-8">@Model.UserDetails.Email</dd>
-
-                            <dt class="col-sm-4 fw-semibold">Role</dt>
-                            <dd class="col-sm-8">
-                                <span class="badge bg-info fs-6">@Model.UserDetails.Role</span>
-                            </dd>
-
-                            <dt class="col-sm-4 fw-semibold">Status</dt>
-                            <dd class="col-sm-8">
-                                <span class="badge bg-info fs-6">@(Model.UserDetails.Status ?? "Not Set")</span>
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Lease & Unit Information Card -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-lg border-0 h-100">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-file-earmark-text me-2"></i>Lease & Unit Information
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4 fw-semibold">Monthly Rent</dt>
-                            <dd class="col-sm-8 text-success fw-semibold">@(Model.ActiveLease?.MonthlyRent.ToString("C", pesoCulture) ?? "N/A")</dd>
-
-                            @if (Model.ActiveLease != null)
-                            {
-                                <dt class="col-sm-4 fw-semibold">Lease Start</dt>
-                                <dd class="col-sm-8">@Model.ActiveLease.LeaseStart.ToString("MMM dd, yyyy")</dd>
-
-                                <dt class="col-sm-4 fw-semibold">Lease End</dt>
-                                <dd class="col-sm-8">@Model.ActiveLease.LeaseEnd.ToString("MMM dd, yyyy")</dd>
-                            }
-
-                            <dt class="col-sm-4 fw-semibold">Assigned Apartment</dt>
-                            <dd class="col-sm-8">
-                                @if (!string.IsNullOrEmpty(Model.ActiveLease?.UnitNumber))
+                <!-- Tenants Table Card -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm tenants-table-card">
+                            <div class="card-header tenants-table-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0 tenants-table-title">
+                                        <i class="bi bi-list-ul me-2"></i>Tenants
+                                    </h5>
+                                    <p class="tenants-table-subtitle mb-0">
+                                        @Model.Tenants.Count tenant@(Model.Tenants.Count == 1 ? "" : "s") linked to active user accounts.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                @if (Model.Tenants.Any())
                                 {
-                                    <span class="badge bg-primary fs-6">@Model.ActiveLease.UnitNumber</span>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0 data-table tenants-table">
+                                            <thead class="tenants-table-head">
+                                                <tr>
+                                                    <th class="border-0 ps-4 tenants-th">Full Name</th>
+                                                    <th class="border-0 tenants-th">Email</th>
+                                                    <th class="border-0 tenants-th">Phone</th>
+                                                    <th class="border-0 tenants-th text-end">Monthly Rent</th>
+                                                    <th class="border-0 tenants-th">Lease Status</th>
+                                                    <th class="border-0 tenants-th">Assigned Unit</th>
+                                                    <th class="border-0 tenants-th text-center pe-4">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var tenant in Model.Tenants)
+                                                {
+                                                    <tr>
+                                                        <td class="align-middle ps-4">
+                                                            <div class="fw-semibold tenants-name">@tenant.FullName</div>
+                                                        </td>
+                                                        <td class="align-middle">
+                                                            <span class="text-truncate d-inline-block tenants-email" title="@tenant.PrimaryEmail">
+                                                                @tenant.PrimaryEmail
+                                                            </span>
+                                                        </td>
+                                                        <td class="align-middle">
+                                                            <span class="tenants-phone">@tenant.PrimaryPhone</span>
+                                                        </td>
+                                                        <td class="align-middle text-end">
+                                                            <span class="tenants-amount">@tenant.MonthlyRent.ToString("C", pesoCulture)</span>
+                                                        </td>
+                                                        <td class="align-middle">
+                                                            <span class="badge tenants-badge-status">
+                                                                @tenant.LeaseStatus
+                                                            </span>
+                                                        </td>
+                                                        <td class="align-middle">
+                                                            @if (tenant.AssignedUnit == "Unassigned")
+                                                            {
+                                                                <span class="badge tenants-badge-unit-unassigned">Unassigned</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge tenants-badge-unit-assigned">@tenant.AssignedUnit</span>
+                                                            }
+                                                        </td>
+                                                        <td class="align-middle text-center pe-4">
+                                                            <a asp-page="/Admin/ManageTenants"
+                                                               asp-page-handler="Details"
+                                                               asp-route-id="@tenant.Id"
+                                                               class="btn btn-teal btn-sm tenants-view-btn"
+                                                               title="View Details">
+                                                                <i class="bi bi-eye me-1"></i>View
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-secondary fs-6">Unassigned</span>
+                                    @* Standardized Empty State *@
+                                    {
+                                        ViewData["EmptyIcon"] = "bi-people";
+                                        ViewData["EmptyTitle"] = "No Tenants Found";
+                                        ViewData["EmptyMessage"] =
+                                            "No tenants are linked yet. Add users with the Tenant role in Manage Users to see them here.";
+                                    }
+                                    @await Html.PartialAsync("_EmptyStatePartial")
                                 }
-                            </dd>
-
-                            <dt class="col-sm-4 fw-semibold">Created At</dt>
-                            <dd class="col-sm-8">@Model.UserDetails.CreatedAt.ToString("MMM dd, yyyy HH:mm")</dd>
-                        </dl>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-}
-else if (isDetails)
-{
-    <div class="container-fluid">
-        <div class="alert alert-warning no-toast">
-            <i class="bi bi-exclamation-triangle me-2"></i>Tenant user not found.
-        </div>
-    </div>
-}
+        }
 
-@* CREATE, EDIT, and DELETE views removed - Tenant Management is now read-only *@
+        @* DETAILS VIEW - Single Tenant View (Read-Only) *@
+        @if (isDetails && Model.UserDetails != null)
+        {
+            ViewData["Title"] = "Tenant Details (Read-Only)";
+
+            <div class="container-fluid tenants-container">
+                <!-- Header Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm tenants-header">
+                            <div class="card-body d-flex justify-content-between align-items-start flex-wrap gap-3">
+                                <div>
+                                    <h2 class="tenants-title mb-1">
+                                        <i class="bi bi-person-circle me-2"></i>Tenant Details
+                                        <span class="tenants-tag">Read-only</span>
+                                    </h2>
+                                    <p class="tenants-subtitle mb-0">
+                                        Review tenant account information and linked lease details.
+                                    </p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a asp-page="/Admin/ManageUsers"
+                                       asp-page-handler="Edit"
+                                       asp-route-id="@Model.UserDetails.Id"
+                                       class="btn btn-primary">
+                                        <i class="bi bi-pencil-square me-2"></i>Edit User
+                                    </a>
+                                    <a asp-page="/Admin/ManageTenants" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left me-2"></i>Back to List
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Personal Information Card -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm tenants-detail-card h-100">
+                            <div class="card-header tenants-detail-header tenants-detail-header-personal">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-person me-2"></i>Personal Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4 fw-semibold">Username</dt>
+                                    <dd class="col-sm-8">@Model.UserDetails.Username</dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Email</dt>
+                                    <dd class="col-sm-8">@Model.UserDetails.Email</dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Role</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge tenants-badge-role">@Model.UserDetails.Role</span>
+                                    </dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Status</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge tenants-badge-status">
+                                            @(Model.UserDetails.Status ?? "Not Set")
+                                        </span>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lease & Unit Information Card -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-0 shadow-sm tenants-detail-card h-100">
+                            <div class="card-header tenants-detail-header tenants-detail-header-lease">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-file-earmark-text me-2"></i>Lease & Unit Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4 fw-semibold">Monthly Rent</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="tenants-amount">
+                                            @(Model.ActiveLease?.MonthlyRent.ToString("C", pesoCulture) ?? "N/A")
+                                        </span>
+                                    </dd>
+
+                                    @if (Model.ActiveLease != null)
+                                    {
+                                        <dt class="col-sm-4 fw-semibold">Lease Start</dt>
+                                        <dd class="col-sm-8">@Model.ActiveLease.LeaseStart.ToString("MMM dd, yyyy")</dd>
+
+                                        <dt class="col-sm-4 fw-semibold">Lease End</dt>
+                                        <dd class="col-sm-8">@Model.ActiveLease.LeaseEnd.ToString("MMM dd, yyyy")</dd>
+                                    }
+
+                                    <dt class="col-sm-4 fw-semibold">Assigned Apartment</dt>
+                                    <dd class="col-sm-8">
+                                        @if (!string.IsNullOrEmpty(Model.ActiveLease?.UnitNumber))
+                                        {
+                                            <span class="badge tenants-badge-unit-assigned">
+                                                @Model.ActiveLease.UnitNumber
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge tenants-badge-unit-unassigned">Unassigned</span>
+                                        }
+                                    </dd>
+
+                                    <dt class="col-sm-4 fw-semibold">Created At</dt>
+                                    <dd class="col-sm-8">
+                                        @Model.UserDetails.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (isDetails)
+        {
+            <div class="container-fluid tenants-container">
+                <div class="alert alert-warning no-toast">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Tenant user not found.
+                </div>
+            </div>
+        }
+
+        @* CREATE, EDIT, and DELETE views removed - Tenant Management is now read-only *@
     </div>
 </div>
 
 <style>
-    .main-content {
+    .matcha-shell {
+        background: #F9F8F3;
+    }
+
+    .tenants-main {
+        margin-left: 280px;
+        width: calc(100% - 280px);
+        padding: 32px;
         min-height: 100vh;
-        background: #f8f9fa;
+        background: #F9F8F3;
+        font-family: "Inter", "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #2C2C2C;
+    }
+
+    .tenants-container {
+        max-width: 1240px;
+    }
+
+    .tenants-header {
+        border-radius: 16px;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        border-top: 4px solid #D7A85A; /* Golden Whisk accent */
+        box-shadow: 0 18px 35px rgba(139, 111, 71, 0.12);
+    }
+
+    .tenants-title {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 700;
+        font-size: 30px;
+        color: #4A6F47; /* Matcha Deep Green */
+        letter-spacing: 0.03em;
+    }
+
+    .tenants-tag {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        background-color: #F9F8F3;
+        color: #8B6F47;
+        border-radius: 999px;
+        padding: 0.15rem 0.75rem;
+        margin-left: 0.5rem;
+    }
+
+    .tenants-subtitle {
+        font-size: 0.95rem;
+        color: #7B7B7B;
+    }
+
+    .tenants-info-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        border-radius: 999px;
+        background-color: #E5F2F2;
+        color: #4A7A7A;
+        font-size: 0.85rem;
+    }
+
+    .tenants-info-pill i {
+        font-size: 1rem;
+    }
+
+    .tenants-link {
+        color: #4A6F47;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        font-weight: 500;
+    }
+
+    /* TABLE STYLING – Matcha table guidelines */
+    .tenants-table-card {
+        border-radius: 16px;
+        overflow: hidden;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        box-shadow: 0 18px 35px rgba(44, 44, 44, 0.06);
+    }
+
+    .tenants-table-header {
+        background: linear-gradient(135deg, #4A6F47 0%, #7DA26C 100%);
+        color: #F9F8F3;
+        padding: 1.1rem 1.5rem;
+    }
+
+    .tenants-table-title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .tenants-table-subtitle {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+
+    .tenants-table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .tenants-table-head {
+        background-color: #4A6F47; /* Matcha Deep Green */
+        color: #F9F8F3;
+    }
+
+    .tenants-th {
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #2C2C2C;
+    }
+
+    /* Ensure DataTables-generated header cells are visible */
+    .tenants-table-card table.dataTable thead th,
+    .tenants-table-card table.dataTable thead td {
+        color: #2C2C2C !important;
+    }
+
+    .tenants-table tbody tr:nth-child(even) {
+        background-color: #F9F8F3;
+    }
+
+    .tenants-table tbody tr:nth-child(odd) {
+        background-color: #FFFFFF;
+    }
+
+    .tenants-table tbody tr:hover {
+        background-color: #E3EDD9;
+        transition: background-color 200ms ease-out;
+    }
+
+    .tenants-table td {
+        border-top: 1px solid #E7E5D8;
+        padding: 0.9rem 0.75rem;
+    }
+
+    .tenants-name {
+        color: #2C2C2C;
+    }
+
+    .tenants-email {
+        max-width: 260px;
+        color: #5F6368;
+    }
+
+    .tenants-phone {
+        color: #5F6368;
+        font-size: 0.9rem;
+    }
+
+    .tenants-amount {
+        font-family: "JetBrains Mono", Consolas, monospace;
+        font-size: 0.9rem;
+        color: #4A6F47;
+        font-weight: 600;
+    }
+
+    /* BADGES */
+    .tenants-badge-status {
+        background-color: #4A6F47;
+        color: #F9F8F3;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 0.78rem;
+    }
+
+    .tenants-badge-unit-assigned {
+        background-color: #4A6F47;
+        color: #F9F8F3;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 0.78rem;
+    }
+
+    .tenants-badge-unit-unassigned {
+        background-color: #E7E5D8;
+        color: #7B7B7B;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 0.78rem;
+    }
+
+    .tenants-badge-role {
+        background-color: #D7A85A;
+        color: #F9F8F3;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 0.78rem;
+    }
+
+    .tenants-view-btn {
+        border-radius: 999px;
+        padding-inline: 1.1rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    /* Detail cards */
+    .tenants-detail-card {
+        border-radius: 16px;
+        background: #FFFFFF;
+        border: 1px solid #E7E5D8;
+        overflow: hidden;
+    }
+
+    .tenants-detail-header {
+        padding: 0.85rem 1.25rem;
+        color: #FFFFFF;
+    }
+
+    .tenants-detail-header-personal {
+        background: #4A6F47;
+    }
+
+    .tenants-detail-header-lease {
+        background: #7DA26C;
+    }
+
+    .tenants-detail-card dl dt {
+        color: #7B7B7B;
+        font-size: 0.9rem;
+    }
+
+    .tenants-detail-card dl dd {
+        color: #2C2C2C;
+        font-size: 0.95rem;
+    }
+
+    /* Align DataTables controls with card padding */
+    .tenants-container .dataTables_wrapper .dataTables_length,
+    .tenants-container .dataTables_wrapper .dataTables_info {
+        padding-left: 1.5rem;
     }
 </style>
