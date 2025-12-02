@@ -128,9 +128,15 @@ namespace Apartment.Pages.Admin
                 return Page();
             }
 
-            DateTime targetDate = new DateTime(Input.Year, Input.Month, 1);
+            // Derive billing period from the selected DueDate to avoid year/month mismatches
+            var effectiveDueDate = Input.DueDate!.Value;
+            DateTime targetDate = new DateTime(effectiveDueDate.Year, effectiveDueDate.Month, 1);
             string periodKey = targetDate.ToString("yyyy-MM");
             string monthName = targetDate.ToString("MMMM"); // Full month name
+
+            // Normalize Input fields to match the effective period so the UI + messages are consistent
+            Input.Year = targetDate.Year;
+            Input.Month = targetDate.Month;
 
             // Use transaction to prevent race conditions
             await using var transaction = await dbData.Database.BeginTransactionAsync();
@@ -150,7 +156,7 @@ namespace Apartment.Pages.Admin
                     {
                         PeriodKey = periodKey,
                         MonthName = monthName,
-                        Year = Input.Year
+                        Year = targetDate.Year
                     };
                     dbData.BillingPeriods.Add(billingPeriod);
                     await dbData.SaveChangesAsync();
@@ -215,7 +221,7 @@ namespace Apartment.Pages.Admin
                         GeneratedDate = DateTime.UtcNow,
                         Status = BillStatus.Unpaid,
                         Type = BillType.Rent, // Explicitly set the type
-                        Description = $"{monthName} {Input.Year} Rent"
+                        Description = $"{monthName} {targetDate.Year} Rent"
                     };
                     rentBillsCreate.Add(newRentBill);
                 }
@@ -316,16 +322,16 @@ namespace Apartment.Pages.Admin
                 await transaction.CommitAsync();
 
                 // Prepare summary - bills were saved within transaction
-                Summary = new GenerationSummary
-                {
-                    PeriodKey = periodKey,
-                    BillsCreated = totalBillsCreated,
-                    OccupiedUnits = leasesToBill.Select(l => l.ApartmentId).Distinct().Count(),
-                    AlreadyExists = false,
-                    TotalAmountBilled = rentBillsCreate.Sum(b => b.AmountDue) + lateFeeBillsCreate.Sum(b => b.AmountDue)
-                };
+                    Summary = new GenerationSummary
+                    {
+                        PeriodKey = periodKey,
+                        BillsCreated = totalBillsCreated,
+                        OccupiedUnits = leasesToBill.Select(l => l.ApartmentId).Distinct().Count(),
+                        AlreadyExists = false,
+                        TotalAmountBilled = rentBillsCreate.Sum(b => b.AmountDue) + lateFeeBillsCreate.Sum(b => b.AmountDue)
+                    };
 
-                SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {Input.Year}. Total amount billed: {Summary.TotalAmountBilled.ToString("C", PhpCulture)}.";
+                SuccessMessage = $"Successfully generated {Summary.BillsCreated} bills for {monthName} {targetDate.Year}. Total amount billed: {Summary.TotalAmountBilled.ToString("C", PhpCulture)}.";
 
                 await _logSnagClient.PublishAsync(new LogSnagEvent
                 {

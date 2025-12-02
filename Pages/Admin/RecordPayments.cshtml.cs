@@ -393,18 +393,18 @@ namespace Apartment.Pages.Admin
 
             var billIds = bills.Select(b => b.Id).ToList();
 
-            // Calculate actual paid amounts from invoices
-            var invoiceSums = await _context.Invoices
-                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
-                .GroupBy(i => i.BillId!.Value)
+            // Calculate actual paid amounts from payment allocations (source of truth)
+            var allocationSums = await _context.PaymentAllocations
+                .Where(pa => billIds.Contains(pa.BillId) && pa.Invoice.DateFullySettled != null)
+                .GroupBy(pa => pa.BillId)
                 .Select(group => new
                 {
                     BillId = group.Key,
-                    TotalPaid = group.Sum(i => i.AmountDue)
+                    TotalPaid = group.Sum(pa => pa.AmountApplied)
                 })
                 .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
 
-            decimal GetPaidAmount(Bill bill) => invoiceSums.TryGetValue(bill.Id, out var paidAmount) ? paidAmount : 0m;
+            decimal GetPaidAmount(Bill bill) => allocationSums.TryGetValue(bill.Id, out var paidAmount) ? paidAmount : 0m;
             bool BillHasBalance(Bill bill) => HasRemainingBalance(bill.AmountDue, GetPaidAmount(bill));
 
             // Get all payment invoices
@@ -476,18 +476,18 @@ namespace Apartment.Pages.Admin
 
             var billIds = allBills.Select(b => b.Id).ToList();
 
-            // Calculate actual paid amounts from invoices
-            var invoiceSums = await _context.Invoices
-                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
-                .GroupBy(i => i.BillId!.Value)
+            // Calculate actual paid amounts from payment allocations (source of truth)
+            var allocationSums = await _context.PaymentAllocations
+                .Where(pa => billIds.Contains(pa.BillId) && pa.Invoice.DateFullySettled != null)
+                .GroupBy(pa => pa.BillId)
                 .Select(group => new
                 {
                     BillId = group.Key,
-                    TotalPaid = group.Sum(i => i.AmountDue)
+                    TotalPaid = group.Sum(pa => pa.AmountApplied)
                 })
                 .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
 
-            decimal GetPaidAmount(Bill bill) => invoiceSums.TryGetValue(bill.Id, out var paid) ? paid : 0m;
+            decimal GetPaidAmount(Bill bill) => allocationSums.TryGetValue(bill.Id, out var paid) ? paid : 0m;
             bool BillHasBalance(Bill bill) => HasRemainingBalance(bill.AmountDue, GetPaidAmount(bill));
 
             // Get last payments for each tenant user
@@ -557,14 +557,14 @@ namespace Apartment.Pages.Admin
 
             var billIds = bills.Select(b => b.Id).ToList();
 
-            // Calculate actual paid amounts from invoices
-            var invoiceSums = await _context.Invoices
-                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
-                .GroupBy(i => i.BillId!.Value)
+            // Calculate actual paid amounts from payment allocations (source of truth)
+            var allocationSums = await _context.PaymentAllocations
+                .Where(pa => billIds.Contains(pa.BillId) && pa.Invoice.DateFullySettled != null)
+                .GroupBy(pa => pa.BillId)
                 .Select(group => new
                 {
                     BillId = group.Key,
-                    TotalPaid = group.Sum(i => i.AmountDue)
+                    TotalPaid = group.Sum(pa => pa.AmountApplied)
                 })
                 .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
 
@@ -572,8 +572,8 @@ namespace Apartment.Pages.Admin
 
             foreach (var bill in bills)
             {
-                // Get actual paid amount from invoices
-                var actualPaid = invoiceSums.TryGetValue(bill.Id, out var totalPaid) ? totalPaid : 0m;
+                // Get actual paid amount from payment allocations
+                var actualPaid = allocationSums.TryGetValue(bill.Id, out var totalPaid) ? totalPaid : 0m;
                 
                 // Note: bill.AmountPaid is only updated for display purposes here (bill is AsNoTracking)
                 // The actual AmountPaid should always be calculated from invoices when needed
