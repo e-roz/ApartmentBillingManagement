@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Apartment.Enums;
+using Apartment.Model;
 
 namespace Apartment.Model
 {
@@ -41,10 +42,7 @@ namespace Apartment.Model
 
 
         //payment tracking
-        public DateTime? PaymentDate { get; set; }
-
-        [StringLength(500)]
-        public string? ReceiptImagePath { get; set; }
+        public DateTime? DateFullySettled { get; set; }
 
         [StringLength(100)]
         public string? ReferenceNumber { get; set; }
@@ -57,5 +55,7 @@ namespace Apartment.Model
 
         [ForeignKey("BillId")]
         public Bill? Bill { get; set; }
+
+        public ICollection<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
     }
 }

@@ -20,6 +20,7 @@ namespace Apartment.Data
         public DbSet<BillingPeriod> BillingPeriods { get; set; } = null!;
         public DbSet<Invoice> Invoices { get; set; } = null!;
         public DbSet<PaymentReceipt> PaymentReceipts { get; set; } = null!;
+        public DbSet<PaymentAllocation> PaymentAllocations { get; set; } = null!;
 
         // Request Table
         public DbSet<Request> Requests { get; set; }
@@ -93,6 +94,11 @@ namespace Apartment.Data
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
+            // Configure the BillStatus enum to be stored as an integer
+            modelBuilder.Entity<Bill>()
+                .Property(b => b.Status)
+                .HasConversion<int>();
+
             modelBuilder.Entity<Request>()
                 .Property(r => r.RequestType)
                 .HasConversion<string>()
@@ -137,8 +143,26 @@ namespace Apartment.Data
                 .HasDatabaseName("IX_Invoices_TenantUserId");
 
             modelBuilder.Entity<Invoice>()
-                .HasIndex(i => i.PaymentDate)
+                .HasIndex(i => i.DateFullySettled)
                 .HasDatabaseName("IX_Invoices_PaymentDate");
+
+            modelBuilder.Entity<PaymentAllocation>()
+                .HasOne(pa => pa.Invoice)
+                .WithMany(i => i.PaymentAllocations)
+                .HasForeignKey(pa => pa.InvoiceId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting invoice if allocations exist
+
+            modelBuilder.Entity<PaymentAllocation>()
+                .HasOne(pa => pa.Bill)
+                .WithMany(b => b.PaymentAllocations)
+                .HasForeignKey(pa => pa.BillId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting bill if allocations exist
+
+            modelBuilder.Entity<PaymentAllocation>()
+                .HasIndex(pa => pa.InvoiceId);
+
+            modelBuilder.Entity<PaymentAllocation>()
+                .HasIndex(pa => pa.BillId);
 
 
 

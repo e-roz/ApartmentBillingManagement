@@ -1,6 +1,7 @@
 using Apartment.Data;
 using Apartment.Model;
 using Apartment.Enums;
+using Apartment.Enums;
 using Apartment.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -66,7 +67,7 @@ namespace Apartment.Pages.Admin
             public decimal TotalRent { get; set; }
             public decimal AmountPaid { get; set; }
             public decimal RemainingBalance { get; set; }
-            public DateTime? LastPaymentDate { get; set; }
+            public DateTime? LastDateFullySettled { get; set; }
             public string? LatestPaymentMethod { get; set; }
             public string PaymentStatus { get; set; } = "Unpaid";
         }
@@ -80,7 +81,7 @@ namespace Apartment.Pages.Admin
             public decimal TotalPaid { get; set; }
             public decimal RemainingBalance { get; set; }
             public string PaymentStatus { get; set; } = "Unpaid";
-            public DateTime? LastPaymentDate { get; set; }
+            public DateTime? LastDateFullySettled { get; set; }
         }
 
         public class MonthlyPaymentBreakdown
@@ -93,10 +94,9 @@ namespace Apartment.Pages.Admin
             public decimal PaidAmount { get; set; }
             public decimal RemainingBalance { get; set; }
             public string Status { get; set; } = "Unpaid";
-            public DateTime? PaymentDate { get; set; }
+            public DateTime? DateFullySettled { get; set; }
             public string? PaymentMethod { get; set; }
             public int? InvoiceId { get; set; }
-            public string? ReceiptImagePath { get; set; }
             public string? ReferenceNumber { get; set; }
         }
 
@@ -105,7 +105,7 @@ namespace Apartment.Pages.Admin
             public int TenantUserId { get; set; }
             public int BillId { get; set; }
             public decimal AmountPaid { get; set; }
-            public DateTime PaymentDate { get; set; } = DateTime.Now;
+            public DateTime DateFullySettled { get; set; } = DateTime.Now;
             public string PaymentMethod { get; set; } = "Cash";
             public string? Notes { get; set; }
             public string? MonthCovered { get; set; }
@@ -141,15 +141,17 @@ namespace Apartment.Pages.Admin
             }
 
             // Validate payment date is not in the future
-            if (AddPaymentInput.PaymentDate > DateTime.UtcNow)
+            if (AddPaymentInput.DateFullySettled > DateTime.UtcNow)
             {
                 ErrorMessage = "Payment date cannot be in the future.";
                 await OnGetAsync();
                 return Page();
             }
 
+            Bill? targetBill = null; // Declare targetBill here so it's accessible in catch
             try
             {
+                await using var transaction = await _context.Database.BeginTransactionAsync();
                 Bill? bill;
                 
                 // Handle outstanding balance payment (BillId = 0 means auto-select oldest unpaid bill)
@@ -167,7 +169,7 @@ namespace Apartment.Pages.Admin
                     
                     // Calculate actual paid amounts from invoices
                     var invoiceSums = await _context.Invoices
-                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
                         .GroupBy(i => i.BillId!.Value)
                         .Select(group => new
                         {
@@ -233,9 +235,11 @@ namespace Apartment.Pages.Admin
                     return Page();
                 }
 
+                targetBill = bill;
+
                 // Calculate actual remaining balance from invoices
                 var existingPayments = await _context.Invoices
-                    .Where(i => i.BillId == bill.Id && i.PaymentDate != null)
+                    .Where(i => i.BillId == bill.Id && i.DateFullySettled != null)
                     .SumAsync(i => i.AmountDue);
 
                 var remainingBalance = bill.AmountDue - existingPayments;
@@ -260,54 +264,109 @@ namespace Apartment.Pages.Admin
                 
                 if (isFullyPaid)
                 {
-                    bill.PaymentDate = AddPaymentInput.PaymentDate;
+                    bill.DateFullySettled = AddPaymentInput.DateFullySettled;
+                    bill.Status = BillStatus.Paid; 
+                }
+                else if (newTotalPaid > 0)
+                {
+                    bill.Status = BillStatus.Partial; 
                 }
 
-                // Create invoice for payment - use newTotalPaid to determine status
-                var invoiceStatus = isFullyPaid
-                    ? InvoiceStatus.Paid
-                    : InvoiceStatus.Partial;
-
+                // Create a single Invoice record for the entire payment
                 var paymentInvoice = new Invoice
                 {
-                    BillId = bill.Id,
-                    TenantUserId = bill.TenantUserId,
-                    ApartmentId = bill.ApartmentId,
+                    TenantUserId = AddPaymentInput.TenantUserId,
+                    ApartmentId = bill.ApartmentId, // Can be refined if multiple bills from different apartments are paid
+                    BillId = null, // This invoice represents the overall payment
                     Title = bill.BillingPeriod != null
                         ? $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year} - Payment"
-                        : $"Bill #{bill.Id} Payment",
-                    AmountDue = AddPaymentInput.AmountPaid,
-                    DueDate = bill.DueDate,
+                        : $"Bill #{bill.Id} Payment", // Title might need adjustment for multi-bill payments
+                    AmountDue = AddPaymentInput.AmountPaid, // Total amount paid in this transaction
+                    DueDate = bill.DueDate, // Can be refined or set to a payment transaction date
                     IssueDate = DateTime.UtcNow,
-                    PaymentDate = AddPaymentInput.PaymentDate,
+                    DateFullySettled = AddPaymentInput.DateFullySettled,
                     PaymentMethod = AddPaymentInput.PaymentMethod,
-                    Status = invoiceStatus,
+                    Status = InvoiceStatus.Paid, // Status of the payment invoice itself
                     ReferenceNumber = AddPaymentInput.ReferenceNumber
                 };
+                _context.Invoices.Add(paymentInvoice);
 
-                // Use transaction to ensure data integrity
-                await using var transaction = await _context.Database.BeginTransactionAsync();
-                try
+                var allocations = new List<PaymentAllocation>();
+                var amountLeftToAllocate = AddPaymentInput.AmountPaid;
+
+                List<Bill> billsToApplyPaymentTo = new List<Bill>();
+
+                if (AddPaymentInput.BillId == 0)
                 {
-                    _context.Invoices.Add(paymentInvoice);
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
+                    // For "Pay Outstanding Balance", get all outstanding bills sorted by DueDate
+                    billsToApplyPaymentTo = await _context.Bills
+                        .Where(b => b.TenantUserId == AddPaymentInput.TenantUserId && (b.Status == BillStatus.Unpaid || b.Status == BillStatus.Partial))
+                        .OrderBy(b => b.DueDate)
+                        .ToListAsync();
                 }
-                catch
+                else
                 {
+                    // For specific bill, just get that one
+                    billsToApplyPaymentTo.Add(bill);
+                }
+
+                foreach (var billToUpdate in billsToApplyPaymentTo)
+                {
+                    if (amountLeftToAllocate <= 0) break;
+
+                    var remainingOnBill = billToUpdate.AmountDue - billToUpdate.AmountPaid;
+                    if (remainingOnBill <= 0) continue; // Skip if already fully paid
+
+                    var amountToApply = Math.Min(amountLeftToAllocate, remainingOnBill);
+
+                    // Update the Bill itself
+                    billToUpdate.AmountPaid += amountToApply;
+                    if (billToUpdate.AmountPaid >= billToUpdate.AmountDue)
+                    {
+                        billToUpdate.DateFullySettled ??= AddPaymentInput.DateFullySettled;
+                        billToUpdate.Status = BillStatus.Paid;
+                    }
+                    else if (billToUpdate.AmountPaid > 0)
+                    {
+                        billToUpdate.Status = BillStatus.Partial;
+                    }
+                    // If still unpaid, status remains Unpaid (default)
+
+                    // Create a corresponding PaymentAllocation record
+                    var allocation = new PaymentAllocation
+                    {
+                        Invoice = paymentInvoice, // Link to the main payment invoice
+                        Bill = billToUpdate, // Link to the current bill
+                        AmountApplied = amountToApply
+                    };
+                    allocations.Add(allocation);
+
+                    amountLeftToAllocate -= amountToApply;
+                }
+
+                if (amountLeftToAllocate > 0.005m) // Allow for small rounding differences
+                {
+                    ErrorMessage = "Could not fully allocate payment. Remaining amount: " + amountLeftToAllocate.ToString("C", CultureInfo.CurrentCulture);
+                    await OnGetAsync(); // Re-load data for the page
                     await transaction.RollbackAsync();
-                    throw;
+                    return Page();
                 }
+
+                _context.PaymentAllocations.AddRange(allocations);
+                _context.Bills.UpdateRange(billsToApplyPaymentTo); // Ensure bills are marked for update
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 await _logSnagClient.PublishAsync(new LogSnagEvent
                 {
                     Event = "Payment Recorded",
-                    Description = $"{bill.TenantUser?.Username ?? "Unknown"} paid {AddPaymentInput.AmountPaid:C} for Bill #{bill.Id}",
+                    Description = $"{targetBill?.TenantUser?.Username ?? "Unknown"} paid {AddPaymentInput.AmountPaid:C} for Bill #{targetBill?.Id}",
                     Icon = "💰",
                     Tags = new Dictionary<string, string>
                     {
-                        { "tenant", bill.TenantUser?.Username ?? "Unknown" },
-                        { "billId", bill.Id.ToString() },
+                        { "tenant", targetBill?.TenantUser?.Username ?? "Unknown" },
+                        { "billId", targetBill?.Id.ToString() ?? "N/A" },
                         { "amount", AddPaymentInput.AmountPaid.ToString("0.##") }
                     }
                 });
@@ -322,33 +381,6 @@ namespace Apartment.Pages.Admin
                 await OnGetAsync();
                 return Page();
             }
-        }
-
-        public async Task<IActionResult> OnGetReceiptAsync(int invoiceId)
-        {
-            var invoice = await _context.Invoices
-                .Include(i => i.TenantUser)
-                .FirstOrDefaultAsync(i => i.Id == invoiceId);
-
-            if (invoice == null || string.IsNullOrEmpty(invoice.ReceiptImagePath))
-            {
-                return NotFound();
-            }
-
-            var filePath = Path.Combine(_environment.WebRootPath, invoice.ReceiptImagePath.TrimStart('/'));
-            if (!System.IO.File.Exists(filePath))
-            {
-                return NotFound();
-            }
-
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
-            var contentType = "image/jpeg";
-            if (filePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-                contentType = "image/png";
-            else if (filePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-                contentType = "application/pdf";
-
-            return File(fileBytes, contentType);
         }
 
         // Helper Methods
@@ -374,7 +406,7 @@ namespace Apartment.Pages.Admin
 
             // Calculate actual paid amounts from invoices
             var invoiceSums = await _context.Invoices
-                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
                 .GroupBy(i => i.BillId!.Value)
                 .Select(group => new
                 {
@@ -395,8 +427,8 @@ namespace Apartment.Pages.Admin
 
             // Get all payment invoices
             var paymentInvoices = await _context.Invoices
-                .Where(i => i.TenantUserId == tenantUserId && i.PaymentDate != null)
-                .OrderByDescending(i => i.PaymentDate)
+                .Where(i => i.TenantUserId == tenantUserId && i.DateFullySettled != null)
+                .OrderByDescending(i => i.DateFullySettled)
                 .ToListAsync();
 
             var totalRent = bills.Sum(b => b.AmountDue);
@@ -406,7 +438,26 @@ namespace Apartment.Pages.Admin
             var lastPayment = paymentInvoices.FirstOrDefault();
             var latestPaymentMethod = lastPayment?.PaymentMethod ?? "N/A";
 
-            var status = DetermineOverallStatus(totalRent, totalPaid, bills);
+            var today = DateTime.UtcNow.Date;
+            bool hasOverdueBills = bills.Any(b => (b.Status == BillStatus.Unpaid || b.Status == BillStatus.Partial) && b.DueDate < today);
+
+            string paymentStatus;
+            if (hasOverdueBills)
+            {
+                paymentStatus = "Overdue";
+            }
+            else if (bills.All(b => b.Status == BillStatus.Paid))
+            {
+                paymentStatus = "Paid";
+            }
+            else if (bills.Any(b => b.Status == BillStatus.Partial))
+            {
+                paymentStatus = "Partial";
+            }
+            else
+            {
+                paymentStatus = "Unpaid";
+            }
 
             var now = DateTime.UtcNow;
             var activeLease = tenantUser.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
@@ -418,55 +469,10 @@ namespace Apartment.Pages.Admin
                 TotalRent = totalRent,
                 AmountPaid = totalPaid,
                 RemainingBalance = remainingBalance,
-                LastPaymentDate = lastPayment?.PaymentDate,
+                LastDateFullySettled = lastPayment?.DateFullySettled,
                 LatestPaymentMethod = latestPaymentMethod,
-                PaymentStatus = status
+                PaymentStatus = paymentStatus
             };
-        }
-
-        private string DetermineOverallStatus(decimal totalRent, decimal totalPaid, List<Bill> bills)
-        {
-            if (totalPaid == 0)
-                return "Unpaid";
-
-            if (totalPaid >= totalRent)
-                return "Paid";
-
-            // Check for overdue bills
-            var today = DateTime.Today;
-            var hasOverdue = bills.Any(b => 
-                today > b.DueDate && 
-                (b.AmountDue - b.AmountPaid) > 0);
-
-            if (hasOverdue)
-                return "Overdue";
-
-            return "Partial";
-        }
-
-        private string DetermineMonthlyStatus(decimal rentAmount, decimal paidAmount, DateTime dueDate)
-        {
-            var today = DateTime.Today;
-            var remaining = rentAmount - paidAmount;
-
-            if (paidAmount == 0)
-            {
-                if (today > dueDate)
-                    return "Overdue";
-                return "Unpaid";
-            }
-
-            if (paidAmount >= rentAmount)
-            {
-                if (paidAmount > rentAmount)
-                    return "Advance";
-                return "Paid";
-            }
-
-            if (today > dueDate && remaining > 0)
-                return "Overdue";
-
-            return "Partial";
         }
 
         private async Task LoadTenantSummariesAsync()
@@ -506,7 +512,7 @@ namespace Apartment.Pages.Admin
 
             // Calculate actual paid amounts from invoices
             var invoiceSums = await _context.Invoices
-                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
                 .GroupBy(i => i.BillId!.Value)
                 .Select(group => new
                 {
@@ -527,12 +533,12 @@ namespace Apartment.Pages.Admin
 
             // Get last payments for each tenant user
             var lastPayments = await _context.Invoices
-                .Where(i => tenantUserIds.Contains(i.TenantUserId) && i.PaymentDate != null)
+                .Where(i => tenantUserIds.Contains(i.TenantUserId) && i.DateFullySettled != null)
                 .GroupBy(i => i.TenantUserId)
                 .Select(g => new
                 {
                     TenantUserId = g.Key,
-                    LastPayment = g.OrderByDescending(i => i.PaymentDate).FirstOrDefault()
+                    LastPayment = g.OrderByDescending(i => i.DateFullySettled).FirstOrDefault()
                 })
                 .ToDictionaryAsync(k => k.TenantUserId, v => v.LastPayment);
 
@@ -563,6 +569,27 @@ namespace Apartment.Pages.Admin
 
                 lastPayments.TryGetValue(u.Id, out var lastPayment);
 
+                var today = DateTime.UtcNow.Date;
+                bool hasOverdueBills = bills.Any(b => (b.Status == BillStatus.Unpaid || b.Status == BillStatus.Partial) && b.DueDate < today);
+
+                string paymentStatus;
+                if (hasOverdueBills)
+                {
+                    paymentStatus = "Overdue";
+                }
+                else if (bills.All(b => b.Status == BillStatus.Paid))
+                {
+                    paymentStatus = "Paid";
+                }
+                else if (bills.Any(b => b.Status == BillStatus.Partial))
+                {
+                    paymentStatus = "Partial";
+                }
+                else
+                {
+                    paymentStatus = "Unpaid";
+                }
+
                 var activeLease = u.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
                 return new TenantPaymentSummary
                 {
@@ -572,8 +599,8 @@ namespace Apartment.Pages.Admin
                     MonthlyRent = activeLease?.MonthlyRent ?? 0m,
                     TotalPaid = totalPaidAllBills, // Total paid across ALL bills for accurate display
                     RemainingBalance = remainingBalance,
-                    PaymentStatus = DetermineOverallStatus(totalRentAllBills, totalPaidAllBills, bills),
-                    LastPaymentDate = lastPayment?.PaymentDate
+                    PaymentStatus = paymentStatus,
+                    LastDateFullySettled = lastPayment?.DateFullySettled
                 };
             }).ToList();
 
@@ -599,7 +626,7 @@ namespace Apartment.Pages.Admin
 
             // Calculate actual paid amounts from invoices
             var invoiceSums = await _context.Invoices
-                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
                 .GroupBy(i => i.BillId!.Value)
                 .Select(group => new
                 {
@@ -620,13 +647,13 @@ namespace Apartment.Pages.Admin
                 bill.AmountPaid = actualPaid; // Only for display, not persisted
 
                 var latestPayment = await _context.Invoices
-                    .Where(i => i.BillId == bill.Id && i.PaymentDate != null)
-                    .OrderByDescending(i => i.PaymentDate)
+                    .Where(i => i.BillId == bill.Id && i.DateFullySettled != null)
+                    .OrderByDescending(i => i.DateFullySettled)
                     .FirstOrDefaultAsync();
 
                 var monthName = bill.BillingPeriod?.MonthName ?? "Unknown";
                 var year = bill.BillingPeriod?.Year ?? DateTime.Now.Year;
-                var status = DetermineMonthlyStatus(bill.AmountDue, actualPaid, bill.DueDate);
+                var status = bill.Status.ToString();
 
                 breakdowns.Add(new MonthlyPaymentBreakdown
                 {
@@ -638,10 +665,9 @@ namespace Apartment.Pages.Admin
                     PaidAmount = actualPaid,
                     RemainingBalance = bill.AmountDue - actualPaid,
                     Status = status,
-                    PaymentDate = latestPayment?.PaymentDate,
+                    DateFullySettled = latestPayment?.DateFullySettled,
                     PaymentMethod = latestPayment?.PaymentMethod,
                     InvoiceId = latestPayment?.Id,
-                    ReceiptImagePath = latestPayment?.ReceiptImagePath,
                     ReferenceNumber = latestPayment?.ReferenceNumber
                 });
             }

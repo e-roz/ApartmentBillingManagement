@@ -303,7 +303,7 @@ namespace Apartment.Pages.Admin
                 {
                     var billIds = tenantBills.ToList();
                     var invoiceSums = await dbData.Invoices
-                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
                         .GroupBy(i => i.BillId!.Value)
                         .Select(group => new
                         {

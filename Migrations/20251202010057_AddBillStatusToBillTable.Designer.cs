@@ -4,6 +4,7 @@ using Apartment.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Apartment.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251202010057_AddBillStatusToBillTable")]
+    partial class AddBillStatusToBillTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -337,32 +340,6 @@ namespace Apartment.Migrations
                     b.ToTable("Messages");
                 });
 
-            modelBuilder.Entity("Apartment.Model.PaymentAllocation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("AmountApplied")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<int>("BillId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InvoiceId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BillId");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.ToTable("PaymentAllocations");
-                });
-
             modelBuilder.Entity("Apartment.Model.PaymentReceipt", b =>
                 {
                     b.Property<int>("Id")
@@ -607,25 +584,6 @@ namespace Apartment.Migrations
                     b.Navigation("Sender");
                 });
 
-            modelBuilder.Entity("Apartment.Model.PaymentAllocation", b =>
-                {
-                    b.HasOne("Apartment.Model.Bill", "Bill")
-                        .WithMany("PaymentAllocations")
-                        .HasForeignKey("BillId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Apartment.Model.Invoice", "Invoice")
-                        .WithMany("PaymentAllocations")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Bill");
-
-                    b.Navigation("Invoice");
-                });
-
             modelBuilder.Entity("Apartment.Model.PaymentReceipt", b =>
                 {
                     b.HasOne("Apartment.Model.Invoice", "Invoice")
@@ -659,19 +617,9 @@ namespace Apartment.Migrations
                     b.Navigation("Leases");
                 });
 
-            modelBuilder.Entity("Apartment.Model.Bill", b =>
-                {
-                    b.Navigation("PaymentAllocations");
-                });
-
             modelBuilder.Entity("Apartment.Model.BillingPeriod", b =>
                 {
                     b.Navigation("Bills");
-                });
-
-            modelBuilder.Entity("Apartment.Model.Invoice", b =>
-                {
-                    b.Navigation("PaymentAllocations");
                 });
 
             modelBuilder.Entity("Apartment.Model.User", b =>

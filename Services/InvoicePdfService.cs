@@ -57,7 +57,7 @@ namespace Apartment.Services
                 };
                 document.Add(title);
 
-                document.Add(CreateSummaryTable(invoice, labelFont, valueFont));
+                document.Add(await CreateSummaryTableAsync(invoice, labelFont, valueFont));
 
                 AddSectionHeader(document, "Tenant Information", sectionFont);
                 document.Add(CreateTwoColumnTable(new (string Label, string Value)[]
@@ -69,20 +69,62 @@ namespace Apartment.Services
                 }, labelFont, valueFont));
 
                 AddSectionHeader(document, "Apartment Details", sectionFont);
+                var monthlyRent = await ResolveMonthlyRentAsync(invoice);
                 document.Add(CreateTwoColumnTable(new[]
                 {
                     ("Unit", ResolveApartmentUnit(invoice)),
-                    ("Monthly Rent", FormatCurrency(invoice.Bill?.AmountDue ?? invoice.AmountDue))
+                    ("Monthly Rent", FormatCurrency(monthlyRent))
                 }, labelFont, valueFont));
 
                 AddSectionHeader(document, "Bill Details", sectionFont);
                 var bill = invoice.Bill;
-                var description = ResolveBillDescription(invoice);
-                var remaining = bill != null
-                    ? Math.Max(0m, bill.AmountDue - bill.AmountPaid)
-                    : 0m;
+                var description = await ResolveBillDescriptionAsync(invoice);
+                
+                // Calculate remaining balance using PaymentAllocations (accurate source of truth)
+                decimal remaining = 0m;
+                if (bill != null)
+                {
+                    // Single bill payment - calculate remaining for this specific bill
+                    var totalPaidOnBill = await _context.PaymentAllocations
+                        .Where(pa => pa.BillId == bill.Id)
+                        .SumAsync(pa => pa.AmountApplied);
+                    remaining = Math.Max(0m, bill.AmountDue - totalPaidOnBill);
+                }
+                else
+                {
+                    // Outstanding balance payment - calculate remaining for all bills in this invoice's allocations
+                    var billIdsInThisInvoice = await _context.PaymentAllocations
+                        .Where(pa => pa.InvoiceId == invoice.Id)
+                        .Select(pa => pa.BillId)
+                        .Distinct()
+                        .ToListAsync();
+                    
+                    if (billIdsInThisInvoice.Any())
+                    {
+                        var billsInInvoice = await _context.Bills
+                            .Where(b => billIdsInThisInvoice.Contains(b.Id))
+                            .ToListAsync();
+                        
+                        var paymentAllocationSums = await _context.PaymentAllocations
+                            .Where(pa => billIdsInThisInvoice.Contains(pa.BillId))
+                            .GroupBy(pa => pa.BillId)
+                            .Select(group => new
+                            {
+                                BillId = group.Key,
+                                TotalPaid = group.Sum(pa => pa.AmountApplied)
+                            })
+                            .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
+                        
+                        remaining = billsInInvoice
+                            .Sum(b =>
+                            {
+                                var paidAmount = paymentAllocationSums.TryGetValue(b.Id, out var paid) ? paid : 0m;
+                                return Math.Max(0m, b.AmountDue - paidAmount);
+                            });
+                    }
+                }
 
-                // Calculate overall remaining balance across all bills for this tenant
+                // Calculate overall remaining balance across all bills for this tenant using PaymentAllocations
                 decimal overallRemainingBalance = 0m;
                 if (invoice.TenantUserId > 0)
                 {
@@ -97,20 +139,21 @@ namespace Apartment.Services
                         
                         if (allBillIds.Any())
                         {
-                            var invoiceSums = await _context.Invoices
-                                .Where(i => i.BillId.HasValue && allBillIds.Contains(i.BillId.Value) && i.PaymentDate != null)
-                                .GroupBy(i => i.BillId!.Value)
+                            // Calculate total paid per bill using PaymentAllocations (accurate for all payment types)
+                            var paymentAllocationSums = await _context.PaymentAllocations
+                                .Where(pa => allBillIds.Contains(pa.BillId))
+                                .GroupBy(pa => pa.BillId)
                                 .Select(group => new
                                 {
                                     BillId = group.Key,
-                                    TotalPaid = group.Sum(i => i.AmountDue)
+                                    TotalPaid = group.Sum(pa => pa.AmountApplied)
                                 })
                                 .ToDictionaryAsync(k => k.BillId, v => v.TotalPaid);
 
                             overallRemainingBalance = allBills
                                 .Sum(b =>
                                 {
-                                    var paidAmount = invoiceSums.TryGetValue(b.Id, out var paid) ? paid : 0m;
+                                    var paidAmount = paymentAllocationSums.TryGetValue(b.Id, out var paid) ? paid : 0m;
                                     return Math.Max(0m, b.AmountDue - paidAmount);
                                 });
                         }
@@ -182,17 +225,21 @@ namespace Apartment.Services
             document.Add(header);
         }
 
-        private static PdfPTable CreateSummaryTable(Invoice invoice, Font labelFont, Font valueFont)
+        private async Task<PdfPTable> CreateSummaryTableAsync(Invoice invoice, Font labelFont, Font valueFont)
         {
+            // For payment invoices, use DateFullySettled as invoice date and due date
+            var invoiceDate = invoice.DateFullySettled ?? invoice.IssueDate;
+            var dueDate = invoice.DateFullySettled ?? invoice.DueDate;
+
             var left = new PdfPTable(1) { WidthPercentage = 100 };
             AddKeyValueRow(left, "Invoice #", invoice.Id.ToString(), labelFont, valueFont);
-            AddKeyValueRow(left, "Invoice Date", FormatDate(invoice.IssueDate), labelFont, valueFont);
-            AddKeyValueRow(left, "Due Date", FormatDate(invoice.DueDate), labelFont, valueFont);
+            AddKeyValueRow(left, "Invoice Date", FormatDate(invoiceDate), labelFont, valueFont);
+            AddKeyValueRow(left, "Due Date", FormatDate(dueDate), labelFont, valueFont);
 
             var right = new PdfPTable(1) { WidthPercentage = 100 };
             AddKeyValueRow(right, "Status", invoice.Status.ToString(), labelFont, valueFont);
             AddKeyValueRow(right, "Tenant", invoice.TenantUser?.Username ?? "Not available", labelFont, valueFont);
-            AddKeyValueRow(right, "Bill Reference", ResolveBillReference(invoice), labelFont, valueFont);
+            AddKeyValueRow(right, "Bill Reference", await ResolveBillReferenceAsync(invoice), labelFont, valueFont);
 
             var container = new PdfPTable(2) { WidthPercentage = 100 };
             container.SetWidths(new[] { 1f, 1f });
@@ -261,31 +308,121 @@ namespace Apartment.Services
                 ?? "Not available";
         }
 
-        private static string ResolveBillReference(Invoice invoice)
+        private async Task<string> ResolveBillReferenceAsync(Invoice invoice)
         {
-            if (invoice.Bill == null)
+            // Check PaymentAllocations to determine if this is outstanding balance or single bill payment
+            var allocations = await _context.PaymentAllocations
+                .Include(pa => pa.Bill)
+                    .ThenInclude(b => b.BillingPeriod)
+                .Where(pa => pa.InvoiceId == invoice.Id)
+                .OrderBy(pa => pa.Bill.DueDate)
+                .ToListAsync();
+
+            if (allocations.Count == 0)
             {
+                // No allocations found, fall back to invoice.Bill or title
+                if (invoice.Bill != null)
+                {
+                    var period = invoice.Bill.BillingPeriod;
+                    if (period != null)
+                    {
+                        return $"{period.MonthName} {period.Year}";
+                    }
+                    return $"Bill #{invoice.Bill.Id}";
+                }
                 return invoice.Title ?? "N/A";
             }
-
-            var period = invoice.Bill.BillingPeriod;
-            if (period != null)
+            else if (allocations.Count == 1)
             {
-                return $"Bill #{invoice.Bill.Id} - {period.MonthName} {period.Year}";
+                // Single bill payment - return month name
+                var bill = allocations[0].Bill;
+                if (bill.BillingPeriod != null)
+                {
+                    return $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}";
+                }
+                return $"Bill #{bill.Id}";
             }
-
-            return $"Bill #{invoice.Bill.Id}";
+            else
+            {
+                // Outstanding balance payment - return month range
+                var firstBill = allocations.First().Bill;
+                var lastBill = allocations.Last().Bill;
+                
+                var firstPeriod = firstBill.BillingPeriod;
+                var lastPeriod = lastBill.BillingPeriod;
+                
+                if (firstPeriod != null && lastPeriod != null)
+                {
+                    if (firstPeriod.Year == lastPeriod.Year && firstPeriod.MonthName == lastPeriod.MonthName)
+                    {
+                        return $"Outstanding Balance - {firstPeriod.MonthName} {firstPeriod.Year}";
+                    }
+                    return $"Outstanding Balance between {firstPeriod.MonthName} {firstPeriod.Year} and {lastPeriod.MonthName} {lastPeriod.Year}";
+                }
+                return "Outstanding Balance";
+            }
         }
 
-        private static string ResolveBillDescription(Invoice invoice)
+        private async Task<string> ResolveBillDescriptionAsync(Invoice invoice)
         {
-            var bill = invoice.Bill;
-            if (bill?.BillingPeriod != null)
+            // Check PaymentAllocations to determine description
+            var allocations = await _context.PaymentAllocations
+                .Include(pa => pa.Bill)
+                    .ThenInclude(b => b.BillingPeriod)
+                .Where(pa => pa.InvoiceId == invoice.Id)
+                .OrderBy(pa => pa.Bill.DueDate)
+                .ToListAsync();
+
+            if (allocations.Count == 0)
             {
-                return $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year} Rent";
+                // No allocations, fall back to invoice.Bill or title
+                var bill = invoice.Bill;
+                if (bill?.BillingPeriod != null)
+                {
+                    return $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year} Rent";
+                }
+                return invoice.Title ?? "Rent Payment";
+            }
+            else if (allocations.Count == 1)
+            {
+                // Single bill payment
+                var bill = allocations[0].Bill;
+                if (bill.BillingPeriod != null)
+                {
+                    return $"{bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year} Rent";
+                }
+                return "Rent Payment";
+            }
+            else
+            {
+                // Outstanding balance payment
+                return "Outstanding Balance Payment";
+            }
+        }
+
+        private async Task<decimal> ResolveMonthlyRentAsync(Invoice invoice)
+        {
+            // If invoice has a direct Bill reference, use that bill's AmountDue
+            if (invoice.Bill != null)
+            {
+                return invoice.Bill.AmountDue;
             }
 
-            return invoice.Title ?? "Rent Payment";
+            // For outstanding balance payments, get the monthly rent from the first bill in PaymentAllocations
+            var allocations = await _context.PaymentAllocations
+                .Include(pa => pa.Bill)
+                .Where(pa => pa.InvoiceId == invoice.Id)
+                .OrderBy(pa => pa.Bill.DueDate)
+                .FirstOrDefaultAsync();
+
+            if (allocations != null)
+            {
+                return allocations.Bill.AmountDue;
+            }
+
+            // Fallback: try to get monthly rent from lease if available
+            // This is a last resort if no allocations exist
+            return invoice.AmountDue;
         }
 
         private static string FormatDate(DateTime date) =>

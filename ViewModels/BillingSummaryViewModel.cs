@@ -52,7 +52,7 @@ namespace Apartment.ViewModels
         public decimal AmountPaid { get; set; }
         public decimal Outstanding { get; set; }
         public DateTime DueDate { get; set; }
-        public DateTime? PaymentDate { get; set; }
+        public DateTime? DateFullySettled { get; set; }
         public string Status { get; set; } = string.Empty;
     }
 }

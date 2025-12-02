@@ -140,28 +140,7 @@ namespace Apartment.Pages.Admin
                 var existingPeriod = await dbData.BillingPeriods
                     .FirstOrDefaultAsync(bp => bp.PeriodKey == periodKey);
 
-                if (existingPeriod != null)
-                {
-                    // check if any bills have already been generated for this period
-                    bool biilsAlreadyGenerated = await dbData.Bills
-                        .AnyAsync(b => b.BillingPeriodId == existingPeriod.Id);
 
-                    if (biilsAlreadyGenerated)
-                    {
-                        await transaction.RollbackAsync();
-                        Summary = new GenerationSummary
-                        {
-                            PeriodKey = periodKey,
-                            BillsCreated = 0,
-                            OccupiedUnits = 0,
-                            AlreadyExists = true,
-                            TotalAmountBilled = 0
-                        };
-                        ModelState.AddModelError(string.Empty, $"Bills for {monthName} {Input.Year} have already been generated and exist in the system.");
-                        await LoadOccupiedApartmentsAsync();
-                        return Page();
-                    }
-                }
 
                 // find or create billing period (within transaction)
                 BillingPeriod billingPeriod;
@@ -174,6 +153,7 @@ namespace Apartment.Pages.Admin
                         Year = Input.Year
                     };
                     dbData.BillingPeriods.Add(billingPeriod);
+                    await dbData.SaveChangesAsync();
                 }
                 else
                 {
@@ -223,17 +203,19 @@ namespace Apartment.Pages.Admin
                         continue;
                     }
 
-                    // Create a new Bill entity
+                    // Create a new Bill entity, linking back to the specific lease
                     var newBill = new Bill
                     {
                         ApartmentId = lease.ApartmentId,
                         TenantUserId = lease.UserId,
                         BillingPeriodId = billingPeriod.Id,
+                        LeaseId = lease.Id,
                         AmountDue = lease.MonthlyRent, // Use Lease.MonthlyRent
                         AmountPaid = 0.00m, // Will be calculated from invoices
                         DueDate = dueDate,
-                            GeneratedDate = DateTime.UtcNow,
-                            PaymentDate = null
+                        GeneratedDate = DateTime.UtcNow,
+                        DateFullySettled = null,
+                        Status = BillStatus.Unpaid
                     };
                     billsCreate.Add(newBill);
                 }

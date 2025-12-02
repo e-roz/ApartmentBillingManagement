@@ -199,6 +199,24 @@ namespace Apartment.Pages.Tenant
                 var amountLeftToAllocate = paymentAmount;
                 var now = DateTime.UtcNow;
 
+                // Create a single Invoice record for the entire payment
+                var mainPaymentInvoice = new Invoice
+                {
+                    TenantUserId = userId,
+                    ApartmentId = paymentPlan.FirstOrDefault()?.ApartmentId ?? 0, // Use first bill's ApartmentId or default
+                    BillId = paymentPlan.Count == 1 ? paymentPlan.First().Id : (int?)null, // Conditionally set BillId
+                    Title = $"Payment received - {paymentAmount.ToString("C", PhpCulture)}",
+                    AmountDue = paymentAmount,
+                    IssueDate = now,
+                    DueDate = now.AddDays(7), // A reasonable due date for the payment invoice itself
+                    DateFullySettled = now,
+                    PaymentMethod = paymentMethod,
+                    Status = InvoiceStatus.Paid,
+                    ReferenceNumber = $"PAY-{now:yyyyMMddHHmmss}-{userId}" // Generate a unique reference
+                };
+                _context.Invoices.Add(mainPaymentInvoice);
+
+                var allocations = new List<PaymentAllocation>();
                 var billIds = paymentPlan.Select(b => b.Id).ToList();
 
                 // Lock the specific bills we are about to work on to prevent concurrent modifications
@@ -221,25 +239,22 @@ namespace Apartment.Pages.Tenant
                     bill.AmountPaid += amountToApply;
                     if (bill.AmountPaid >= bill.AmountDue)
                     {
-                        bill.PaymentDate ??= now;
+                        bill.DateFullySettled ??= now;
+                        bill.Status = BillStatus.Paid;
+                    }
+                    else if (bill.AmountPaid > 0)
+                    {
+                        bill.Status = BillStatus.Partial;
                     }
                     
-                    // 2. Create a corresponding Invoice record for this part of the payment
-                    var invoice = new Invoice
+                    // 2. Create a corresponding PaymentAllocation record
+                    var allocation = new PaymentAllocation
                     {
-                        TenantUserId = bill.TenantUserId,
-                        ApartmentId = bill.ApartmentId,
-                        BillId = bill.Id,
-                        Title = $"Payment for {bill.BillingPeriod.MonthName} {bill.BillingPeriod.Year}",
-                        AmountDue = amountToApply, // This invoice represents the amount just paid
-                        IssueDate = now,
-                        DueDate = bill.DueDate,
-                        PaymentDate = now,
-                        PaymentMethod = paymentMethod,
-                        Status = InvoiceStatus.Paid, // This record represents a completed payment
-                        ReferenceNumber = $"PAY-{now:yyyyMMddHHmmss}-{bill.Id}"
+                        Invoice = mainPaymentInvoice, // Link to the main payment invoice
+                        Bill = bill, // Link to the current bill
+                        AmountApplied = amountToApply
                     };
-                    _context.Invoices.Add(invoice);
+                    allocations.Add(allocation);
 
                     amountLeftToAllocate -= amountToApply;
                 }
@@ -251,10 +266,13 @@ namespace Apartment.Pages.Tenant
                     return (false, "Could not fully allocate payment. This may be due to a concurrent update. Please try again.");
                 }
 
+                _context.PaymentAllocations.AddRange(allocations);
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
                 
                 return (true, null);
+
             }
             catch (DbUpdateException)
             {

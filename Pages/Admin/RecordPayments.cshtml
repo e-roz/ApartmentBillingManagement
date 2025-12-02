@@ -127,8 +127,8 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-calendar-check text-primary me-2" style="font-size: 1.5rem;"></i>
                                             <div>
-                                                <h6 class="text-muted mb-0 small">Last Payment Date</h6>
-                                                <p class="mb-0 fw-semibold">@(Model.SelectedTenantSummary.LastPaymentDate?.ToString("MMM dd, yyyy") ?? "No payments yet")</p>
+                                                <h6 class="text-muted mb-0 small">Last Settled Date</h6>
+                                                <p class="mb-0 fw-semibold">@(Model.SelectedTenantSummary.LastDateFullySettled?.ToString("MMM dd, yyyy") ?? "No payments yet")</p>
                                             </div>
                                         </div>
                                     </div>
@@ -178,7 +178,7 @@
                                             <th class="fw-semibold">Paid Amount</th>
                                             <th class="fw-semibold">Remaining Balance</th>
                                             <th class="fw-semibold">Status</th>
-                                            <th class="fw-semibold">Payment Date</th>
+                                            <th class="fw-semibold">Date Settled</th>
                                             <th class="fw-semibold text-center">Actions</th>
                                         </tr>
                                     </thead>
@@ -202,26 +202,9 @@
                                                 <td>
                                                     <span class="badge @statusClass fs-6">@breakdown.Status</span>
                                                 </td>
-                                                <td>@(breakdown.PaymentDate?.ToString("MMM dd, yyyy") ?? "—")</td>
+                                                <td>@(breakdown.DateFullySettled?.ToString("MMM dd, yyyy") ?? "—")</td>
                                                 <td class="text-center">
-                                                    @if (breakdown.InvoiceId.HasValue && !string.IsNullOrEmpty(breakdown.ReceiptImagePath))
-                                                    {
-                                                        <button type="button" class="btn btn-outline-info btn-sm" 
-                                                                data-bs-toggle="modal" 
-                                                                data-bs-target="#receiptModal"
-                                                                data-invoice-id="@breakdown.InvoiceId"
-                                                                data-amount="@breakdown.PaidAmount.ToString("C", pesoCulture)"
-                                                                data-date="@breakdown.PaymentDate?.ToString("MMM dd, yyyy")"
-                                                                data-method="@breakdown.PaymentMethod"
-                                                                data-reference="@breakdown.ReferenceNumber"
-                                                                data-receipt-path="@breakdown.ReceiptImagePath">
-                                                            <i class="bi bi-receipt me-1"></i>View Receipt
-                                                        </button>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-muted small">No receipt</span>
-                                                    }
+                                                    <span class="text-muted small">No actions</span>
                                                 </td>
                                             </tr>
                                         }
@@ -261,7 +244,7 @@
                                             <th class="fw-semibold">Total Paid</th>
                                             <th class="fw-semibold">Remaining Balance</th>
                                             <th class="fw-semibold">Status</th>
-                                            <th class="fw-semibold">Last Payment</th>
+                                            <th class="fw-semibold">Last Settled</th>
                                             <th class="fw-semibold text-center">Actions</th>
                                         </tr>
                                     </thead>
@@ -285,7 +268,7 @@
                                                 <td>
                                                     <span class="badge @statusClass fs-6">@summary.PaymentStatus</span>
                                                 </td>
-                                                <td>@(summary.LastPaymentDate?.ToString("MMM dd, yyyy") ?? "—")</td>
+                                                <td>@(summary.LastDateFullySettled?.ToString("MMM dd, yyyy") ?? "—")</td>
                                                 <td class="text-center">
                                                     <a asp-page="/Admin/RecordPayments" asp-route-SelectedTenantUserId="@summary.TenantId" class="btn btn-outline-primary btn-sm">
                                                         <i class="bi bi-eye me-1"></i>View Details
@@ -361,9 +344,9 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="AddPaymentInput.PaymentDate" class="form-label fw-semibold">Payment Date</label>
-                        <input type="date" asp-for="AddPaymentInput.PaymentDate" class="form-control" required />
-                        <span asp-validation-for="AddPaymentInput.PaymentDate" class="text-danger"></span>
+                        <label asp-for="AddPaymentInput.DateFullySettled" class="form-label fw-semibold">Payment Date</label>
+                        <input type="date" asp-for="AddPaymentInput.DateFullySettled" class="form-control" required />
+                        <span asp-validation-for="AddPaymentInput.DateFullySettled" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
@@ -396,36 +379,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-</div>
-
-<!-- Receipt Viewer Modal -->
-<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="receiptModalLabel">
-                    <i class="bi bi-receipt me-2"></i>Payment Receipt
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <p class="mb-1"><strong>Amount:</strong> <span id="receiptAmount"></span></p>
-                        <p class="mb-1"><strong>Payment Date:</strong> <span id="receiptDate"></span></p>
-                        <p class="mb-1"><strong>Payment Method:</strong> <span id="receiptMethod"></span></p>
-                        <p class="mb-0"><strong>Reference Number:</strong> <span id="receiptReference"></span></p>
-                    </div>
-                </div>
-                <div class="text-center">
-                    <img id="receiptImage" src="" alt="Receipt" class="img-fluid rounded shadow" style="max-height: 500px;" />
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
         </div>
     </div>
 </div>
@@ -463,32 +416,6 @@
                 }
             }
         });
-
-        // Receipt modal handler
-        const receiptModal = document.getElementById('receiptModal');
-        if (receiptModal) {
-            receiptModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const invoiceId = button.getAttribute('data-invoice-id');
-                const amount = button.getAttribute('data-amount');
-                const date = button.getAttribute('data-date');
-                const method = button.getAttribute('data-method');
-                const reference = button.getAttribute('data-reference');
-                const receiptPath = button.getAttribute('data-receipt-path');
-
-                document.getElementById('receiptAmount').textContent = amount || '—';
-                document.getElementById('receiptDate').textContent = date || '—';
-                document.getElementById('receiptMethod').textContent = method || '—';
-                document.getElementById('receiptReference').textContent = reference || '—';
-                
-                if (receiptPath) {
-                    document.getElementById('receiptImage').src = receiptPath;
-                } else {
-                    document.getElementById('receiptImage').src = '';
-                    document.getElementById('receiptImage').alt = 'No receipt image available';
-                }
-            });
-        }
 
         // Form validation with SweetAlert
         document.getElementById('addPaymentForm')?.addEventListener('submit', function(e) {

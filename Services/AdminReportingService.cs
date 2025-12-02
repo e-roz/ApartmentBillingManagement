@@ -3,6 +3,7 @@ using Apartment.Options;
 using Apartment.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Apartment.Enums;
 
 namespace Apartment.Services
 {
@@ -47,7 +48,8 @@ namespace Apartment.Services
                     b.AmountDue,
                     b.AmountPaid,
                     b.DueDate,
-                    b.PaymentDate,
+                    b.DateFullySettled,
+                    b.Status,
                     PeriodKey = b.BillingPeriod.PeriodKey,
                     b.BillingPeriod.MonthName,
                     b.BillingPeriod.Year,
@@ -173,29 +175,14 @@ namespace Apartment.Services
                         AmountPaid = b.AmountPaid,
                         Outstanding = b.AmountDue - b.AmountPaid,
                         DueDate = b.DueDate,
-                        PaymentDate = b.PaymentDate,
-                        Status = DetermineStatus(b.AmountDue, b.AmountPaid, b.DueDate, b.PaymentDate)
+                        DateFullySettled = b.DateFullySettled,
+                        Status = b.Status.ToString()
                     })
                     .ToList();
             }
 
             await EmitAlertsAsync(summary, cancellationToken);
             return summary;
-        }
-
-        private static string DetermineStatus(decimal amountDue, decimal amountPaid, DateTime dueDate, DateTime? paymentDate)
-        {
-            if (amountPaid >= amountDue)
-            {
-                return "Paid";
-            }
-
-            if (amountPaid > 0)
-            {
-                return dueDate < DateTime.UtcNow.Date ? "Overdue (Partial)" : "Partial";
-            }
-
-            return dueDate < DateTime.UtcNow.Date ? "Overdue" : "Unpaid";
         }
 
         private async Task EmitAlertsAsync(BillingSummaryViewModel summary, CancellationToken cancellationToken)

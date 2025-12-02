@@ -22,7 +22,7 @@
                             <thead>
                                 <tr>
                                     <th>Transaction ID</th>
-                                    <th>Payment Date</th>
+                                    <th>Date Fully Settled</th>
                                     <th>Amount Paid</th>
                                     <th>Payment Method</th>
                                     <th>Invoice Reference</th>
@@ -33,7 +33,7 @@
                                 {
                                     <tr>
                                         <td>#@payment.TransactionId</td>
-                                        <td>@payment.PaymentDate.ToString("MM/dd/yyyy")</td>
+                                        <td>@payment.DateFullySettled.ToString("MM/dd/yyyy")</td>
                                         <td class="text-success"><strong>@payment.AmountPaid.ToString("C", pesoCulture)</strong></td>
                                         <td>@payment.PaymentMethod</td>
                                         <td>@payment.InvoiceReference</td>

@@ -70,7 +70,7 @@ namespace Apartment.Pages
 
                     var billIds = bills.Select(b => b.Id).ToList();
                     var invoiceSums = await _context.Invoices
-                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.PaymentDate != null)
+                        .Where(i => i.BillId.HasValue && billIds.Contains(i.BillId.Value) && i.DateFullySettled != null)
                         .GroupBy(i => i.BillId!.Value)
                         .Select(group => new
                         {

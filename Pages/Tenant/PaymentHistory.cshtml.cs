@@ -23,7 +23,7 @@ namespace Apartment.Pages.Tenant
         public class PaymentViewModel
         {
             public int TransactionId { get; set; }
-            public DateTime PaymentDate { get; set; }
+            public DateTime DateFullySettled { get; set; }
             public decimal AmountPaid { get; set; }
             public string PaymentMethod { get; set; } = "Online Payment";
             public string InvoiceReference { get; set; } = string.Empty;
@@ -44,14 +44,14 @@ namespace Apartment.Pages.Tenant
                     UserInfo = user;
 
                     var invoices = await _context.Invoices
-                        .Where(i => i.TenantUserId == userId && i.PaymentDate != null)
-                        .OrderByDescending(i => i.PaymentDate)
+                        .Where(i => i.TenantUserId == userId && i.DateFullySettled != null)
+                        .OrderByDescending(i => i.DateFullySettled)
                         .ToListAsync();
 
                     Payments = invoices.Select(i => new PaymentViewModel
                     {
                         TransactionId = i.Id,
-                        PaymentDate = i.PaymentDate ?? i.IssueDate,
+                        DateFullySettled = i.DateFullySettled ?? i.IssueDate,
                         AmountPaid = i.AmountDue,
                         PaymentMethod = string.IsNullOrWhiteSpace(i.PaymentMethod)
                             ? "Online Payment"

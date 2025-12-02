@@ -105,7 +105,7 @@ namespace Apartment.Services
                 "Amount Paid",
                 "Outstanding",
                 "Due Date",
-                "Payment Date",
+                "Date Fully Settled",
                 "Status"
             };
 
@@ -127,7 +127,7 @@ namespace Apartment.Services
                     detailSheet.Cell(detailRow, 5).Value = detail.AmountPaid;
                     detailSheet.Cell(detailRow, 6).Value = detail.Outstanding;
                     detailSheet.Cell(detailRow, 7).Value = detail.DueDate;
-                    detailSheet.Cell(detailRow, 8).Value = detail.PaymentDate;
+                    detailSheet.Cell(detailRow, 8).Value = detail.DateFullySettled;
                     detailSheet.Cell(detailRow, 9).Value = detail.Status;
 
                     detailSheet.Cell(detailRow, 4).Style.NumberFormat.Format = "#,##0.00";

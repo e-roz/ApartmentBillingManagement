@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Apartment.Enums;
+using Apartment.Model;
 
 namespace Apartment.Model
 {
@@ -24,6 +26,14 @@ namespace Apartment.Model
         //  Link this bill to the user/tenant responsible for payment
         [Required]
         public int TenantUserId { get; set; }
+
+        // Foreign Key to link the bill to a specific lease
+        [Required]
+        public int LeaseId { get; set; }
+
+        [ForeignKey("LeaseId")]
+        public Lease Lease { get; set; } = null!;
+
 
         // 
         [ForeignKey("ApartmentId")]
@@ -53,10 +63,12 @@ namespace Apartment.Model
 
         public DateTime DueDate { get; set; }
 
-        public DateTime? PaymentDate { get; set; }
+        public DateTime? DateFullySettled { get; set; }
 
         public DateTime GeneratedDate { get; set; }
 
+        public Enums.BillStatus Status { get; set; } = Enums.BillStatus.Unpaid;
 
+        public ICollection<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
     }
 }
