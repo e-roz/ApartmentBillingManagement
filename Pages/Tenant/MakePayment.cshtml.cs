@@ -15,6 +15,7 @@ namespace Apartment.Pages.Tenant
     {
         private readonly ApplicationDbContext _context;
         private static readonly CultureInfo PhpCulture = CultureInfo.CreateSpecificCulture("en-PH");
+        private const decimal AmountTolerance = 0.005m;
 
         public MakePaymentModel(ApplicationDbContext context)
         {
@@ -100,13 +101,33 @@ namespace Apartment.Pages.Tenant
             }
 
             var totalOutstanding = paymentPlan.Sum(b => b.AmountDue - b.AmountPaid);
-            if (Input.Amount > totalOutstanding)
+            if (totalOutstanding <= 0)
             {
-                var formattedBalance = totalOutstanding.ToString("C", PhpCulture);
-                var message = Input.BillId.HasValue
-                    ? $"Payment exceeds the remaining balance of {formattedBalance} for this bill."
-                    : $"Payment exceeds your total outstanding balance of {formattedBalance}.";
-                ModelState.AddModelError(nameof(Input.Amount), message);
+                ModelState.AddModelError(nameof(Input.Amount), "No outstanding balance found for the selected bills.");
+                await LoadDataAsync(user.Id);
+                return Page();
+            }
+
+            decimal requiredAmount;
+            string validationMessage;
+
+            if (Input.BillId.HasValue)
+            {
+                var targetBill = paymentPlan.First();
+                requiredAmount = targetBill.AmountDue - targetBill.AmountPaid;
+                var formattedAmount = requiredAmount.ToString("C", PhpCulture);
+                validationMessage = $"Please enter exactly {formattedAmount} for this month.";
+            }
+            else
+            {
+                requiredAmount = totalOutstanding;
+                var formattedBalance = requiredAmount.ToString("C", PhpCulture);
+                validationMessage = $"Please pay your total outstanding balance of {formattedBalance}.";
+            }
+
+            if (!MatchesExactAmount(Input.Amount, requiredAmount))
+            {
+                ModelState.AddModelError(nameof(Input.Amount), validationMessage);
                 await LoadDataAsync(user.Id);
                 return Page();
             }
@@ -242,9 +263,9 @@ namespace Apartment.Pages.Tenant
                         bill.DateFullySettled ??= now;
                         bill.Status = BillStatus.Paid;
                     }
-                    else if (bill.AmountPaid > 0)
+                    else
                     {
-                        bill.Status = BillStatus.Partial;
+                        bill.Status = BillStatus.Unpaid;
                     }
                     
                     // 2. Create a corresponding PaymentAllocation record
@@ -287,6 +308,9 @@ namespace Apartment.Pages.Tenant
                 return (false, "An unexpected error occurred. Please try again.");
             }
         }
+
+        private static bool MatchesExactAmount(decimal amount, decimal expected) =>
+            Math.Abs(amount - expected) <= AmountTolerance;
     }
 }
 

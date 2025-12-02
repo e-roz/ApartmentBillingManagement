@@ -19,12 +19,6 @@
                         <h1 class="display-5 fw-bold text-primary mb-0">
                             <i class="bi bi-cash-stack me-3"></i>Payment Processing
                         </h1>
-                        @if (Model.SelectedTenantUserId.HasValue)
-                        {
-                            <button type="button" class="btn btn-success btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-                                <i class="bi bi-plus-circle me-2"></i>Add Payment
-                            </button>
-                        }
                     </div>
                 </div>
             </div>
@@ -111,10 +105,8 @@
                                                 var statusClass = Model.SelectedTenantSummary.PaymentStatus switch
                                                 {
                                                     "Paid" => "bg-success",
-                                                    "Partial" => "bg-warning",
                                                     "Unpaid" => "bg-secondary",
-                                                    "Overdue" => "bg-danger",
-                                                    _ => "bg-info"
+                                                    _ => "bg-primary"
                                                 };
                                             }
                                             <span class="badge @statusClass fs-6 px-3 py-2">@Model.SelectedTenantSummary.PaymentStatus</span>
@@ -179,7 +171,6 @@
                                             <th class="fw-semibold">Remaining Balance</th>
                                             <th class="fw-semibold">Status</th>
                                             <th class="fw-semibold">Date Settled</th>
-                                            <th class="fw-semibold text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -188,10 +179,7 @@
                                             var statusClass = breakdown.Status switch
                                             {
                                                 "Paid" => "bg-success",
-                                                "Partial" => "bg-warning",
                                                 "Unpaid" => "bg-secondary",
-                                                "Overdue" => "bg-danger",
-                                                "Advance" => "bg-info",
                                                 _ => "bg-secondary"
                                             };
                                             <tr>
@@ -203,9 +191,6 @@
                                                     <span class="badge @statusClass fs-6">@breakdown.Status</span>
                                                 </td>
                                                 <td>@(breakdown.DateFullySettled?.ToString("MMM dd, yyyy") ?? "—")</td>
-                                                <td class="text-center">
-                                                    <span class="text-muted small">No actions</span>
-                                                </td>
                                             </tr>
                                         }
                                     </tbody>
@@ -254,9 +239,7 @@
                                             var statusClass = summary.PaymentStatus switch
                                             {
                                                 "Paid" => "bg-success",
-                                                "Partial" => "bg-warning",
                                                 "Unpaid" => "bg-secondary",
-                                                "Overdue" => "bg-danger",
                                                 _ => "bg-info"
                                             };
                                             <tr>
@@ -293,167 +276,3 @@
         </div>
     </div>
 </div>
-
-<!-- Add Payment Modal -->
-<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="addPaymentModalLabel">
-                    <i class="bi bi-plus-circle me-2"></i>Add Manual Payment
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" asp-page-handler="AddPayment" id="addPaymentForm" data-loading="true">
-                <div class="modal-body p-4">
-                    <input type="hidden" asp-for="AddPaymentInput.TenantUserId" value="@Model.SelectedTenantUserId" />
-                    
-                    <div class="mb-3">
-                        <label asp-for="AddPaymentInput.BillId" class="form-label fw-semibold">Select Bill (Month)</label>
-                        <select asp-for="AddPaymentInput.BillId" class="form-select" id="billSelect" required>
-                            <option value="">-- Select Month --</option>
-                            <option value="0" id="outstandingBalanceOption">Pay Outstanding Balance (Oldest Unpaid Bill)</option>
-                            @if (Model.MonthlyBreakdowns.Any())
-                            {
-                                @foreach (var breakdown in Model.MonthlyBreakdowns)
-                                {
-                                    @if (breakdown.RemainingBalance > 0)
-                                    {
-                                        <option value="@breakdown.BillId" data-remaining="@breakdown.RemainingBalance">
-                                            @breakdown.Month @breakdown.Year - Remaining: @breakdown.RemainingBalance.ToString("C", pesoCulture)
-                                        </option>
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                <option value="" disabled>No bills available</option>
-                            }
-                        </select>
-                        <span asp-validation-for="AddPaymentInput.BillId" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="AddPaymentInput.AmountPaid" class="form-label fw-semibold">Amount Paid</label>
-                        <div class="input-group">
-                            <span class="input-group-text">₱</span>
-                            <input type="number" asp-for="AddPaymentInput.AmountPaid" class="form-control" step="0.01" min="0.01" required />
-                        </div>
-                        <span asp-validation-for="AddPaymentInput.AmountPaid" class="text-danger"></span>
-                        <div class="form-text">Maximum: <span id="maxAmount">₱0.00</span></div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="AddPaymentInput.DateFullySettled" class="form-label fw-semibold">Payment Date</label>
-                        <input type="date" asp-for="AddPaymentInput.DateFullySettled" class="form-control" required />
-                        <span asp-validation-for="AddPaymentInput.DateFullySettled" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="AddPaymentInput.PaymentMethod" class="form-label fw-semibold">Payment Method</label>
-                        <select asp-for="AddPaymentInput.PaymentMethod" class="form-select" required>
-                            <option value="Cash">Cash</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="Check">Check</option>
-                            <option value="Online Payment">Online Payment</option>
-                            <option value="Credit Card">Credit Card</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <span asp-validation-for="AddPaymentInput.PaymentMethod" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="AddPaymentInput.ReferenceNumber" class="form-label fw-semibold">Reference Number (Optional)</label>
-                        <input type="text" asp-for="AddPaymentInput.ReferenceNumber" class="form-control" placeholder="Transaction ID, Check Number, etc." />
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="AddPaymentInput.Notes" class="form-label fw-semibold">Notes (Optional)</label>
-                        <textarea asp-for="AddPaymentInput.Notes" class="form-control" rows="3" placeholder="Additional notes about this payment..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle me-1"></i>Record Payment
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <script>
-        // Success/Error messages are now handled by page-enhancements.js (Toastr)
-
-        // Update max amount when bill is selected
-        document.getElementById('billSelect')?.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const billId = selectedOption.value;
-            
-            if (billId === '0') {
-                // Outstanding balance option selected - use remaining balance from summary
-                const outstandingBalance = parseFloat('@(Model.SelectedTenantSummary?.RemainingBalance ?? 0)');
-                document.getElementById('maxAmount').textContent = '₱' + outstandingBalance.toFixed(2);
-                
-                const amountInput = document.getElementById('AddPaymentInput_AmountPaid');
-                if (amountInput) {
-                    amountInput.max = outstandingBalance;
-                    amountInput.value = outstandingBalance > 0 ? outstandingBalance.toFixed(2) : '';
-                }
-            } else {
-                const maxAmount = selectedOption.getAttribute('data-remaining') || '0';
-                document.getElementById('maxAmount').textContent = '₱' + parseFloat(maxAmount).toFixed(2);
-                
-                const amountInput = document.getElementById('AddPaymentInput_AmountPaid');
-                if (amountInput) {
-                    amountInput.max = maxAmount;
-                    amountInput.value = '';
-                }
-            }
-        });
-
-        // Form validation with SweetAlert
-        document.getElementById('addPaymentForm')?.addEventListener('submit', function(e) {
-            const amount = parseFloat(document.getElementById('AddPaymentInput_AmountPaid').value);
-            const maxAmount = parseFloat(document.getElementById('maxAmount').textContent.replace('₱', '').replace(',', ''));
-
-            if (amount <= 0) {
-                e.preventDefault();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Invalid Amount',
-                    text: 'Payment amount must be greater than zero.'
-                });
-                return false;
-            }
-
-            if (amount > maxAmount) {
-                e.preventDefault();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Amount Exceeds Balance',
-                    text: `Payment amount cannot exceed the remaining balance of ${maxAmount.toFixed(2)}.`
-                });
-                return false;
-            }
-
-            const billId = document.getElementById('billSelect').value;
-            if (billId === '' || billId === null || billId === undefined) {
-                e.preventDefault();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Missing Required Fields',
-                    text: 'Please select a bill (month) or outstanding balance option for this payment.'
-                });
-                return false;
-            }
-            
-            // billId can be '0' for outstanding balance, which is valid
-        });
-    </script>
-}

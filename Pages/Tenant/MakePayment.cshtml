@@ -92,7 +92,7 @@
                             </div>
                             <div class="field-block">
                                 <label asp-for="Input.Amount">Payment Amount</label>
-                                <div class="field-hint">Enter an amount greater than ₱0.00</div>
+                                <div class="field-hint">Enter the exact amount required for the selection above.</div>
                                 <div class="amount-input">
                                     <span>₱</span>
                                     <input asp-for="Input.Amount" type="number" min="0.01" step="0.01" placeholder="0.00" required />
@@ -708,9 +708,10 @@
 
         const billSelect = document.getElementById('billSelect');
         const amountInput = document.getElementById('Input_Amount');
+        const amountTolerance = 0.005;
         
         // Total outstanding balance from server
-        const totalOutstandingBalance = @Model.OutstandingBalance;
+        const totalOutstandingBalance = parseFloat('@Model.OutstandingBalance.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)');
         
         // Helper function to format as Philippine Peso
         function formatPeso(amount) {
@@ -720,16 +721,12 @@
             }).format(amount);
         }
         
-        // Helper function to get the maximum payable amount
-        function getMaxPayableAmount() {
+        function getRequiredAmount() {
             const selectedOption = billSelect.options[billSelect.selectedIndex];
             if (selectedOption && selectedOption.value) {
-                // A specific bill is selected - max is that bill's remaining balance
                 return parseFloat(selectedOption.dataset.remaining) || 0;
-            } else {
-                // "Pay Total Outstanding Balance" is selected - max is total outstanding
-                return totalOutstandingBalance;
             }
+            return totalOutstandingBalance;
         }
         
         // Helper function to get a friendly description of what's selected
@@ -756,19 +753,17 @@
             });
         });
         
-        // --- Auto-fill amount when a bill is selected ---
-        billSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption && selectedOption.value) {
-                const remaining = selectedOption.dataset.remaining;
-                if (remaining) {
-                    amountInput.value = parseFloat(remaining).toFixed(2);
-                }
-            } else {
-                // If "Pay Total" is selected, clear the amount
-                amountInput.value = '';
+        function syncAmountToSelection() {
+            if (!amountInput) {
+                return;
             }
-        });
+            const requiredAmount = getRequiredAmount();
+            amountInput.value = requiredAmount > 0 ? requiredAmount.toFixed(2) : '';
+        }
+
+        // --- Auto-fill amount when a bill is selected ---
+        billSelect.addEventListener('change', syncAmountToSelection);
+        syncAmountToSelection();
 
 
         // --- Form Submission Logic ---
@@ -799,15 +794,25 @@
                 return false;
             }
             
-            // Check if amount exceeds the maximum allowed
-            const maxAmount = getMaxPayableAmount();
-            if (amount > maxAmount) {
+            const requiredAmount = getRequiredAmount();
+            if (requiredAmount <= 0) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No Amount Available',
+                    text: 'Please select a bill or outstanding balance to pay.',
+                    confirmButtonColor: '#9fbf9f'
+                });
+                return false;
+            }
+
+            if (Math.abs(amount - requiredAmount) > amountTolerance) {
                 e.preventDefault();
                 const description = getSelectionDescription();
                 Swal.fire({
                     icon: 'error',
-                    title: 'Amount Exceeds Balance',
-                    html: `You cannot pay more than <strong>${formatPeso(maxAmount)}</strong>, which is the remaining balance for ${description}.<br><br>Please enter an amount equal to or less than ${formatPeso(maxAmount)}.`,
+                    title: 'Exact Amount Required',
+                    html: `Please enter <strong>${formatPeso(requiredAmount)}</strong>, which is the exact amount for ${description}.`,
                     confirmButtonColor: '#9fbf9f',
                     confirmButtonText: 'Got it'
                 });

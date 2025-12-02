@@ -2,8 +2,7 @@ namespace Apartment.Enums
 {
     public enum BillStatus
     {
-        Unpaid,
-        Partial,
-        Paid
+        Unpaid = 0,
+        Paid = 2
     }
 }

@@ -6,190 +6,306 @@
     var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
-<div class="d-flex">
+<div class="matcha-dashboard d-flex">
     @await Html.PartialAsync("_AdminSidebar")
 
-    <!-- Main Content -->
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">System Overview</h1>
-        <p class="text-muted mb-4">Welcome back, <strong>@Model.Username</strong>. This is your command center.</p>
+    <div class="matcha-main">
+        <!-- Page Header -->
+        <header class="matcha-header">
+            <div>
+                <h1 class="matcha-h1">System Overview</h1>
+                <p class="matcha-subtitle">
+                    Welcome back,
+                    <span class="matcha-tenant-email">
+                        @Model.Username
+                    </span>. This is your admin command center.
+                </p>
+            </div>
+        </header>
 
-        <!-- Key Performance Indicators (KPIs) -->
-        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-4 mb-5">
-            <div class="col">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted text-uppercase small mb-2">Active Tenants</h6>
-                                <h2 class="mb-0">@Model.ActiveTenants</h2>
-                                <small class="text-muted">Currently active leases</small>
-                            </div>
-                            <div class="text-info" style="font-size: 2.5rem;">
-                                <i class="bi bi-people-fill"></i>
+        <!-- KPI Row -->
+        <section class="matcha-section mb-5">
+            <div class="row g-4">
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="matcha-body-s text-muted text-uppercase mb-1">Active Tenants</div>
+                                    <div class="matcha-amount">@Model.ActiveTenants</div>
+                                    <div class="matcha-body-s text-muted">Currently active leases</div>
+                                </div>
+                                <div class="matcha-card-icon matcha-card-icon-unit">
+                                    <i class="bi bi-people"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </article>
                 </div>
-            </div>
 
-            <div class="col">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted text-uppercase small mb-2">Occupied Units</h6>
-                                <h2 class="mb-0">@Model.OccupiedUnits</h2>
-                                <small class="text-muted">Units with active tenants</small>
-                            </div>
-                            <div class="text-success" style="font-size: 2.5rem;">
-                                <i class="bi bi-building"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted text-uppercase small mb-2">Open Service Tickets</h6>
-                                <h2 class="mb-0">@Model.OpenServiceTickets</h2>
-                                <small class="text-muted">Requires attention</small>
-                            </div>
-                            <div class="text-warning" style="font-size: 2.5rem;">
-                                <i class="bi bi-ticket-perforated"></i>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="matcha-body-s text-muted text-uppercase mb-1">Occupied Units</div>
+                                    <div class="matcha-amount">@Model.OccupiedUnits</div>
+                                    <div class="matcha-body-s text-muted">Units with tenants</div>
+                                </div>
+                                <div class="matcha-card-icon matcha-card-icon-unit">
+                                    <i class="bi bi-building"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </article>
                 </div>
-            </div>
 
-            <div class="col">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted text-uppercase small mb-2">Pending Bills</h6>
-                                <h2 class="mb-0">@Model.PendingBills</h2>
-                                <small class="text-muted">Requires attention</small>
-                            </div>
-                            <div class="text-warning" style="font-size: 2.5rem;">
-                                <i class="bi bi-receipt"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted text-uppercase small mb-2">Total Revenue</h6>
-                                <h2 class="mb-0">@Model.TotalRevenue.ToString("C", pesoCulture)</h2>
-                                <small class="text-muted">Total payments received</small>
-                            </div>
-                            <div class="text-success" style="font-size: 2.5rem;">
-                                <i class="bi bi-cash-stack"></i>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="matcha-body-s text-muted text-uppercase mb-1">Open Tickets</div>
+                                    <div class="matcha-amount">@Model.OpenServiceTickets</div>
+                                    <div class="matcha-body-s text-muted">Requests in progress</div>
+                                </div>
+                                <div class="matcha-card-icon matcha-card-icon-request">
+                                    <i class="bi bi-tools"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </article>
                 </div>
-            </div>
-        </div>
 
-        <!-- Core Management Actions -->
-        <h2 class="h4 mb-4">Core Management Actions</h2>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Tenant Management</h5>
-                        <p class="card-text text-muted">
-                            Add, view, and update all tenant contact and status records.
-                        </p>
-                        <a asp-page="/Admin/ManageTenants" class="btn btn-primary">
-                            <i class="bi bi-person-lines-fill me-2"></i>Manage Tenants
-                        </a>
-                    </div>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <article class="matcha-card h-100">
+                        <div class="matcha-card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="matcha-body-s text-muted text-uppercase mb-1">Pending Bills</div>
+                                    <div class="matcha-amount">@Model.PendingBills</div>
+                                    <div class="matcha-body-s text-muted">Needs follow-up</div>
+                                </div>
+                                <div class="matcha-card-icon matcha-card-icon-payment">
+                                    <i class="bi bi-receipt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
                 </div>
-            </div>
 
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Apartment Unit Management</h5>
-                        <p class="card-text text-muted">
-                            Set unit details, monthly rent, and assign tenants to units.
-                        </p>
-                        <a asp-page="/Admin/ManageApartments" class="btn btn-primary">
-                            <i class="bi bi-house-door-fill me-2"></i>Manage Units
-                        </a>
-                    </div>
+                <div class="col-lg-4 col-md-8 col-sm-12">
+                    <article class="matcha-card matcha-card-accent h-100">
+                        <div class="matcha-card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="matcha-body-s text-muted text-uppercase mb-1">Total Revenue</div>
+                                    <div class="matcha-amount">
+                                        @Model.TotalRevenue.ToString("C", pesoCulture)
+                                    </div>
+                                    <div class="matcha-body-s text-muted">Total payments received</div>
+                                </div>
+                                <div class="matcha-card-icon matcha-card-icon-payment">
+                                    <i class="bi bi-cash-stack"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </div>
+        </section>
 
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Billing & Generation</h5>
-                        <p class="card-text text-muted">
-                            Start new billing periods and generate monthly invoices for all occupied units.
-                        </p>
-                        <a asp-page="/Admin/GenerateBills" class="btn btn-primary">
-                            <i class="bi bi-receipt me-2"></i>Generate Bills
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <!-- Portfolio Calendar + Payment Audit -->
+        <section class="matcha-section mb-5">
+            <div class="row g-4">
+                <!-- Admin Rent & Events Calendar -->
+                <div class="col-lg-8">
+                    <article class="matcha-card h-100">
+                        <header class="matcha-card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="matcha-card-title">Portfolio Rent Calendar</h2>
+                                <p class="matcha-body-s text-muted mb-0">
+                                    Shows when rent is due or overdue across all units this month.
+                                </p>
+                            </div>
+                            <div class="matcha-calendar-legend matcha-body-s">
+                                <span class="legend-item">
+                                    <span class="dot rent-due"></span> Rent Due
+                                </span>
+                                <span class="legend-item">
+                                    <span class="dot overdue"></span> Overdue
+                                </span>
+                            </div>
+                        </header>
 
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Payment Processing</h5>
-                        <p class="card-text text-muted">
-                            View outstanding balances and record payments made by tenants.
-                        </p>
-                        <a asp-page="/Admin/RecordPayments" class="btn btn-primary">
-                            <i class="bi bi-cash-stack me-2"></i>Record Payments
-                        </a>
-                    </div>
-                </div>
-            </div>
+                        <div class="matcha-card-body">
+                            @{
+                                var monthDate = new DateTime(Model.CalendarYear, Model.CalendarMonth, 1);
+                                var today = DateTime.Today;
+                                var startOfMonth = monthDate;
+                                var daysInMonth = DateTime.DaysInMonth(monthDate.Year, monthDate.Month);
+                            }
+                            <div class="matcha-calendar">
+                                <div class="matcha-calendar-header d-flex justify-content-between align-items-center mb-3">
+                                    <div class="matcha-h3 mb-0">
+                                        @monthDate.ToString("MMMM yyyy")
+                                    </div>
+                                    @{
+                                        var prevMonth = monthDate.AddMonths(-1);
+                                        var nextMonth = monthDate.AddMonths(1);
+                                    }
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a asp-page="/Admin/AdminDashboard"
+                                           asp-route-year="@prevMonth.Year"
+                                           asp-route-month="@prevMonth.Month"
+                                           class="matcha-btn-secondary matcha-btn-compact">
+                                            ‹ Prev
+                                        </a>
+                                        <a asp-page="/Admin/AdminDashboard"
+                                           asp-route-year="@nextMonth.Year"
+                                           asp-route-month="@nextMonth.Month"
+                                           class="matcha-btn-secondary matcha-btn-compact">
+                                            Next ›
+                                        </a>
+                                    </div>
+                                </div>
 
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Reporting & Summary</h5>
-                        <p class="card-text text-muted">
-                            Financial overview, tracking paid vs. outstanding amounts.
-                        </p>
-                        <a asp-page="/Admin/BillingSummary" class="btn btn-primary">
-                            <i class="bi bi-graph-up me-2"></i>View Reports
-                        </a>
+                                <div class="matcha-calendar-grid">
+                                    <div class="matcha-calendar-weekday">Sun</div>
+                                    <div class="matcha-calendar-weekday">Mon</div>
+                                    <div class="matcha-calendar-weekday">Tue</div>
+                                    <div class="matcha-calendar-weekday">Wed</div>
+                                    <div class="matcha-calendar-weekday">Thu</div>
+                                    <div class="matcha-calendar-weekday">Fri</div>
+                                    <div class="matcha-calendar-weekday">Sat</div>
+
+                                    @{
+                                        var firstDayOfWeek = (int)startOfMonth.DayOfWeek;
+                                        for (int i = 0; i < firstDayOfWeek; i++)
+                                        {
+                                            <div class="matcha-calendar-cell empty"></div>
+                                        }
+                                        for (int day = 1; day <= daysInMonth; day++)
+                                        {
+                                            var date = new DateTime(monthDate.Year, monthDate.Month, day);
+                                            var isToday = date.Date == today.Date;
+                                            var isRentDueDay = Model.RentDueDates.Contains(date.Date);
+                                            var isOverdueDay = Model.OverdueRentDates.Contains(date.Date);
+
+                                            var cellClasses = "matcha-calendar-cell";
+                                            if (isToday)
+                                            {
+                                                cellClasses += " today";
+                                            }
+                                            if (isRentDueDay)
+                                            {
+                                                cellClasses += " has-rent-due";
+                                            }
+                                            if (isOverdueDay)
+                                            {
+                                                cellClasses += " has-overdue";
+                                            }
+
+                                            <div class="@cellClasses">
+                                                <div class="day-number">@day</div>
+                                                <div class="matcha-calendar-markers">
+                                                    @if (isRentDueDay)
+                                                    {
+                                                        <span class="dot rent-due" title="Rent due"></span>
+                                                    }
+                                                    @if (isOverdueDay)
+                                                    {
+                                                        <span class="dot overdue" title="Overdue rent"></span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Right Column: Payment Audit + Core Management Actions -->
+                <div class="col-lg-4">
+                    <div class="d-flex flex-column gap-4 h-100">
+                        <!-- Payment Audit Card -->
+                        <article class="matcha-card">
+                            <header class="matcha-card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h2 class="matcha-card-title mb-0">Recent Payments Audit</h2>
+                                    <p class="matcha-body-s text-muted mb-0">
+                                        Latest 3 confirmed payments across all tenants.
+                                    </p>
+                                </div>
+                            </header>
+                            <div class="matcha-card-body">
+                                @if (Model.RecentPayments != null && Model.RecentPayments.Any())
+                                {
+                                    <div class="matcha-table">
+                                        <div class="matcha-table-header">
+                                            <div>Tenant</div>
+                                            <div class="text-end matcha-mono">Amount</div>
+                                            <div class="text-end">Date</div>
+                                        </div>
+                                        @foreach (var p in Model.RecentPayments)
+                                        {
+                                            <div class="matcha-table-row">
+                                                <div>
+                                                    <div class="matcha-list-label">@p.TenantName</div>
+                                                    @if (!string.IsNullOrWhiteSpace(p.UnitNumber))
+                                                    {
+                                                        <div class="matcha-body-s text-muted">Unit @p.UnitNumber</div>
+                                                    }
+                                                </div>
+                                                <div class="text-end matcha-mono">
+                                                    @p.Amount.ToString("C", pesoCulture)
+                                                </div>
+                                                <div class="text-end matcha-body-s">
+                                                    @p.Date.ToString("MMM dd, yyyy")
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="matcha-body-s text-muted mb-0">
+                                        No recent payments to display.
+                                    </p>
+                                }
+                            </div>
+                        </article>
+
+                        <!-- Compact Core Management Actions -->
+                        <article class="matcha-card matcha-card-soft flex-grow-1">
+                            <header class="matcha-card-header d-flex justify-content-between align-items-center">
+                                <h2 class="matcha-card-title mb-0">Core Management Actions</h2>
+                            </header>
+                            <div class="matcha-card-body">
+                                <div class="d-grid gap-2">
+                                    <a asp-page="/Admin/ManageTenants" class="matcha-btn-primary w-100 text-center">
+                                        Manage Tenants
+                                    </a>
+                                    <a asp-page="/Admin/ManageApartments" class="matcha-btn-secondary w-100 text-center">
+                                        Manage Units
+                                    </a>
+                                    <a asp-page="/Admin/GenerateBills" class="matcha-btn-secondary w-100 text-center">
+                                        Generate Bills
+                                    </a>
+                                    <a asp-page="/Admin/RecordPayments" class="matcha-btn-secondary w-100 text-center">
+                                        Record Payments
+                                    </a>
+                                    <a asp-page="/Admin/BillingSummary" class="matcha-btn-secondary w-100 text-center">
+                                        View Reports
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
 </div>
-
-<style>
-    .main-content {
-        min-height: 100vh;
-        background: #f8f9fa;
-    }
-
-    .card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    }
-</style>
-

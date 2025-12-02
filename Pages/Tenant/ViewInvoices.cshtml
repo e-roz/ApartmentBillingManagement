@@ -50,7 +50,7 @@
                                         <td>@billAmount.ToString("C", pesoCulture)</td>
                                         <td>@invoice.AmountDue.ToString("C", pesoCulture)</td>
                                         <td>@invoice.IssueDate.ToString("MM/dd/yyyy")</td>
-                                        <td>@invoice.DueDate.ToString("MM/dd/yyyy")</td>
+                                        <td>@(invoice.Bill?.DueDate.ToString("MM/dd/yyyy") ?? invoice.DueDate.ToString("MM/dd/yyyy"))</td>
                                         <td>
                                             <span class="badge @(invoice.Status == Apartment.Enums.InvoiceStatus.Paid ? "bg-success" : invoice.Status == Apartment.Enums.InvoiceStatus.Overdue ? "bg-danger" : invoice.Status == Apartment.Enums.InvoiceStatus.Partial ? "bg-warning text-dark" : "bg-secondary")">
                                                 @invoice.Status

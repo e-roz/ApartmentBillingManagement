@@ -94,10 +94,16 @@ namespace Apartment.Data
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
-            // Configure the BillStatus enum to be stored as an integer
+            // Configure the BillStatus and BillType enums to be stored as strings
             modelBuilder.Entity<Bill>()
                 .Property(b => b.Status)
-                .HasConversion<int>();
+                .HasConversion<string>()
+                .HasMaxLength(50);
+
+            modelBuilder.Entity<Bill>()
+                .Property(b => b.Type)
+                .HasConversion<string>()
+                .HasMaxLength(50);
 
             modelBuilder.Entity<Request>()
                 .Property(r => r.RequestType)

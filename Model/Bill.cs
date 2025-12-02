@@ -69,6 +69,19 @@ namespace Apartment.Model
 
         public Enums.BillStatus Status { get; set; } = Enums.BillStatus.Unpaid;
 
+        [Required]
+        public BillType Type { get; set; } = BillType.Rent;
+
+        [StringLength(200)]
+        public string? Description { get; set; }
+
+        // Foreign key to link a late fee bill to its original rent bill
+        public int? ParentBillId { get; set; }
+
+        [ForeignKey("ParentBillId")]
+        public Bill? ParentBill { get; set; }
+
+
         public ICollection<PaymentAllocation> PaymentAllocations { get; set; } = new List<PaymentAllocation>();
     }
 }

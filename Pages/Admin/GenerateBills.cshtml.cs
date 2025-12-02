@@ -184,7 +184,7 @@ namespace Apartment.Pages.Admin
                 }
                 // Re-check for existing bills within transaction to prevent race conditions
                 var existingTenantUserIdsWithBills = await dbData.Bills
-                    .Where(b => b.BillingPeriodId == billingPeriod.Id)
+                    .Where(b => b.BillingPeriodId == billingPeriod.Id && b.Type == BillType.Rent)
                     .Select(b => b.TenantUserId)
                     .ToListAsync();
 
@@ -193,31 +193,73 @@ namespace Apartment.Pages.Admin
                 var billsCreate = new List<Bill>();
                 var dueDate = Input.DueDate.Value;
 
-                // Generate bills for each active lease
+                // --- Step 1: Generate RENT bills for the selected period ---
                 foreach (var lease in leasesToBill)
                 {
-                    // Check if a Bill already exists for this TenantUserId and the current BillingPeriodId
+                    // Skip if a bill for this tenant & period already exists for rent
                     if (billedTenantUserIds.Contains(lease.UserId))
                     {
-                        // Skip this tenant user if bill already exists
                         continue;
                     }
 
-                    // Create a new Bill entity, linking back to the specific lease
-                    var newBill = new Bill
+                    // Create a new RENT bill
+                    var newRentBill = new Bill
                     {
                         ApartmentId = lease.ApartmentId,
                         TenantUserId = lease.UserId,
                         BillingPeriodId = billingPeriod.Id,
                         LeaseId = lease.Id,
-                        AmountDue = lease.MonthlyRent, // Use Lease.MonthlyRent
-                        AmountPaid = 0.00m, // Will be calculated from invoices
+                        AmountDue = lease.MonthlyRent,
                         DueDate = dueDate,
                         GeneratedDate = DateTime.UtcNow,
-                        DateFullySettled = null,
-                        Status = BillStatus.Unpaid
+                        Status = BillStatus.Unpaid,
+                        Type = BillType.Rent, // Explicitly set the type
+                        Description = $"{monthName} {Input.Year} Rent"
                     };
-                    billsCreate.Add(newBill);
+                    billsCreate.Add(newRentBill);
+                }
+
+                // --- Step 2: Generate LATE FEE bills for any previously overdue rent ---
+                
+                // Find all rent bills that are overdue and unpaid
+                var overdueRentBills = await dbData.Bills
+                    .Include(b => b.Lease)
+                    .Include(b => b.BillingPeriod)
+                    .Where(b => b.Type == BillType.Rent && 
+                                b.AmountDue > b.PaymentAllocations.Sum(pa => pa.AmountApplied) && // is unpaid
+                                b.DueDate.AddDays(b.Lease.LateFeeDays) < DateTime.UtcNow) // is overdue
+                    .ToListAsync();
+                
+                // Find which of these overdue bills already have a late fee generated
+                var parentBillIdsWithFees = await dbData.Bills
+                    .Where(b => b.Type == BillType.LateFee && b.ParentBillId != null)
+                    .Select(b => b.ParentBillId)
+                    .ToListAsync();
+
+                foreach (var overdueBill in overdueRentBills)
+                {
+                    // If a late fee bill for this overdue rent bill already exists, skip it
+                    if (parentBillIdsWithFees.Contains(overdueBill.Id))
+                    {
+                        continue;
+                    }
+
+                    // Create a new LATE FEE bill
+                    var newLateFeeBill = new Bill
+                    {
+                        ApartmentId = overdueBill.ApartmentId,
+                        TenantUserId = overdueBill.TenantUserId,
+                        BillingPeriodId = billingPeriod.Id, // Assign to the CURRENT generating period
+                        LeaseId = overdueBill.LeaseId,
+                        AmountDue = overdueBill.Lease.LateFeeAmount,
+                        DueDate = dueDate, // Due on the same day as the new rent bills
+                        GeneratedDate = DateTime.UtcNow,
+                        Status = BillStatus.Unpaid,
+                        Type = BillType.LateFee, // Explicitly set the type
+                        ParentBillId = overdueBill.Id, // Link back to the overdue rent bill
+                        Description = $"Late Fee for {overdueBill.BillingPeriod.MonthName} {overdueBill.BillingPeriod.Year} Rent"
+                    };
+                    billsCreate.Add(newLateFeeBill);
                 }
 
                 // Save all generated bills to the database

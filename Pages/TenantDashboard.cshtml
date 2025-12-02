@@ -4,161 +4,478 @@
     ViewData["Title"] = "Tenant Dashboard";
     Layout = "_Layout";
     var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
+    var monthDate = new DateTime(Model.CalendarYear, Model.CalendarMonth, 1);
+    var today = DateTime.Today;
+    var startOfMonth = monthDate;
+    var daysInMonth = DateTime.DaysInMonth(monthDate.Year, monthDate.Month);
 }
 
-<div class="d-flex">
+<div class="matcha-dashboard d-flex">
     @await Html.PartialAsync("_TenantSidebar")
 
     <!-- Main Content -->
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">Dashboard Overview</h1>
-        <p class="text-muted mb-4">Welcome back, <strong>@Model.Username</strong>. Here's your account summary.</p>
-
-    @if (Model.UserInfo != null)
-    {
-        <!-- Metric Cards -->
-        <div class="row g-4 mb-5">
-            <!-- Current Balance Due - Most Prominent -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #dc3545 !important;">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted text-uppercase small mb-2">Current Balance Due</h6>
-                                <h2 class="mb-0 @(Model.OutstandingBalance > 0 && Model.RecentBills != null && Model.RecentBills.Any(b => b.DueDate < DateTime.Now && !b.IsPaid) ? "text-danger" : "text-dark")" style="font-size: 2rem; font-weight: 700;">
-                                    @Model.OutstandingBalance.ToString("C", pesoCulture)
-                                </h2>
-                                @if (Model.OutstandingBalance > 0 && Model.RecentBills != null && Model.RecentBills.Any(b => b.DueDate < DateTime.Now && !b.IsPaid))
-                                {
-                                    <small class="text-danger">Overdue</small>
-                                }
-                                else if (Model.OutstandingBalance > 0)
-                                {
-                                    <small class="text-warning">Pending Payment</small>
-                                }
-                                else
-                                {
-                                    <small class="text-success">All Paid</small>
-                                }
-                            </div>
-                            <div class="text-danger" style="font-size: 2.5rem;">
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="matcha-main">
+        <!-- Page Header -->
+        <header class="matcha-header">
+            <div>
+                <h1 class="matcha-h1">Dashboard Overview</h1>
+                <p class="matcha-subtitle">
+                    Welcome back,
+                    <span class="matcha-tenant-email">
+                        @(Model.UserInfo?.Email ?? Model.Username)
+                    </span>. Here's your account summary.
+                </p>
             </div>
+        </header>
 
-            <!-- Unit Information -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted text-uppercase small mb-2">Unit Information</h6>
-                                <h4 class="mb-1">@(Model.ActiveLease?.UnitNumber ?? "Not Assigned")</h4>
-                                <p class="mb-1 small text-muted">Property Address</p>
-                                @if (Model.ActiveLease != null)
-                                {
-                                    <p class="mb-0 small">
-                                        <strong>Lease Expires:</strong> @Model.ActiveLease.LeaseEnd.ToString("MM/dd/yyyy")
-                                    </p>
-                                }
-                            </div>
-                            <div class="text-primary" style="font-size: 2.5rem;">
-                                <i class="bi bi-house-door-fill"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Stats Summary -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <h6 class="text-muted text-uppercase small mb-3">Account Summary</h6>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Pending Bills:</span>
-                            <strong>@Model.PendingBills</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Total Paid:</span>
-                            <strong class="text-success">@Model.TotalPaid.ToString("C", pesoCulture)</strong>
-                        </div>
-                        @if (Model.ActiveLease != null)
+        @if (Model.UserInfo != null)
+        {
+            <!-- Alerts Section (Conditional) -->
+            @if (Model.OutstandingLateFees > 0 || Model.HasOverdueRent || Model.IsLeaseExpiringSoon)
+            {
+                <section class="matcha-section mb-4">
+                    <div class="matcha-alerts">
+                        @if (Model.OutstandingLateFees > 0)
                         {
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">Monthly Rent:</span>
-                                <strong>@Model.ActiveLease.MonthlyRent.ToString("C", pesoCulture)</strong>
+                            <div class="matcha-alert matcha-alert-latefee">
+                                <span class="matcha-alert-label">Late Fee</span>
+                                <p>You have an outstanding late fee of <strong>@Model.OutstandingLateFees.ToString("C", pesoCulture)</strong>.</p>
+                            </div>
+                        }
+
+                        @if (Model.HasOverdueRent)
+                        {
+                            <div class="matcha-alert matcha-alert-overdue">
+                                <span class="matcha-alert-label">Overdue Rent</span>
+                                <p>Your rent has overdue items. Please review and make a payment as soon as possible.</p>
+                            </div>
+                        }
+
+                        @if (Model.IsLeaseExpiringSoon && Model.ActiveLease != null)
+                        {
+                            <div class="matcha-alert matcha-alert-lease">
+                                <span class="matcha-alert-label">Lease Expiring</span>
+                                <p>Your lease is expiring on <strong>@Model.ActiveLease.LeaseEnd.ToString("MMM dd, yyyy")</strong>. Please contact management if you wish to renew.</p>
                             </div>
                         }
                     </div>
-                </div>
-            </div>
-        </div>
+                </section>
+            }
 
-        <!-- Quick Action Cards -->
-        <h2 class="h4 mb-4">Quick Actions</h2>
-        <div class="row g-4 mb-5">
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center">
-                        <div class="mb-3" style="font-size: 3rem; color: #28a745;">
-                            <i class="bi bi-credit-card"></i>
-                        </div>
-                        <h5 class="card-title">Make a Payment</h5>
-                        <p class="card-text text-muted">
-                            Submit a payment for your outstanding balance or upcoming bills.
-                        </p>
-                        <a asp-page="/Tenant/MakePayment" class="btn btn-primary btn-lg">
-                            <i class="bi bi-credit-card me-2"></i>Pay Now
-                        </a>
+            <!-- Summary Cards Row -->
+            <section class="matcha-section mb-5">
+                <div class="row g-4">
+                    <!-- Card A — Current Balance Due -->
+                    <div class="col-lg-4 col-md-6">
+                        <article class="matcha-card matcha-card-accent h-100">
+                            <header class="matcha-card-header">
+                                <h2 class="matcha-card-title">Current Balance Due</h2>
+                            </header>
+                            <div class="matcha-card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <div class="matcha-amount">
+                                            @Model.OutstandingBalance.ToString("C", pesoCulture)
+                                        </div>
+                                        <div class="matcha-status-pill @(
+                                                Model.OutstandingBalance <= 0
+                                                    ? "matcha-status-pill-paid"
+                                                    : (Model.RecentBills != null && Model.RecentBills.Any(b => b.DueDate < DateTime.Now && !b.IsPaid)
+                                                        ? "matcha-status-pill-overdue"
+                                                        : "matcha-status-pill-pending")
+                                            )">
+                                            @if (Model.OutstandingBalance <= 0)
+                                            {
+                                                <span>Paid</span>
+                                            }
+                                            else if (Model.RecentBills != null && Model.RecentBills.Any(b => b.DueDate < DateTime.Now && !b.IsPaid))
+                                            {
+                                                <span>Overdue</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Pending</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="matcha-card-icon matcha-card-icon-balance">
+                                        <i class="bi bi-wallet2"></i>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted matcha-mono">
+                                    <span>Late Fees</span>
+                                    <span>@Model.OutstandingLateFees.ToString("C", pesoCulture)</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Card B — Unit Information -->
+                    <div class="col-lg-4 col-md-6">
+                        <article class="matcha-card h-100">
+                            <header class="matcha-card-header">
+                                <h2 class="matcha-card-title">Unit Information</h2>
+                            </header>
+                            <div class="matcha-card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="matcha-unit-name">
+                                            @(Model.ActiveLease?.UnitNumber ?? "Not Assigned")
+                                        </div>
+                                        <p class="matcha-body-s mb-2 text-muted">
+                                            Tenant unit within the property
+                                        </p>
+                                        @if (Model.ActiveLease != null)
+                                        {
+                                            <p class="matcha-body-s mb-0">
+                                                <span class="text-muted">Lease Expires:</span>
+                                                <span class="matcha-mono">
+                                                    @Model.ActiveLease.LeaseEnd.ToString("MMM dd, yyyy")
+                                                </span>
+                                            </p>
+                                        }
+                                    </div>
+                                    <div class="matcha-card-icon matcha-card-icon-unit">
+                                        <i class="bi bi-house-door"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Card C — Account Summary -->
+                    <div class="col-lg-4 col-md-6">
+                        <article class="matcha-card h-100">
+                            <header class="matcha-card-header">
+                                <h2 class="matcha-card-title">Account Summary</h2>
+                            </header>
+                            <div class="matcha-card-body">
+                                <div class="matcha-summary-row">
+                                    <span>Pending Bills</span>
+                                    <span class="matcha-mono">@Model.PendingBills</span>
+                                </div>
+                                <div class="matcha-summary-row">
+                                    <span>Total Paid</span>
+                                    <span class="matcha-mono text-success">
+                                        @Model.TotalPaid.ToString("C", pesoCulture)
+                                    </span>
+                                </div>
+                                @if (Model.ActiveLease != null)
+                                {
+                                    <div class="matcha-summary-row">
+                                        <span>Monthly Rent</span>
+                                        <span class="matcha-mono">
+                                            @Model.ActiveLease.MonthlyRent.ToString("C", pesoCulture)
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Actions (Row of 2 cards) -->
+            <section class="matcha-section mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="matcha-h3 mb-0">Quick Actions</h2>
+                </div>
+                <div class="row g-4">
+                    <!-- Card A — Make a Payment -->
+                    <div class="col-md-6">
+                        <article class="matcha-card matcha-card-soft h-100">
+                            <div class="matcha-card-body d-flex flex-column">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="matcha-card-icon matcha-card-icon-payment me-3">
+                                        <i class="bi bi-credit-card"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="matcha-card-title mb-1">Make a Payment</h3>
+                                        <p class="matcha-body-s mb-0 text-muted">
+                                            Pay your current balance or upcoming rent securely.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-auto">
+                                    <a asp-page="/Tenant/MakePayment" class="matcha-btn-primary">
+                                        Pay Now
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Card B — Submit Request -->
+                    <div class="col-md-6">
+                        <article class="matcha-card matcha-card-soft h-100">
+                            <div class="matcha-card-body d-flex flex-column">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="matcha-card-icon matcha-card-icon-request me-3">
+                                        <i class="bi bi-tools"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="matcha-card-title mb-1">Submit Request</h3>
+                                        <p class="matcha-body-s mb-0 text-muted">
+                                            Report maintenance issues or request assistance from management.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-auto">
+                                    <a asp-page="/Tenant/SubmitRequest" class="matcha-btn-secondary">
+                                        Submit Request
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Middle landscape row: Calendar (left) + Upcoming Due Dates (right) -->
+            <section class="matcha-section mb-5">
+                <div class="row g-4">
+                    <!-- Rent & Events Calendar -->
+                    <div class="col-lg-8">
+                        <article class="matcha-card h-100">
+                            <header class="matcha-card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h2 class="matcha-card-title">Rent &amp; Events Calendar</h2>
+                                    <p class="matcha-body-s text-muted mb-0">
+                                        Highlights rent due days, overdue days, and special events.
+                                    </p>
+                                </div>
+                                <div class="matcha-calendar-legend matcha-body-s">
+                                    <span class="legend-item">
+                                        <span class="dot rent-due"></span> Rent Due
+                                    </span>
+                                    <span class="legend-item">
+                                        <span class="dot overdue"></span> Overdue
+                                    </span>
+                                    <span class="legend-item">
+                                        <span class="dot event"></span> Event
+                                    </span>
+                                </div>
+                            </header>
+
+                            <div class="matcha-card-body">
+                                <div class="matcha-calendar">
+                                    <div class="matcha-calendar-header d-flex justify-content-between align-items-center mb-3">
+                                        <div class="matcha-h3 mb-0">
+                                            @monthDate.ToString("MMMM yyyy")
+                                        </div>
+                                        @{
+                                            var prevMonth = monthDate.AddMonths(-1);
+                                            var nextMonth = monthDate.AddMonths(1);
+                                        }
+                                        <div class="d-flex align-items-center gap-2">
+                                            <a asp-page="/TenantDashboard"
+                                               asp-route-year="@prevMonth.Year"
+                                               asp-route-month="@prevMonth.Month"
+                                               class="matcha-btn-secondary matcha-btn-compact">
+                                                ‹ Prev
+                                            </a>
+                                            <a asp-page="/TenantDashboard"
+                                               asp-route-year="@nextMonth.Year"
+                                               asp-route-month="@nextMonth.Month"
+                                               class="matcha-btn-secondary matcha-btn-compact">
+                                                Next ›
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div class="matcha-calendar-grid">
+                                        <div class="matcha-calendar-weekday">Sun</div>
+                                        <div class="matcha-calendar-weekday">Mon</div>
+                                        <div class="matcha-calendar-weekday">Tue</div>
+                                        <div class="matcha-calendar-weekday">Wed</div>
+                                        <div class="matcha-calendar-weekday">Thu</div>
+                                        <div class="matcha-calendar-weekday">Fri</div>
+                                        <div class="matcha-calendar-weekday">Sat</div>
+
+                                        @{
+                                            var firstDayOfWeek = (int)startOfMonth.DayOfWeek;
+                                            for (int i = 0; i < firstDayOfWeek; i++)
+                                            {
+                                                <div class="matcha-calendar-cell empty"></div>
+                                            }
+                                            for (int day = 1; day <= daysInMonth; day++)
+                                            {
+                                                var date = new DateTime(monthDate.Year, monthDate.Month, day);
+                                                var isToday = date.Date == today.Date;
+                                                var isRentDueDay = Model.RentDueDates.Contains(date.Date);
+                                                var isOverdueDay = Model.OverdueRentDates.Contains(date.Date);
+
+                                                var cellClasses = "matcha-calendar-cell";
+                                                if (isToday)
+                                                {
+                                                    cellClasses += " today";
+                                                }
+                                                if (isRentDueDay)
+                                                {
+                                                    cellClasses += " has-rent-due";
+                                                }
+                                                if (isOverdueDay)
+                                                {
+                                                    cellClasses += " has-overdue";
+                                                }
+
+                                                <div class="@cellClasses">
+                                                    <div class="day-number">@day</div>
+                                                    <div class="matcha-calendar-markers">
+                                                        @if (isRentDueDay)
+                                                        {
+                                                            <span class="dot rent-due" title="Rent due"></span>
+                                                        }
+                                                        @if (isOverdueDay)
+                                                        {
+                                                            <span class="dot overdue" title="Overdue rent"></span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Upcoming Due Dates (Right Column) -->
+                    <div class="col-lg-4">
+                        <article class="matcha-card h-100">
+                            <header class="matcha-card-header">
+                                <h2 class="matcha-card-title">Upcoming Due Dates</h2>
+                            </header>
+                            <div class="matcha-card-body">
+                                <ul class="matcha-list">
+                                    <li class="matcha-list-item">
+                                        <div>
+                                            <div class="matcha-list-label">Next Rent Due</div>
+                                            <div class="matcha-mono">
+                                                @(Model.NextRentDueDate?.ToString("MMM dd, yyyy") ?? "—")
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="matcha-list-item">
+                                        <div>
+                                            <div class="matcha-list-label">Late Fee Application</div>
+                                            <div class="matcha-mono">
+                                                @(Model.NextLateFeeDate?.ToString("MMM dd, yyyy") ?? "—")
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="matcha-list-item">
+                                        <div>
+                                            <div class="matcha-list-label">Lease End Date</div>
+                                            <div class="matcha-mono">
+                                                @(Model.ActiveLease?.LeaseEnd.ToString("MMM dd, yyyy") ?? "—")
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom: Recent Transactions (left) + Maintenance Request Status (right) -->
+            <section class="matcha-section mb-4">
+                <div class="row g-4">
+                    <!-- Recent Transactions -->
+                    <div class="col-lg-6">
+                        <article class="matcha-card h-100">
+                            <header class="matcha-card-header d-flex justify-content-between align-items-center">
+                                <h2 class="matcha-card-title mb-0">Recent Transactions</h2>
+                            </header>
+                            <div class="matcha-card-body">
+                                @if (Model.RecentTransactions != null && Model.RecentTransactions.Any())
+                                {
+                                    <div class="matcha-table matcha-table-compact">
+                                        <div class="matcha-table-header">
+                                            <div>Date</div>
+                                            <div class="text-end matcha-mono">Amount</div>
+                                            <div class="text-end">Status</div>
+                                        </div>
+                                        @foreach (var tx in Model.RecentTransactions)
+                                        {
+                                            <div class="matcha-table-row">
+                                                <div>@tx.Date.ToString("MMM dd, yyyy")</div>
+                                                <div class="text-end matcha-mono">
+                                                    @tx.Amount.ToString("C", pesoCulture)
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="matcha-status-chip @(
+                                                            tx.Status == "Success"
+                                                                ? "success"
+                                                                : (tx.Status == "Failed" ? "danger" : "neutral")
+                                                        )">
+                                                        @tx.Status
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="matcha-body-s text-muted mb-0">No recent transactions to display.</p>
+                                }
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Maintenance Request Status -->
+                    <div class="col-lg-6">
+                        <article class="matcha-card h-100">
+                            <header class="matcha-card-header d-flex justify-content-between align-items-center">
+                                <h2 class="matcha-card-title mb-0">Maintenance Request Status</h2>
+                            </header>
+                            <div class="matcha-card-body">
+                                @if (Model.MaintenanceRequests != null && Model.MaintenanceRequests.Any())
+                                {
+                                    <ul class="matcha-list">
+                                        @foreach (var req in Model.MaintenanceRequests)
+                                        {
+                                            <li class="matcha-list-item d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="matcha-list-label">@req.Title</div>
+                                                    <div class="matcha-body-s text-muted">
+                                                        @req.DateSubmitted.ToString("MMM dd, yyyy")
+                                                    </div>
+                                                </div>
+                                                <span class="matcha-status-chip @(
+                                                        req.Status == "Completed"
+                                                            ? "success"
+                                                            : (req.Status == "InProgress" ? "warning" : "neutral")
+                                                    )">
+                                                    @req.Status
+                                                </span>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <p class="matcha-body-s text-muted mb-0">
+                                        You have no maintenance requests yet.
+                                    </p>
+                                }
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+        }
+        else
+        {
+            <div class="matcha-section">
+                <div class="matcha-card">
+                    <div class="matcha-card-body">
+                        <p class="matcha-body">No user profile found. Please contact the administrator.</p>
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center">
-                        <div class="mb-3" style="font-size: 3rem; color: #007bff;">
-                            <i class="bi bi-tools"></i>
-                        </div>
-                        <h5 class="card-title">Submit Request</h5>
-                        <p class="card-text text-muted">
-                            Report maintenance issues or submit service requests to property management.
-                        </p>
-                        <a asp-page="/Tenant/SubmitRequest" class="btn btn-primary btn-lg">
-                            <i class="bi bi-plus-circle me-2"></i>Submit Request
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle me-2"></i>
-            No user profile found. Please contact the administrator.
-        </div>
-    }
+        }
     </div>
 </div>
-
-<style>
-    .main-content {
-        min-height: 100vh;
-        background: #f8f9fa;
-    }
-
-    .card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    }
-</style>
-
