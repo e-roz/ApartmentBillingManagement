@@ -9,147 +9,302 @@
     @await Html.PartialAsync("_TenantSidebar")
 
     <!-- Main Content -->
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <div class="container-fluid">
+    <div class="main-content">
+        <div class="page-content-wrapper">
             <!-- Header -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h1 class="display-5 fw-bold text-primary mb-0">
-                        <i class="bi bi-envelope me-3"></i>My Messages
-                    </h1>
-                    <p class="text-muted mt-2">View communication from property management regarding your requests and other announcements.</p>
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">My Messages</h1>
+                    <p class="page-subtitle">Communication from property management regarding your requests and other announcements.</p>
                 </div>
             </div>
-
+            
+            <!-- Notifications -->
             @if (!string.IsNullOrEmpty(Model.SuccessMessage))
             {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    @Model.SuccessMessage
+                <div class="matcha-notification is-success mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                    <span>@Model.SuccessMessage</span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
             @if (!string.IsNullOrEmpty(Model.ErrorMessage))
             {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @Model.ErrorMessage
+                <div class="matcha-notification is-danger mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+                    <span>@Model.ErrorMessage</span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
 
-            <div class="row">
-                <div class="col-lg-12">
-                    @if (Model.Messages.Any())
-                    {
-                        <div class="card shadow-lg rounded-4 border-0 mb-4">
-                            <div class="card-header bg-light text-dark py-3">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-inbox me-2"></i>Inbox
-                                </h5>
-                            </div>
-                            <div class="card-body p-4 message-list">
-                                @foreach (var message in Model.Messages)
-                                {
-                                    <div class="message-item @(!message.IsRead ? "message-unread" : "")">
-                                        <div class="d-flex w-100 justify-content-between align-items-start">
-                                            <div>
-                                                <h6 class="mb-1 fw-semibold message-sender">
-                                                    @if (!message.IsRead)
-                                                    {
-                                                        <span class="badge bg-primary me-2">New</span>
-                                                    }
-                                                    @{
-                                                        var senderName = (message.SenderUserId == Model.CurrentUserId) ? "You" : "Manager";
-                                                    }
-                                                    @senderName
-                                                    @if (message.AssociatedRequestId.HasValue)
-                                                    {
-                                                        <small class="text-muted">(Request #@message.AssociatedRequestId)</small>
-                                                    }
-                                                </h6>
-                                                <p class="mb-1 message-content">@message.Content</p>
-                                            </div>
-                                            <div class="text-end">
-                                                <small class="text-muted message-timestamp">@message.Timestamp.ToString("MMM dd, yyyy hh:mm tt")</small>
-                                                <form method="post" class="delete-message-form" asp-page-handler="Delete" asp-route-messageId="@message.Id">
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm mt-2" title="Delete Message">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
+            <div class="matcha-panel">
+                @if (Model.Messages.Any())
+                {
+                    <div class="message-list">
+                        @foreach (var message in Model.Messages)
+                        {
+                            <div class="message-item @(!message.IsRead ? "message-unread" : "")">
+                                <div class="message-indicator"></div>
+                                <div class="message-main-content">
+                                    <div class="message-header">
+                                        <span class="message-sender">
+                                            @((message.SenderUserId == Model.CurrentUserId) ? "You" : "Manager")
+                                        </span>
+                                        @if (message.AssociatedRequestId.HasValue)
+                                        {
+                                            <span class="message-association">(Request #@message.AssociatedRequestId)</span>
+                                        }
                                     </div>
-                                }
+                                    <p class="message-body">@message.Content</p>
+                                </div>
+                                <div class="message-meta">
+                                    <small class="message-timestamp">@message.Timestamp.ToString("MMM dd, hh:mm tt")</small>
+                                    <form method="post" class="delete-message-form" asp-page-handler="Delete" asp-route-messageId="@message.Id">
+                                        <button type="submit" class="btn-delete" title="Delete Message">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-envelope-open" viewBox="0 0 16 16"><path d="M8.47 1.318a1 1 0 0 0-.94 0l-6 3.2A1 1 0 0 0 1 5.4v.817l5.75 3.45L8 8.917l1.25.75L15 6.217V5.4a1 1 0 0 0-.53-.882l-6-3.2zM15 7.383l-4.778 2.867L15 13.117V7.383zm-.035 6.88L8 10.082l-6.965 4.18A1 1 0 0 0 2 15h12a1 1 0 0 0 .965-.738zM1 13.116l4.778-2.867L1 7.383v5.734z"/></svg>
                         </div>
-                    }
-                    else
-                    {
-                        <div class="text-center p-5">
-                            <i class="bi bi-envelope-open fs-1 text-muted"></i>
-                            <h4 class="mt-3">No Messages Here</h4>
-                            <p class="text-muted">You haven't received any messages yet, or all have been deleted.</p>
-                        </div>
-                    }
-                </div>
+                        <h3 class="empty-state-title">No Messages Here</h3>
+                        <p class="empty-state-message">You haven't received any new messages.</p>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
 
 <style>
+    /* 1. PALETTE & FONTS */
+    :root {
+        --matcha-deep-green: #4A6F47;
+        --matcha-soft-green: #A8C3A0;
+        --ceremonial-matcha: #7DA26C;
+        --fresh-cream-white: #F9F8F3;
+        --azuki-red: #B35A5A;
+        --ink-black: #2C2C2C;
+        --leaf-gray: #7B7B7B;
+        --tea-mist: #E7E5D8;
+        --white: #FFFFFF;
+        
+        --font-headings: 'Cormorant Garamond', Georgia, serif;
+        --font-body: 'Inter', Arial, sans-serif;
+    }
+
+    /* 2. LAYOUT */
     .main-content {
+        background-color: var(--fresh-cream-white);
         min-height: 100vh;
-        background: #f8f9fa;
+        flex-grow: 1;
+        padding: 32px;
+        font-family: var(--font-body);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
-    .message-list {
-        padding: 0;
+
+    .page-content-wrapper {
+        width: 100%;
+        max-width: 1000px;
     }
+    
+    .page-header { margin-bottom: 32px; }
+    .page-title {
+        font-family: var(--font-headings);
+        font-weight: 700;
+        font-size: 36px;
+        color: var(--matcha-deep-green);
+        margin: 0;
+    }
+    .page-subtitle {
+        font-size: 18px;
+        color: var(--leaf-gray);
+        margin-top: 4px;
+    }
+
+    /* 3. COMPONENTS */
+    .matcha-panel {
+        background-color: var(--white);
+        border: 1px solid var(--tea-mist);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(44, 44, 44, 0.04);
+        overflow: hidden;
+    }
+
+    /* Message List */
     .message-item {
-        border-bottom: 1px solid #eee;
-        padding: 1rem 1.5rem;
-        transition: background-color 0.2s ease-in-out;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--tea-mist);
+        transition: background-color 150ms ease-out;
     }
-    .message-item:last-child {
+    .message-list > .message-item:last-child {
         border-bottom: none;
     }
     .message-item:hover {
-        background-color: #f9f9f9;
+        background-color: #F7F9F6;
+    }
+    .message-item:hover .btn-delete {
+        opacity: 1;
+        transform: scale(1);
     }
     .message-unread {
-        background-color: #e6f7ff; /* Light blue for unread messages */
+        background-color: #F0F3EF;
+        border-left: 3px solid var(--ceremonial-matcha);
+        padding-left: 21px;
+    }
+    
+    .message-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--ceremonial-matcha);
+        flex-shrink: 0;
+        margin-top: 7px;
+        opacity: 0;
+    }
+    .message-unread .message-indicator {
+        opacity: 1;
+    }
+    
+    .message-main-content {
+        flex-grow: 1;
+    }
+    .message-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
     }
     .message-sender {
-        color: #007bff; /* Primary color for sender name */
+        font-weight: 600;
+        color: var(--ink-black);
     }
-    .message-content {
-        white-space: pre-wrap; /* Preserve whitespace and line breaks */
+    .message-association {
+        font-size: 0.85rem;
+        color: var(--leaf-gray);
+    }
+    .message-body {
+        color: var(--leaf-gray);
+        margin: 0;
+        white-space: pre-wrap;
+    }
+    
+    .message-meta {
+        flex-shrink: 0;
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    .message-timestamp {
+        font-size: 0.8rem;
+        color: var(--leaf-gray);
+    }
+    .btn-delete {
+        background: none;
+        border: none;
+        color: var(--leaf-gray);
+        padding: 4px;
+        margin-top: 8px;
+        cursor: pointer;
+        opacity: 0;
+        transform: scale(0.9);
+        transition: all 150ms ease-out;
+    }
+    .btn-delete:hover {
+        color: var(--azuki-red);
+    }
+
+    /* Notification */
+    .matcha-notification {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid;
+        border-left-width: 4px;
+        border-radius: 8px;
+        padding: 16px;
+        position: relative;
+    }
+    .matcha-notification.is-success {
+        background-color: #f0fdf4;
+        border-color: var(--ceremonial-matcha);
+        color: var(--matcha-deep-green);
+    }
+    .matcha-notification.is-danger {
+        background-color: #FEF2F2;
+        border-color: var(--azuki-red);
+        color: #991B1B;
+    }
+    .matcha-notification .btn-close {
+        position: absolute;
+        top: 50%;
+        right: 16px;
+        transform: translateY(-50%);
+    }
+
+    /* Empty State */
+    .empty-state-content { text-align: center; padding: 64px 40px; }
+    .empty-state-icon-wrapper {
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        background-color: #F0F3EF;
+        display: inline-flex; align-items: center; justify-content: center;
+        margin-bottom: 24px;
+        color: var(--matcha-deep-green);
+    }
+    .empty-state-title {
+        font-family: var(--font-headings);
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--ink-black);
+        margin-bottom: 8px;
+    }
+    .empty-state-message {
+        font-size: 16px;
+        color: var(--leaf-gray);
+        max-width: 400px;
+        margin: 0 auto;
     }
 </style>
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const deleteForms = document.querySelectorAll('.delete-message-form');
-            deleteForms.forEach(form => {
-                form.addEventListener('submit', function (event) {
-                    event.preventDefault(); // Stop the form from submitting immediately
+<script>
+    // This script remains the same as it handles functionality, not design.
+    document.addEventListener('DOMContentLoaded', function () {
+        const deleteForms = document.querySelectorAll('.delete-message-form');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function (event) {
+                event.preventDefault(); 
 
-                    Swal.fire({
-                        title: 'Are you sure?',
-                        text: "You won't be able to revert this!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#d33',
-                        cancelButtonColor: '#3085d6',
-                        confirmButtonText: 'Yes, delete it!'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            // If confirmed, submit the form
-                            form.submit();
-                        }
-                    });
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
                 });
             });
         });
-    </script>
+    });
+</script>
 }

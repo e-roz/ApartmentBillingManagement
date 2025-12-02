@@ -1,5 +1,6 @@
 @page
 @model Apartment.Pages.Tenant.PaymentHistoryModel
+@using System.Globalization
 @{
     ViewData["Title"] = "Payment History";
     Layout = "_Layout";
@@ -9,16 +10,16 @@
 <div class="d-flex">
     @await Html.PartialAsync("_TenantSidebar")
 
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">Payment History</h1>
-        <p class="text-muted mb-4">All successful payments made to your account.</p>
+    <div class="main-content">
+        <h1 class="page-title">Payment History</h1>
+        <p class="page-subtitle">All successful payments made to your account.</p>
 
         @if (Model.Payments.Any())
         {
-            <div class="card border-0 shadow-sm">
+            <div class="matcha-card">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover data-table" id="paymentHistoryTable">
+                        <table class="matcha-table" id="paymentHistoryTable">
                             <thead>
                                 <tr>
                                     <th>Transaction ID</th>
@@ -32,9 +33,9 @@
                                 @foreach (var payment in Model.Payments)
                                 {
                                     <tr>
-                                        <td>#@payment.TransactionId</td>
-                                        <td>@payment.DateFullySettled.ToString("MM/dd/yyyy")</td>
-                                        <td class="text-success"><strong>@payment.AmountPaid.ToString("C", pesoCulture)</strong></td>
+                                        <td class="numeric-font">#@payment.TransactionId</td>
+                                        <td>@payment.DateFullySettled.ToString("MMMM dd, yyyy")</td>
+                                        <td class="amount-paid numeric-font">@payment.AmountPaid.ToString("C", pesoCulture)</td>
                                         <td>@payment.PaymentMethod</td>
                                         <td>@payment.InvoiceReference</td>
                                     </tr>
@@ -47,25 +48,176 @@
         }
         else
         {
-            <div class="empty-state-card">
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="bi bi-credit-card"></i>
-                    </div>
-                    <h3 class="empty-state-title">No Payment History</h3>
-                    <p class="empty-state-message">
-                        You haven't made any payments yet. Payment records will appear here once you complete a transaction.
-                    </p>
+            <div class="matcha-card empty-state-card">
+                 <div class="empty-state-icon-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-credit-card" viewBox="0 0 16 16">
+                      <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-.5.5v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/>
+                      <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z"/>
+                    </svg>
                 </div>
+                <h3 class="empty-state-title">No Payment History</h3>
+                <p class="empty-state-message">
+                    You haven't made any payments yet. Records will appear here once you complete a transaction.
+                </p>
             </div>
         }
     </div>
 </div>
 
 <style>
+    /* 1. BRAND FOUNDATION & COLOR SYSTEM */
+    :root {
+        /* Primary Palette */
+        --matcha-deep-green: #4A6F47;
+        --matcha-soft-green: #A8C3A0;
+        --ceremonial-matcha: #7DA26C;
+        --fresh-cream-white: #F9F8F3;
+
+        /* Secondary Palette */
+        --roasted-brown: #8B6F47;
+        --golden-whisk: #D7A85A;
+        --azuki-red: #B35A5A;
+
+        /* Neutral Palette */
+        --ink-black: #2C2C2C;
+        --leaf-gray: #7B7B7B;
+        --tea-mist: #E7E5D8;
+        
+        /* Typography */
+        --font-headings: 'Cormorant Garamond', Georgia, serif;
+        --font-body: 'Inter', Arial, sans-serif;
+        --font-numeric: 'JetBrains Mono', Consolas, monospace;
+    }
+
+    /* 2. TYPOGRAPHY & LAYOUT */
     .main-content {
+        background-color: var(--fresh-cream-white);
         min-height: 100vh;
-        background: #f8f9fa;
+        width: calc(100% - 280px); 
+        margin-left: 280px; 
+        padding: 32px;
+        font-family: var(--font-body);
+        color: var(--ink-black);
+    }
+    
+    .page-title {
+        font-family: var(--font-headings);
+        font-weight: 700;
+        font-size: 36px;
+        color: var(--matcha-deep-green);
+        margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+        font-size: 18px;
+        color: var(--leaf-gray);
+        margin-bottom: 32px;
+    }
+
+    .numeric-font {
+        font-family: var(--font-numeric);
+    }
+
+    /* 3. UI COMPONENTS */
+
+    /* Cards */
+    .matcha-card {
+        background-color: var(--fresh-cream-white);
+        border: 1px solid var(--tea-mist);
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        padding: 24px;
+        border-top: 4px solid var(--golden-whisk);
+    }
+    
+    .card-body {
+        padding: 0; /* Reset bootstrap padding */
+    }
+
+    /* Tables (Billing-Centric) */
+    .matcha-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .matcha-table th, 
+    .matcha-table td {
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--tea-mist);
+        font-size: 16px;
+    }
+
+    .matcha-table thead tr {
+        background-color: var(--matcha-deep-green);
+        color: var(--fresh-cream-white);
+    }
+    
+    .matcha-table thead th {
+        font-weight: 600;
+        border-bottom: none;
+    }
+
+    .matcha-table tbody tr:nth-child(even) {
+        background-color: #F0F3EF; /* A lighter version of soft green for subtlety */
+    }
+
+    .matcha-table tbody tr:hover {
+        background-color: var(--ceremonial-matcha);
+        color: white;
+        transition: background-color 150ms ease-out;
+    }
+    
+    .matcha-table .amount-paid {
+        font-weight: 600;
+        text-align: right;
+        color: var(--matcha-deep-green);
+    }
+    
+    .matcha-table td {
+        color: var(--ink-black);
+    }
+    
+    .matcha-table tr:hover td, .matcha-table tr:hover .amount-paid, .matcha-table tr:hover .numeric-font {
+        color: var(--fresh-cream-white);
+    }
+
+
+    /* Empty State */
+    .empty-state-card {
+        text-align: center;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-top: 4px solid var(--tea-mist); /* Use a neutral color for empty state */
+    }
+    
+    .empty-state-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: #eef2ed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        color: var(--matcha-deep-green);
+    }
+    
+    .empty-state-title {
+        font-family: var(--font-headings);
+        font-size: 24px;
+        color: var(--ink-black);
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .empty-state-message {
+        font-size: 16px;
+        color: var(--leaf-gray);
+        max-width: 400px;
+        line-height: 1.6;
     }
 </style>
-

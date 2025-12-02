@@ -8,75 +8,298 @@
 <div class="d-flex">
     @await Html.PartialAsync("_TenantSidebar")
 
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">Submit New Request</h1>
-        <p class="text-muted mb-4">Report maintenance issues or submit service requests.</p>
+    <div class="main-content">
+        <h1 class="page-title">Submit New Request</h1>
+        <p class="page-subtitle">Report maintenance issues or submit other service requests.</p>
 
         @if (Model.UserInfo != null)
         {
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        <div class="mb-3">
+            <div class="form-panel">
+                <form method="post" enctype="multipart/form-data">
+                    <div class="form-grid">
+                        <!-- Request Title -->
+                        <div class="form-group form-span-2">
                             <label asp-for="Input.Title" class="form-label">Request Title</label>
-                            <input asp-for="Input.Title" class="form-control" placeholder="e.g., Leaky Faucet" required />
-                            <span asp-validation-for="Input.Title" class="text-danger"></span>
+                            <input asp-for="Input.Title" class="matcha-input" placeholder="e.g., Leaky Faucet in Kitchen" required />
+                            <span asp-validation-for="Input.Title" class="form-error-message"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="Input.Description" class="form-label">Detailed Description</label>
-                            <textarea asp-for="Input.Description" class="form-control" rows="5" placeholder="Please provide a detailed description of the issue..." required></textarea>
-                            <span asp-validation-for="Input.Description" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
+                        <!-- Request Type -->
+                        <div class="form-group">
                             <label asp-for="Input.RequestType" class="form-label">Request Type</label>
-                            <select asp-for="Input.RequestType" asp-items="Html.GetEnumSelectList<Apartment.Enums.RequestType>()" class="form-select">
+                            <select asp-for="Input.RequestType" asp-items="Html.GetEnumSelectList<Apartment.Enums.RequestType>()" class="matcha-select">
                                 <option value="">-- Select a Type --</option>
                             </select>
-                            <span asp-validation-for="Input.RequestType" class="text-danger"></span>
+                            <span asp-validation-for="Input.RequestType" class="form-error-message"></span>
                         </div>
 
-                        <div class="mb-3">
+                        <!-- Priority -->
+                        <div class="form-group">
                             <label asp-for="Input.Priority" class="form-label">Priority</label>
-                            <select asp-for="Input.Priority" asp-items="Html.GetEnumSelectList<Apartment.Enums.RequestPriority>()" class="form-select">
+                            <select asp-for="Input.Priority" asp-items="Html.GetEnumSelectList<Apartment.Enums.RequestPriority>()" class="matcha-select">
                             </select>
-                            <span asp-validation-for="Input.Priority" class="text-danger"></span>
+                            <span asp-validation-for="Input.Priority" class="form-error-message"></span>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Photo Upload (Optional)</label>
-                            <input type="file" class="form-control" accept="image/*" />
-                            <small class="text-muted">You can upload photos to help describe the issue.</small>
+                        <!-- Detailed Description -->
+                        <div class="form-group form-span-2">
+                            <label asp-for="Input.Description" class="form-label">Detailed Description</label>
+                            <textarea asp-for="Input.Description" class="matcha-textarea" rows="6" placeholder="Please provide as much detail as possible. What is the issue, where is it located, and when did you first notice it?" required></textarea>
+                            <span asp-validation-for="Input.Description" class="form-error-message"></span>
+                        </div>
+                        
+                        <!-- Photo Upload -->
+                        <div class="form-group form-span-2">
+                             <label class="form-label">Photo Upload (Optional)</label>
+                             <div class="file-upload-wrapper">
+                                 <input type="file" id="file-upload" class="file-upload-input" accept="image/*" />
+                                 <label for="file-upload" class="file-upload-label">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cloud-arrow-up" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.646 5.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2z"/><path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383zm.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/></svg>
+                                     <span>Choose a file or drag it here</span>
+                                 </label>
+                             </div>
+                             <small class="form-helper-text">You can upload photos to help describe the issue.</small>
                         </div>
 
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <strong>Note:</strong> Photo upload functionality is a placeholder. In production, this would integrate with file storage.
-                        </div>
+                    </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-send me-2"></i>Submit Request
-                        </button>
-                        <a asp-page="/TenantDashboard" class="btn btn-secondary btn-lg ms-2">Cancel</a>
-                    </form>
-                </div>
+                    <div class="matcha-notification">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-info-circle-fill" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM6.95 4.95a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm1.32 2.15a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 1 0v-4a.5.5 0 0 0-.5-.5z"/></svg>
+                        <span><strong>Note:</strong> Photo upload is for demonstration. In a real application, this would integrate with a file storage service.</span>
+                    </div>
+
+                    <div class="form-actions">
+                        <a asp-page="/TenantDashboard" class="btn btn-secondary-matcha">Cancel</a>
+                        <button type="submit" class="btn btn-primary-matcha">Submit Request</button>
+                    </div>
+                </form>
             </div>
         }
         else
         {
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                No tenant profile found. Please contact the administrator.
+            <div class="matcha-notification">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                <span>No tenant profile found. Please contact the administrator to resolve this issue.</span>
             </div>
         }
     </div>
 </div>
 
 <style>
-    .main-content {
-        min-height: 100vh;
-        background: #f8f9fa;
+    /* 1. PALETTE & FONTS */
+    :root {
+        --matcha-deep-green: #4A6F47;
+        --matcha-soft-green: #A8C3A0;
+        --ceremonial-matcha: #7DA26C;
+        --fresh-cream-white: #F9F8F3;
+        --roasted-brown: #8B6F47;
+        --golden-whisk: #D7A85A;
+        --ink-black: #2C2C2C;
+        --leaf-gray: #7B7B7B;
+        --tea-mist: #E7E5D8;
+        --white: #FFFFFF;
+        
+        --font-headings: 'Cormorant Garamond', Georgia, serif;
+        --font-body: 'Inter', Arial, sans-serif;
     }
-</style>
 
+    /* 2. LAYOUT */
+    .main-content {
+        background-color: var(--fresh-cream-white);
+        min-height: 100vh;
+        flex-grow: 1;
+        padding: 32px;
+        font-family: var(--font-body);
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Center the content column */
+    }
+    
+    .page-title {
+        font-family: var(--font-headings);
+        font-weight: 700;
+        font-size: 36px;
+        color: var(--matcha-deep-green);
+        margin-bottom: 8px;
+        width: 100%;
+        max-width: 900px; /* Match form panel width */
+    }
+
+    .page-subtitle {
+        font-size: 18px;
+        color: var(--leaf-gray);
+        margin-bottom: 32px;
+        width: 100%;
+        max-width: 900px; /* Match form panel width */
+    }
+
+    /* 3. FORM COMPONENTS */
+    .form-panel {
+        background-color: var(--white);
+        border: 1px solid var(--tea-mist);
+        border-radius: 16px;
+        padding: 32px 40px;
+        width: 100%;
+        max-width: 900px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-span-2 {
+        grid-column: span 2;
+    }
+
+    .form-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink-black);
+        margin-bottom: 8px;
+    }
+
+    .matcha-input, .matcha-textarea, .matcha-select {
+        font-family: var(--font-body);
+        font-size: 16px;
+        padding: 12px 16px;
+        border: 1px solid var(--tea-mist);
+        border-radius: 8px;
+        background-color: var(--fresh-cream-white);
+        color: var(--ink-black);
+        transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+    }
+    
+    .matcha-input::placeholder, .matcha-textarea::placeholder {
+        color: var(--leaf-gray);
+    }
+    
+    .matcha-input:focus, .matcha-textarea:focus, .matcha-select:focus {
+        outline: none;
+        border-color: var(--ceremonial-matcha);
+        box-shadow: 0 0 0 3px #a8c3a04a;
+    }
+    
+    .matcha-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%234A6F47' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1em;
+    }
+
+    .form-error-message {
+        font-size: 13px;
+        color: var(--azuki-red);
+        margin-top: 6px;
+    }
+
+    .form-helper-text {
+        font-size: 13px;
+        color: var(--leaf-gray);
+        margin-top: 8px;
+    }
+
+    /* File Upload */
+    .file-upload-wrapper {
+        position: relative;
+    }
+    .file-upload-input {
+        opacity: 0;
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%;
+        cursor: pointer;
+    }
+    .file-upload-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 32px;
+        border: 2px dashed var(--tea-mist);
+        border-radius: 8px;
+        background-color: var(--fresh-cream-white);
+        color: var(--leaf-gray);
+        transition: border-color 150ms ease-out, background-color 150ms ease-out;
+    }
+    .file-upload-input:hover + .file-upload-label,
+    .file-upload-input:focus + .file-upload-label {
+        border-color: var(--ceremonial-matcha);
+        background-color: var(--white);
+    }
+    
+    .file-upload-label svg {
+        color: var(--matcha-deep-green);
+    }
+    
+    /* Notification Panel */
+    .matcha-notification {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background-color: #FDF8E8; /* Light Golden Whisk */
+        border: 1px solid var(--golden-whisk);
+        border-left: 4px solid var(--golden-whisk);
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 32px;
+        color: #8B6F47;
+    }
+    .matcha-notification svg {
+        flex-shrink: 0;
+        margin-top: 2px;
+        color: var(--golden-whisk);
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--tea-mist);
+    }
+    
+    .btn-primary-matcha, .btn-secondary-matcha {
+        font-family: var(--font-body);
+        font-size: 16px;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 150ms ease-out;
+    }
+    
+    .btn-primary-matcha {
+        background-color: var(--matcha-deep-green);
+        color: var(--white);
+    }
+    .btn-primary-matcha:hover {
+        background-color: var(--ceremonial-matcha);
+    }
+
+    .btn-secondary-matcha {
+        background-color: transparent;
+        color: var(--matcha-deep-green);
+        border-color: var(--tea-mist);
+    }
+    .btn-secondary-matcha:hover {
+        background-color: #F0F3EF;
+        border-color: var(--ceremonial-matcha);
+    }
+
+</style>

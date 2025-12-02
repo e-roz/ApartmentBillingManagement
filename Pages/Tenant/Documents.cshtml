@@ -9,77 +9,74 @@
 <div class="d-flex">
     @await Html.PartialAsync("_TenantSidebar")
 
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">Documents</h1>
-        <p class="text-muted mb-4">Access your lease agreement and building policies.</p>
+    <div class="main-content">
+        <div class="page-content-wrapper">
+            <h1 class="page-title">Documents</h1>
+            <p class="page-subtitle">Access your lease agreement and official building policies.</p>
 
-        <div class="row g-4">
-            <!-- Lease Agreement -->
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="me-3" style="font-size: 2.5rem; color: #007bff;">
-                                <i class="bi bi-file-earmark-text"></i>
+            <div class="row g-4">
+                <!-- Lease Agreement -->
+                <div class="col-lg-6">
+                    <div class="document-card">
+                        <div class="card-header-matcha">
+                            <div class="card-icon-wrapper">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>
                             </div>
                             <div>
-                                <h5 class="card-title mb-0">Lease Agreement</h5>
-                                <small class="text-muted">Your personalized lease document</small>
+                                <h5 class="card-title-matcha">Lease Agreement</h5>
+                                <small class="card-subtitle-matcha">Your personalized lease document</small>
                             </div>
                         </div>
-                        @if (Model.UserInfo != null)
-                        {
-                            <p class="text-muted">
-                                <strong>Unit:</strong> @(Model.ActiveLease?.UnitNumber ?? "Not Assigned")<br />
-                                @{
-                                    if (Model.ActiveLease != null)
-                                    {
-                                        var leaseStart = Model.ActiveLease.LeaseStart.ToString("MM/dd/yyyy");
-                                        var leaseEnd = Model.ActiveLease.LeaseEnd.ToString("MM/dd/yyyy");
-                                        <text><strong>Lease Period:</strong> @leaseStart - @leaseEnd<br /></text>
-                                        <text><strong>Monthly Rent:</strong> @Model.ActiveLease.MonthlyRent.ToString("C", pesoCulture)</text>
+                        <div class="card-body-matcha">
+                            @if (Model.ActiveLease != null)
+                            {
+                                <div class="lease-details">
+                                    <p><strong>Unit:</strong> @Model.ActiveLease.UnitNumber</p>
+                                    @{
+                                        var leaseStart = Model.ActiveLease.LeaseStart.ToString("MMMM dd, yyyy");
+                                        var leaseEnd = Model.ActiveLease.LeaseEnd.ToString("MMMM dd, yyyy");
+                                        <p><strong>Lease Period:</strong> @leaseStart - @leaseEnd</p>
+                                        <p><strong>Monthly Rent:</strong> <span class="mono-font">@Model.ActiveLease.MonthlyRent.ToString("C", pesoCulture)</span></p>
                                     }
-                                }
-                            </p>
-                        }
-                        @if (Model.ActiveLease != null)
-                        {
-                            <form method="post" asp-page-handler="DownloadLease">
-                                <input type="hidden" name="leaseId" value="@Model.ActiveLease.Id" />
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-download me-2"></i>View Lease Agreement
+                                </div>
+                                <form method="post" asp-page-handler="DownloadLease" class="mt-4">
+                                    <input type="hidden" name="leaseId" value="@Model.ActiveLease.Id" />
+                                    <button type="submit" class="btn btn-primary-matcha w-100">
+                                        Download Lease Agreement
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <p class="text-muted">An active lease is required to view the agreement.</p>
+                                <button class="btn btn-disabled-matcha w-100 mt-4" type="button" disabled>
+                                    No Active Lease Available
                                 </button>
-                            </form>
-                        }
-                        else
-                        {
-                            <button class="btn btn-primary" type="button" disabled>
-                                <i class="bi bi-download me-2"></i>No Active Lease Available
-                            </button>
-                        }
+                            }
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Building Policies -->
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="me-3" style="font-size: 2.5rem; color: #28a745;">
-                                <i class="bi bi-file-earmark-ruled"></i>
+                <!-- Building Policies -->
+                <div class="col-lg-6">
+                    <div class="document-card">
+                        <div class="card-header-matcha">
+                            <div class="card-icon-wrapper">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-file-earmark-ruled" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 1a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V2l-2.5-1.5z"/><path d="M3 8.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg>
                             </div>
                             <div>
-                                <h5 class="card-title mb-0">Building Policies</h5>
-                                <small class="text-muted">Rules, quiet hours, and guidelines</small>
+                                <h5 class="card-title-matcha">Building Policies</h5>
+                                <small class="card-subtitle-matcha">Rules, quiet hours, and guidelines</small>
                             </div>
                         </div>
-                        <p class="text-muted">
-                            Access general building rules, quiet hours, parking policies, pet policies, and community guidelines.
-                        </p>
-                        <button class="btn btn-primary" onclick="alert('In production, this would open the building policies document.')">
-                            <i class="bi bi-file-earmark-text me-2"></i>View Building Policies
-                        </button>
+                        <div class="card-body-matcha">
+                            <p class="text-muted">
+                                Access general building rules, quiet hours, parking policies, pet policies, and other community guidelines.
+                            </p>
+                            <button class="btn btn-primary-matcha w-100 mt-auto" onclick="alert('In production, this would open the building policies document.')">
+                                View Building Policies
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -88,18 +85,150 @@
 </div>
 
 <style>
+    /* 1. PALETTE & FONTS */
+    :root {
+        --matcha-deep-green: #4A6F47;
+        --ceremonial-matcha: #7DA26C;
+        --fresh-cream-white: #F9F8F3;
+        --ink-black: #2C2C2C;
+        --leaf-gray: #7B7B7B;
+        --tea-mist: #E7E5D8;
+        --white: #FFFFFF;
+        
+        --font-headings: 'Cormorant Garamond', Georgia, serif;
+        --font-body: 'Inter', Arial, sans-serif;
+        --font-numeric: 'JetBrains Mono', Consolas, monospace;
+    }
+
+    /* 2. LAYOUT */
     .main-content {
+        background-color: var(--fresh-cream-white);
         min-height: 100vh;
-        background: #f8f9fa;
+        flex-grow: 1;
+        padding: 32px;
+        font-family: var(--font-body);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .page-content-wrapper {
+        width: 100%;
+        max-width: 1000px;
+    }
+    
+    .page-title {
+        font-family: var(--font-headings);
+        font-weight: 700;
+        font-size: 36px;
+        color: var(--matcha-deep-green);
+        margin-bottom: 8px;
     }
 
-    .card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    .page-subtitle {
+        font-size: 18px;
+        color: var(--leaf-gray);
+        margin-bottom: 32px;
     }
 
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    /* 3. DOCUMENT CARD */
+    .document-card {
+        background-color: var(--white);
+        border: 1px solid var(--tea-mist);
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: transform 200ms ease-out, box-shadow 200ms ease-out;
     }
+    .document-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    
+    .card-header-matcha {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+        border-bottom: 1px solid var(--tea-mist);
+    }
+    
+    .card-icon-wrapper {
+        flex-shrink: 0;
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #F0F3EF;
+        color: var(--matcha-deep-green);
+    }
+
+    .card-title-matcha {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--ink-black);
+        margin: 0;
+    }
+    
+    .card-subtitle-matcha {
+        color: var(--leaf-gray);
+        font-size: 0.9rem;
+    }
+
+    .card-body-matcha {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+    
+    .lease-details p {
+        margin-bottom: 8px;
+        color: var(--leaf-gray);
+        font-size: 0.95rem;
+    }
+    
+    .lease-details p strong {
+        color: var(--ink-black);
+    }
+    
+    .text-muted {
+        color: var(--leaf-gray) !important;
+    }
+    
+    .mono-font {
+        font-family: var(--font-numeric);
+    }
+
+    /* Buttons */
+    .btn-primary-matcha, .btn-disabled-matcha {
+        font-family: var(--font-body);
+        font-size: 16px;
+        font-weight: 600;
+        padding: 14px 24px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 150ms ease-out;
+    }
+    
+    .btn-primary-matcha {
+        background-color: var(--matcha-deep-green);
+        color: var(--white);
+    }
+    .btn-primary-matcha:hover {
+        background-color: var(--ceremonial-matcha);
+    }
+    
+    .btn-disabled-matcha {
+        background-color: #F3F4F6;
+        color: var(--leaf-gray);
+        cursor: not-allowed;
+    }
+
 </style>
-

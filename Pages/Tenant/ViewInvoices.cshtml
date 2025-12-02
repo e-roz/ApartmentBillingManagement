@@ -6,31 +6,40 @@
     var pesoCulture = CultureInfo.CreateSpecificCulture("en-PH");
 }
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600&family=Nunito:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <div class="d-flex">
     @await Html.PartialAsync("_TenantSidebar")
 
-    <div class="main-content" style="margin-left: 280px; width: calc(100% - 280px); padding: 2rem;">
-        <h1 class="h3 mb-4">View Invoices</h1>
-        <p class="text-muted mb-4">All past and current invoices for your account.</p>
+    <div class="matcha-main matcha-dashboard">
+        <div class="matcha-header">
+            <h1 class="matcha-h1">View Invoices</h1>
+            <p class="matcha-subtitle">All past and current invoices for your account.</p>
+        </div>
 
         @if (Model.Invoices != null && Model.Invoices.Any())
         {
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover data-table" id="invoicesTable">
+            <div class="matcha-card matcha-card-accent">
+                <div class="matcha-card-body" style="padding: 0;">
+                    <div class="matcha-table-responsive">
+                        <table class="matcha-invoices-table" id="invoicesTable">
                             <thead>
                                 <tr>
                                     <th>Invoice</th>
-                                    <th>Bill Amount</th>
-                                    <th>Payment Amount</th>
+                                    <th class="text-end">Bill Amount</th>
+                                    <th class="text-end">Payment Amount</th>
                                     <th>Issue Date</th>
                                     <th>Due Date</th>
                                     <th>Status</th>
-                                    <th>Action</th>
+                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @{
+                                    var rowIndex = 0;
+                                }
                                 @foreach (var invoice in Model.Invoices)
                                 {
                                     var billingPeriod = invoice.Bill?.BillingPeriod != null
@@ -41,30 +50,43 @@
                                         ? Math.Max(0m, invoice.Bill.AmountDue - invoice.Bill.AmountPaid)
                                         : 0m;
                                     var showPayButton = invoice.BillId.HasValue && remaining > 0m;
+                                    var statusClass = invoice.Status == Apartment.Enums.InvoiceStatus.Paid 
+                                        ? "success" 
+                                        : invoice.Status == Apartment.Enums.InvoiceStatus.Overdue 
+                                        ? "danger" 
+                                        : invoice.Status == Apartment.Enums.InvoiceStatus.Partial 
+                                        ? "warning" 
+                                        : "neutral";
+                                    var isEvenRow = rowIndex % 2 == 0;
+                                    rowIndex++;
                                     
-                                    <tr>
+                                    <tr class="@(isEvenRow ? "matcha-table-row-even" : "")">
                                         <td>
-                                            <div class="fw-semibold">@invoice.Title</div>
-                                            <small class="text-muted d-block">@billingPeriod</small>
+                                            <div class="matcha-invoice-title">@invoice.Title</div>
+                                            <div class="matcha-invoice-period">@billingPeriod</div>
                                         </td>
-                                        <td>@billAmount.ToString("C", pesoCulture)</td>
-                                        <td>@invoice.AmountDue.ToString("C", pesoCulture)</td>
-                                        <td>@invoice.IssueDate.ToString("MM/dd/yyyy")</td>
-                                        <td>@(invoice.Bill?.DueDate.ToString("MM/dd/yyyy") ?? invoice.DueDate.ToString("MM/dd/yyyy"))</td>
+                                        <td class="matcha-amount-cell text-end">
+                                            <span class="matcha-mono">@billAmount.ToString("C", pesoCulture)</span>
+                                        </td>
+                                        <td class="matcha-amount-cell text-end">
+                                            <span class="matcha-mono">@invoice.AmountDue.ToString("C", pesoCulture)</span>
+                                        </td>
+                                        <td class="matcha-date-cell">@invoice.IssueDate.ToString("MM/dd/yyyy")</td>
+                                        <td class="matcha-date-cell">@(invoice.Bill?.DueDate.ToString("MM/dd/yyyy") ?? invoice.DueDate.ToString("MM/dd/yyyy"))</td>
                                         <td>
-                                            <span class="badge @(invoice.Status == Apartment.Enums.InvoiceStatus.Paid ? "bg-success" : invoice.Status == Apartment.Enums.InvoiceStatus.Overdue ? "bg-danger" : invoice.Status == Apartment.Enums.InvoiceStatus.Partial ? "bg-warning text-dark" : "bg-secondary")">
+                                            <span class="matcha-status-chip @statusClass">
                                                 @invoice.Status
                                             </span>
                                         </td>
-                                        <td>
-                                            <div class="d-flex gap-2">
-                                                <a asp-page="/Tenant/InvoiceDownload" asp-route-invoiceId="@invoice.Id" class="btn btn-outline-secondary btn-sm">
-                                                    <i class="bi bi-download me-1"></i>PDF
+                                        <td class="text-center">
+                                            <div class="matcha-action-buttons">
+                                                <a asp-page="/Tenant/InvoiceDownload" asp-route-invoiceId="@invoice.Id" class="matcha-btn-secondary matcha-btn-compact">
+                                                    <i class="bi bi-download"></i> PDF
                                                 </a>
                                                 @if (showPayButton)
                                                 {
-                                                    <a asp-page="/Tenant/MakePayment" asp-route-billId="@invoice.BillId" class="btn btn-primary btn-sm">
-                                                        <i class="bi bi-credit-card me-1"></i>Pay
+                                                    <a asp-page="/Tenant/MakePayment" asp-route-billId="@invoice.BillId" class="matcha-btn-primary matcha-btn-compact">
+                                                        <i class="bi bi-credit-card"></i> Pay
                                                     </a>
                                                 }
                                             </div>
@@ -79,18 +101,156 @@
         }
         else
         {
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                No invoices found for your account.
+            <div class="matcha-card matcha-card-soft">
+                <div class="matcha-card-body" style="text-align: center; padding: 40px 20px;">
+                    <i class="bi bi-receipt" style="font-size: 48px; color: #7B7B7B; margin-bottom: 16px; display: block;"></i>
+                    <p class="matcha-body" style="color: #7B7B7B; margin: 0;">
+                        No invoices found for your account.
+                    </p>
+                </div>
             </div>
         }
     </div>
 </div>
 
 <style>
-    .main-content {
+    /* Matcha Design System - View Invoices Page */
+    .matcha-main {
+        background: #F9F8F3;
         min-height: 100vh;
-        background: #f8f9fa;
     }
+
+    .matcha-table-responsive {
+        overflow-x: auto;
+        border-radius: 16px;
+    }
+
+    .matcha-invoices-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-family: "Inter", "Nunito", Arial, sans-serif;
+        font-size: 14px;
+    }
+
+    .matcha-invoices-table thead {
+        background: #8B6F47; /* Roasted Brown */
+        color: #ffffff;
+        width: inherit;
+    }
+
+    .matcha-invoices-table thead th {
+        padding: 16px 20px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+        font-family: "Inter", "Nunito", Arial, sans-serif;
+        border: none;
+        border-bottom: 2px solid #6B5F37;
+    }
+
+    .matcha-invoices-table thead th.text-end {
+        text-align: right;
+    }
+
+    .matcha-invoices-table thead th.text-center {
+        text-align: center;
+    }
+
+    .matcha-invoices-table tbody tr {
+        background: #F9F8F3; /* Fresh Cream White */
+        border-bottom: 1px solid #E7E5D8; /* Tea Mist */
+        transition: background-color 0.2s ease;
+    }
+
+    .matcha-invoices-table tbody tr.matcha-table-row-even {
+        background: #F5F0E8; /* Light warm cream - alternating rows */
+    }
+
+    .matcha-invoices-table tbody tr:hover {
+        background: #F0EBE3; /* Warm sand on hover */
+    }
+
+    .matcha-invoices-table tbody tr.matcha-table-row-even:hover {
+        background: #EBE5DC; /* Slightly darker cream on hover */
+    }
+
+    .matcha-invoices-table tbody td {
+        padding: 16px 20px;
+        border: none;
+        vertical-align: middle;
+        color: #2C2C2C; /* Ink Black */
+    }
+
+    .matcha-invoice-title {
+        font-family: "Inter", "Nunito", Arial, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: #8B6F47; /* Roasted Brown */
+        margin-bottom: 4px;
+    }
+
+    .matcha-invoice-period {
+        font-family: "Inter", "Nunito", Arial, sans-serif;
+        font-size: 13px;
+        color: #7B7B7B; /* Leaf Gray */
+    }
+
+    .matcha-amount-cell {
+        font-family: "JetBrains Mono", Consolas, monospace;
+        font-size: 15px;
+        font-weight: 500;
+        color: #2C2C2C;
+    }
+
+    .matcha-date-cell {
+        font-family: "Inter", "Nunito", Arial, sans-serif;
+        font-size: 14px;
+        color: #2C2C2C;
+    }
+
+    .matcha-action-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .matcha-action-buttons .matcha-btn-primary,
+    .matcha-action-buttons .matcha-btn-secondary {
+        white-space: nowrap;
+    }
+
+    /* Override heading color to use brown instead of green */
+    .matcha-h1 {
+        color: #8B6F47 !important; /* Roasted Brown */
+    }
+
+    /* Override button colors to use brown instead of green */
+    .matcha-btn-primary {
+        background-color: #8B6F47 !important; /* Roasted Brown */
+        border-color: #8B6F47 !important;
+    }
+
+    .matcha-btn-primary:hover {
+        background-color: #A68B6B !important; /* Lighter brown */
+        border-color: #A68B6B !important;
+    }
+
+    .matcha-btn-secondary {
+        color: #8B6F47 !important; /* Roasted Brown */
+        border-color: #8B6F47 !important;
+    }
+
+    .matcha-btn-secondary:hover {
+        background-color: #F5F0E8 !important; /* Light warm cream */
+        border-color: #8B6F47 !important;
+        color: #8B6F47 !important;
+    }
+
+    
+    
+
 </style>
 
