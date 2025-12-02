@@ -92,6 +92,9 @@ namespace Apartment.Pages
             );
             await dbData.SaveChangesAsync();
 
+            // Clear any lingering error messages from previous failed attempts
+            TempData.Remove("ErrorMessage");
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
