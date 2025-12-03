@@ -24,9 +24,9 @@
         </header>
 
         <!-- KPI Row -->
-        <section class="matcha-section mb-5">
+        <section class="matcha-section mb-4">
             <div class="row g-4">
-                <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="col-lg-3 col-md-6 col-sm-6">
                     <article class="matcha-card h-100">
                         <div class="matcha-card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -43,7 +43,7 @@
                     </article>
                 </div>
 
-                <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="col-lg-3 col-md-6 col-sm-6">
                     <article class="matcha-card h-100">
                         <div class="matcha-card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -60,7 +60,7 @@
                     </article>
                 </div>
 
-                <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="col-lg-3 col-md-6 col-sm-6">
                     <article class="matcha-card h-100">
                         <div class="matcha-card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -77,7 +77,7 @@
                     </article>
                 </div>
 
-                <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="col-lg-3 col-md-6 col-sm-6">
                     <article class="matcha-card h-100">
                         <div class="matcha-card-body">
                             <div class="d-flex justify-content-between align-items-start">
@@ -93,22 +93,74 @@
                         </div>
                     </article>
                 </div>
+            </div>
+        </section>
 
-                <div class="col-lg-4 col-md-8 col-sm-12">
+        <!-- Total Revenue Card -->
+        <section class="matcha-section mb-4">
+            <div class="row g-4">
+                <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                     <article class="matcha-card matcha-card-accent h-100">
                         <div class="matcha-card-body">
-                            <div class="d-flex justify-content-between align-items-start">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <div class="matcha-body-s text-muted text-uppercase mb-1">Total Revenue</div>
                                     <div class="matcha-amount">
                                         @Model.TotalRevenue.ToString("C", pesoCulture)
                                     </div>
-                                    <div class="matcha-body-s text-muted">Total payments received</div>
+                                    <div class="matcha-body-s text-muted">Total payments received (all time)</div>
                                 </div>
                                 <div class="matcha-card-icon matcha-card-icon-payment">
                                     <i class="bi bi-cash-stack"></i>
                                 </div>
                             </div>
+                            
+                            <!-- Revenue Filter Dropdowns -->
+                            <div class="mb-3">
+                                <form method="get" class="d-flex gap-2 align-items-end flex-wrap" id="revenueFilterForm">
+                                    <div class="flex-grow-1" style="min-width: 200px;">
+                                        <label class="matcha-body-s text-muted mb-1 d-block">Filter by Month/Year</label>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <div style="flex: 1; min-width: 120px;">
+                                                <select name="revenueMonth" class="form-select form-select-sm w-100" onchange="submitRevenueFilter()">
+                                                    <option value="">All Months</option>
+                                                    @for (int m = 1; m <= 12; m++)
+                                                    {
+                                                        var monthName = new DateTime(2000, m, 1).ToString("MMMM");
+                                                        <option value="@m" selected="@(Model.RevenueMonth == m)">@monthName</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div style="flex: 1; min-width: 100px;">
+                                                <select name="revenueYear" class="form-select form-select-sm w-100" onchange="submitRevenueFilter()">
+                                                    <option value="">All Years</option>
+                                                    @{
+                                                        var currentYear = DateTime.Now.Year;
+                                                        // Show current year + 5 future years, and 10 past years
+                                                        for (int y = currentYear + 5; y >= currentYear - 10; y--)
+                                                        {
+                                                            <option value="@y" selected="@(Model.RevenueYear == y)">@y</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Filtered Revenue Display -->
+                            @if (Model.RevenueYear.HasValue && Model.RevenueMonth.HasValue)
+                            {
+                                var selectedMonthName = new DateTime(Model.RevenueYear.Value, Model.RevenueMonth.Value, 1).ToString("MMMM yyyy");
+                                <div class="border-top pt-3">
+                                    <div class="matcha-body-s text-muted text-uppercase mb-1">Revenue for @selectedMonthName</div>
+                                    <div class="matcha-amount" style="font-size: 1.5rem;">
+                                        @Model.FilteredRevenue.ToString("C", pesoCulture)
+                                    </div>
+                                    <div class="matcha-body-s text-muted">Payments received in this period</div>
+                                </div>
+                            }
                         </div>
                     </article>
                 </div>
@@ -116,7 +168,7 @@
         </section>
 
         <!-- Portfolio Calendar + Payment Audit -->
-        <section class="matcha-section mb-5">
+        <section class="matcha-section mb-4">
             <div class="row g-4">
                 <!-- Admin Rent & Events Calendar -->
                 <div class="col-lg-8">
@@ -158,12 +210,16 @@
                                         <a asp-page="/Admin/AdminDashboard"
                                            asp-route-year="@prevMonth.Year"
                                            asp-route-month="@prevMonth.Month"
+                                           asp-route-revenueYear="@(Model.RevenueYear)"
+                                           asp-route-revenueMonth="@(Model.RevenueMonth)"
                                            class="matcha-btn-secondary matcha-btn-compact">
                                             ‹ Prev
                                         </a>
                                         <a asp-page="/Admin/AdminDashboard"
                                            asp-route-year="@nextMonth.Year"
                                            asp-route-month="@nextMonth.Month"
+                                           asp-route-revenueYear="@(Model.RevenueYear)"
+                                           asp-route-revenueMonth="@(Model.RevenueMonth)"
                                            class="matcha-btn-secondary matcha-btn-compact">
                                             Next ›
                                         </a>
@@ -309,3 +365,99 @@
         </section>
     </div>
 </div>
+
+<style>
+    /* Revenue Filter Form Selects - Matcha Design */
+    #revenueFilterForm .form-select {
+        border: 1px solid #E7E5D8;
+        border-radius: 8px;
+        background-color: #FFFFFF;
+        color: #2C2C2C;
+        font-family: "Inter", "Nunito", Arial, sans-serif;
+        font-size: 14px;
+        padding: 8px 12px;
+        transition: all 0.2s ease;
+    }
+    
+    #revenueFilterForm .form-select:focus {
+        border-color: #4A6F47;
+        box-shadow: 0 0 0 2px rgba(74, 111, 71, 0.15);
+        outline: none;
+    }
+    
+    #revenueFilterForm .form-select:hover {
+        border-color: #A8C3A0;
+    }
+
+    /* Responsive Design - Similar to BillingSummary */
+    @@media (max-width: 768px) {
+        #revenueFilterForm {
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+        
+        #revenueFilterForm > div {
+            width: 100%;
+            min-width: 100%;
+        }
+        
+        #revenueFilterForm .d-flex.gap-2 {
+            flex-direction: column;
+        }
+        
+        #revenueFilterForm .d-flex.gap-2 > div {
+            width: 100%;
+            min-width: 100%;
+        }
+        
+        #revenueFilterForm .form-select {
+            width: 100% !important;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .matcha-card-accent .matcha-card-body {
+            padding: 12px 16px 16px 16px;
+        }
+        
+        .matcha-amount {
+            font-size: 20px;
+        }
+        
+        #revenueFilterForm label {
+            font-size: 12px;
+        }
+    }
+</style>
+
+<script>
+    function submitRevenueFilter() {
+        const form = document.getElementById('revenueFilterForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        
+        // Preserve current calendar month/year from URL if they exist
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentYear = urlParams.get('year');
+        const currentMonth = urlParams.get('month');
+        
+        if (currentYear && currentMonth) {
+            params.append('year', currentYear);
+            params.append('month', currentMonth);
+        }
+        
+        // Add revenue filter parameters
+        const revenueMonth = formData.get('revenueMonth');
+        const revenueYear = formData.get('revenueYear');
+        
+        if (revenueMonth) {
+            params.append('revenueMonth', revenueMonth);
+        }
+        if (revenueYear) {
+            params.append('revenueYear', revenueYear);
+        }
+        
+        // Navigate with preserved calendar and revenue filter parameters
+        window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    }
+</script>

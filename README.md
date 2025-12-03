@@ -62,21 +62,47 @@ Restore the .NET and client-side packages.
 
 ### 4. Apply Database Migrations
 
-This project uses EF Core Migrations to set up the database schema. Run the following command to create and seed the database specified in your connection string.
+This project uses EF Core Migrations to set up the database schema. Choose the method that matches your development environment.
+
+<details>
+<summary><strong>Option 1: Using .NET CLI (Recommended)</strong></summary>
+
+Make sure you are in the `ApartmentBillingManagement` directory, then run the following command. It will create the database (if it doesn't exist) and apply all migrations.
 
 ```sh
 dotnet ef database update
 ```
-This command will apply all existing migrations. The database will be created if it doesn't exist.
+</details>
+
+<details>
+<summary><strong>Option 2: Using Visual Studio PMC</strong></summary>
+
+1.  Open the solution in Visual Studio.
+2.  Open the Package Manager Console (`View` > `Other Windows` > `Package Manager Console`).
+3.  Ensure the "Default project" dropdown is set to `Apartment`.
+4.  Run the following command:
+
+```powershell
+Update-Database
+```
+</details>
 
 ### 5. Run the Application
 
-You can now run the application.
+You can now run the application. From the `ApartmentBillingManagement` directory, run:
 
 ```sh
 dotnet watch run
 ```
-This command will build and run the application, automatically relaunching it if you make any code changes. The application should be available at `https://localhost:7043` or a similar address shown in the console.
+This command will build and run the application, automatically relaunching it if you make any code changes. The application should be available at a local address shown in the console (e.g., `https://localhost:7043`).
+
+### Troubleshooting Migrations
+If you get an error during the `database update` command, it's often because a local database already exists in an inconsistent state. The easiest fix is to start fresh.
+
+1.  **Open SQL Server Management Studio (SSMS) or your database tool.**
+2.  **Find the database** you named in your `appsettings.Development.json` (e.g., `ApartmentDB_Dev`).
+3.  **Delete the database.**
+4.  **Run the update command again.** EF Core will now create a clean database and apply all migrations from the beginning.
 
 ---
 

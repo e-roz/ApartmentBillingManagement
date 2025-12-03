@@ -23,6 +23,8 @@ namespace Apartment.ViewModels
 
         [Display(Name = "Last Login")]
         public DateTime? LastLogin { get; set; }
+
+        public string? DeactivationReason { get; set; }
     }
 }
 

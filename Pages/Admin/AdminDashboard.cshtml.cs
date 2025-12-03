@@ -29,6 +29,7 @@ namespace Apartment.Pages.Admin
         public int OpenServiceTickets { get; set; }
         public int PendingBills { get; set; }
         public decimal TotalRevenue { get; set; }
+        public decimal FilteredRevenue { get; set; }
 
         // Admin calendar + payment audit
         public HashSet<DateTime> RentDueDates { get; set; } = new();
@@ -39,6 +40,10 @@ namespace Apartment.Pages.Admin
         public int CalendarYear { get; set; }
         public int CalendarMonth { get; set; }
 
+        // Revenue filter selection (year / month)
+        public int? RevenueYear { get; set; }
+        public int? RevenueMonth { get; set; }
+
         public class PaymentAuditItem
         {
             public string TenantName { get; set; } = string.Empty;
@@ -47,7 +52,7 @@ namespace Apartment.Pages.Admin
             public DateTime Date { get; set; }
         }
 
-        public async Task OnGetAsync(int? year, int? month)
+        public async Task OnGetAsync(int? year, int? month, int? revenueYear, int? revenueMonth)
         {
             // Get user information from claims
             Username = User.Identity?.Name ?? "Unknown User";
@@ -61,6 +66,10 @@ namespace Apartment.Pages.Admin
             }
             CalendarYear = baseDate.Year;
             CalendarMonth = baseDate.Month;
+
+            // Revenue filter parameters
+            RevenueYear = revenueYear;
+            RevenueMonth = revenueMonth;
 
             // Fetch manager dashboard KPI data
             ActiveTenants = await _context.Users
@@ -77,9 +86,34 @@ namespace Apartment.Pages.Admin
                 .Where(b => b.AmountPaid < b.AmountDue)
                 .CountAsync();
 
+            // Total revenue (all time)
             TotalRevenue = await _context.Bills
                 .Where(b => b.AmountPaid > 0)
                 .SumAsync(b => b.AmountPaid);
+
+            // Filtered revenue (for selected month/year) - matching BillingSummary logic
+            if (RevenueYear.HasValue && RevenueMonth.HasValue && RevenueMonth.Value is >= 1 and <= 12)
+            {
+                // Construct PeriodKey in format "yyyy-mm" (e.g., "2025-01" for January 2025)
+                var periodKey = $"{RevenueYear.Value}-{RevenueMonth.Value:D2}";
+                
+                // Get month name for the selected month
+                var monthDate = new DateTime(RevenueYear.Value, RevenueMonth.Value, 1);
+                var monthName = monthDate.ToString("MMMM");
+
+                // Calculate revenue the same way as BillingSummary: sum Bill.AmountPaid for bills in that period
+                FilteredRevenue = await _context.Bills
+                    .Include(b => b.BillingPeriod)
+                    .Where(b => b.BillingPeriod != null 
+                                && (b.BillingPeriod.PeriodKey == periodKey 
+                                    || (b.BillingPeriod.Year == RevenueYear.Value 
+                                        && b.BillingPeriod.MonthName == monthName)))
+                    .SumAsync(b => b.AmountPaid);
+            }
+            else
+            {
+                FilteredRevenue = 0;
+            }
 
             // Calendar data - rent due and overdue dates for selected month (portfolio-wide)
             var nowLocal = DateTime.Now;

@@ -21,6 +21,7 @@ namespace Apartment.Pages
         public string Username { get; set; } = string.Empty;
         public Model.User? UserInfo { get; set; }
         public Lease? ActiveLease { get; set; }
+        public string? ApartmentType { get; set; }
         public decimal OutstandingBalance { get; set; }
         public int PendingBills { get; set; }
         public decimal TotalPaid { get; set; }
@@ -104,6 +105,11 @@ namespace Apartment.Pages
                     UserInfo = user;
                     var now = DateTime.UtcNow;
                     ActiveLease = user.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
+                    if (ActiveLease?.Apartment != null)
+                    {
+                        ApartmentType = ActiveLease.Apartment.ApartmentType.ToString();
+                    }
+
                     var unpaidBillSummaries = await _context.Bills
                         .Where(b => b.TenantUserId == user.Id)
                         .Select(b => new

@@ -118,7 +118,8 @@ namespace Apartment.Pages.Admin
                     Role = u.Role,
                     CreationDate = u.CreatedAt,
                     Status = u.Status ?? "Active", // Default to Active if null
-                    LastLogin = u.UpdatedAt // Using UpdatedAt as proxy for LastLogin
+                    LastLogin = u.UpdatedAt, // Using UpdatedAt as proxy for LastLogin
+                    DeactivationReason = u.DeactivationReason
                 })
                 .OrderBy(u => u.Role)
                 .ThenBy(u => u.Id)
@@ -412,7 +413,7 @@ namespace Apartment.Pages.Admin
         }
 
         // POST Method: Toggle user status (Activate/Deactivate)
-        public async Task<IActionResult> OnPostToggleStatusAsync(int userId)
+        public async Task<IActionResult> OnPostToggleStatusAsync(int userId, string deactivationReason)
         {
             var userToToggle = await dbData.Users.FirstOrDefaultAsync(u => u.Id == userId);
             var adminIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -441,14 +442,28 @@ namespace Apartment.Pages.Admin
             userToToggle.Status = newStatus;
             userToToggle.UpdatedAt = DateTime.UtcNow;
 
+            if (newStatus == "Inactive")
+            {
+                userToToggle.DeactivationReason = deactivationReason;
+            }
+            else
+            {
+                userToToggle.DeactivationReason = null;
+            }
+
             dbData.Users.Update(userToToggle);
             await dbData.SaveChangesAsync();
 
             // Log audit action
+            var details = $"Admin changed status for user {userToToggle.Username} (ID: {userToToggle.Id}) from {oldStatus} to {newStatus}.";
+            if (newStatus == "Inactive" && !string.IsNullOrEmpty(deactivationReason))
+            {
+                details += $" Reason: {deactivationReason}";
+            }
             await _auditService.LogAsync(
                 action: AuditActionType.UpdateUser,
                 userId: currentAdminIdInt,
-                details: $"Admin changed status for user {userToToggle.Username} (ID: {userToToggle.Id}) from {oldStatus} to {newStatus}.",
+                details: details,
                 entityId: userToToggle.Id,
                 entityType: "User"
             );

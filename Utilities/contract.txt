@@ -1,0 +1,81 @@
+﻿RESIDENTIAL APARTMENT LEASE AGREEMENT
+
+This Residential Apartment Lease Agreement (“Agreement”) is executed by and between {{LandlordName}}, hereinafter referred to as the “Landlord,” and {{TenantName}}, hereinafter referred to as the “Tenant.”
+Both parties hereby agree to enter into a binding lease contract under the terms and conditions set forth below.
+
+1. DESCRIPTION OF PREMISES
+
+The Landlord hereby leases to the Tenant the residential unit identified as {{UnitName}} (“Leased Premises”).
+The Tenant acknowledges that the Leased Premises is a private dwelling intended solely for residential occupancy.
+
+2. LEASE TERM (FIXED DURATION)
+
+The lease shall commence on {{LeaseStartDate}} and shall continue until {{LeaseEndDate}}, unless earlier terminated in accordance with this Agreement.
+Upon expiration of the fixed term, continuation of occupancy shall require the mutual written agreement of both parties.
+
+3. MONTHLY RENT
+
+The Tenant agrees to pay the Landlord a monthly rental fee of {{MonthlyRent}}, payable in advance on the date designated by the Landlord.
+Rent must be paid in full and without deductions, unless otherwise allowed by Philippine law.
+
+4. PAYMENT METHOD AND DELIVERY
+
+The Tenant agrees to pay all rental amounts using the payment method and payment location designated by the Landlord.
+The Landlord may, through written notice, modify or provide additional instructions on how rent payments shall be submitted.
+
+5. LATE PAYMENT AND PENALTIES
+
+Timely payment of rent is a material obligation of the Tenant.
+If rent is not received on the designated due date, the Tenant agrees to pay a late fee of {{LateFee}}, which shall be added to the outstanding amount due.
+The Tenant understands that personal circumstances such as illness, employment issues, or financial difficulty shall not exempt them from paying rent on time or from applicable late fees.
+
+6. SECURITY DEPOSIT
+
+The Tenant shall remit a security deposit of {{SecurityDeposit}}, to be held by the Landlord as security for any damages to the Leased Premises, unpaid obligations, or violations of this Agreement.
+The security deposit shall not be applied toward rental payments and shall be returned to the Tenant after the lease ends and the Tenant has vacated the premises, subject to lawful deductions for damages and necessary repairs.
+The return of the deposit shall follow the timeline prescribed by applicable Philippine regulations.
+
+7. CONDITION OF THE PREMISES
+
+The Tenant acknowledges that the Leased Premises is accepted in good and habitable condition at the time of occupancy.
+Any existing issues must be reported to the Landlord immediately upon move-in. Failure to do so shall constitute acknowledgement that the premises is in satisfactory condition.
+
+8. PETS
+
+Pets Allowed: {{PetsAllowed}}
+If pets are permitted, the Tenant agrees to ensure that all animals are well-controlled, properly maintained, and do not cause damage, nuisance, or disturbances.
+Any damage caused by pets shall be deducted from the security deposit or charged directly to the Tenant.
+
+9. USE OF PREMISES
+
+The Leased Premises shall be used exclusively for residential purposes by the Tenant.
+The Tenant shall not engage in any illegal, hazardous, or disruptive activities within the property.
+
+10. MAINTENANCE AND RESPONSIBILITY
+
+The Tenant agrees to maintain the premises in clean and sanitary condition.
+Any damage caused by negligence, misuse, or willful actions of the Tenant shall be charged to the Tenant.
+The Landlord shall remain responsible for structural repairs not caused by the Tenant.
+
+11. TERMINATION AND MOVE-OUT
+
+Upon termination or expiration of the lease, the Tenant shall vacate the premises, return all keys, and surrender the unit in good, clean, and habitable condition.
+Any damages beyond normal wear and tear shall be charged against the Tenant’s security deposit.
+
+12. GOVERNING LAW
+
+This Agreement shall be governed by and interpreted in accordance with the laws of the Republic of the Philippines.
+
+Both parties acknowledge that they have read, understood, and voluntarily agreed to the terms and conditions stated herein.
+
+SIGNATURES
+
+Landlord:
+
+Signature
+Date: _________________________
+
+Tenant:
+
+Signature
+Date: _________________________

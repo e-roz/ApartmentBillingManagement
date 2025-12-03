@@ -108,7 +108,7 @@
                                         <tbody>
                                             @foreach (var user in Model.Users)
                                             {
-                                                <tr class="user-row" data-user-id="@user.Id" onclick="openUserDrawer(@user.Id, '@user.Username', '@user.Email', '@user.Role', '@(user.Status ?? "Active")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("HH:mm") ?? "Never")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("MMM dd, yyyy HH:mm") ?? "Never")', @(user.Role == UserRoles.Admin ? "true" : "false"))">
+                                                <tr class="user-row" data-user-id="@user.Id" onclick="openUserDrawer(@user.Id, '@user.Username', '@user.Email', '@user.Role', '@(user.Status ?? "Active")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("HH:mm") ?? "Never")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("MMM dd, yyyy HH:mm") ?? "Never")', @(user.Role == UserRoles.Admin ? "true" : "false"), '@HttpUtility.JavaScriptStringEncode(user.DeactivationReason)')">
                                                     <td class="align-middle ps-4">
                                                         <div class="fw-semibold users-username">@user.Username</div>
                                                     </td>
@@ -152,7 +152,7 @@
                                                             </button>
                                                             <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="border-radius: 8px; border: none;" onclick="event.stopPropagation();">
                                                                 <li>
-                                                                    <a class="dropdown-item" href="#" onclick="event.stopPropagation(); openUserDrawer(@user.Id, '@user.Username', '@user.Email', '@user.Role', '@(user.Status ?? "Active")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("HH:mm") ?? "Never")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("MMM dd, yyyy HH:mm") ?? "Never")', @(user.Role == UserRoles.Admin ? "true" : "false")); return false;">
+                                                                    <a class="dropdown-item" href="#" onclick="event.stopPropagation(); openUserDrawer(@user.Id, '@user.Username', '@user.Email', '@user.Role', '@(user.Status ?? "Active")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("HH:mm") ?? "Never")', '@user.CreationDate.ToString("MMM dd, yyyy")', '@(user.LastLogin?.ToString("MMM dd, yyyy HH:mm") ?? "Never")', @(user.Role == UserRoles.Admin ? "true" : "false"), '@HttpUtility.JavaScriptStringEncode(user.DeactivationReason)'); return false;">
                                                                         <i class="bi bi-eye me-2"></i>View Profile
                                                                     </a>
                                                                 </li>
@@ -278,6 +278,10 @@
                 <label class="form-label small text-muted mb-1">Status</label>
                 <div id="drawerStatus"></div>
             </div>
+            <div class="mb-4" id="drawerDeactivationReasonContainer" style="display: none;">
+                <label class="form-label small text-muted mb-1">Reason for Deactivation</label>
+                <div id="drawerDeactivationReason" style="color: #5f6368;"></div>
+            </div>
             <div class="mb-4">
                 <label class="form-label small text-muted mb-1">Created</label>
                 <div id="drawerCreated" style="color: #5f6368;"></div>
@@ -296,6 +300,7 @@
                 </form>
                 <form method="post" asp-page-handler="ToggleStatus" class="d-inline" id="toggleStatusForm" style="display: none;">
                     <input type="hidden" name="userId" id="toggleStatusUserId" />
+                    <input type="hidden" name="deactivationReason" id="deactivationReason" />
                     <button type="button" class="btn btn-outline-secondary w-100" style="border-radius: 8px;" onclick="confirmToggleStatus()">
                         <i class="bi bi-toggle-on me-2" id="toggleStatusIcon"></i><span id="toggleStatusText">Activate/Deactivate</span>
                     </button>
@@ -648,7 +653,7 @@
         let currentUserIsAdmin = false;
 
         // Open user drawer
-        function openUserDrawer(userId, username, email, role, status, createdShort, lastLoginShort, createdFull, lastLoginFull, isAdmin) {
+        function openUserDrawer(userId, username, email, role, status, createdShort, lastLoginShort, createdFull, lastLoginFull, isAdmin, deactivationReason) {
             currentUserId = userId;
             currentUserStatus = status;
             currentUserIsAdmin = isAdmin === true || isAdmin === 'true';
@@ -664,6 +669,15 @@
             const statusBadgeClass = (status.toLowerCase() === 'active') ? 'badge-green' : 'badge-gray';
             const statusText = (status.toLowerCase() === 'active') ? 'Active' : 'Inactive';
             document.getElementById('drawerStatus').innerHTML = `<span class="badge ${statusBadgeClass}">${statusText}</span>`;
+
+            // Show or hide the deactivation reason
+            const deactivationReasonContainer = document.getElementById('drawerDeactivationReasonContainer');
+            if (status.toLowerCase() === 'inactive' && deactivationReason) {
+                document.getElementById('drawerDeactivationReason').textContent = deactivationReason;
+                deactivationReasonContainer.style.display = 'block';
+            } else {
+                deactivationReasonContainer.style.display = 'none';
+            }
             
             document.getElementById('drawerCreated').textContent = createdFull;
             document.getElementById('drawerLastLogin').textContent = lastLoginFull;
@@ -729,16 +743,57 @@
         function confirmToggleStatus() {
             const username = document.getElementById('drawerUsername').textContent;
             const action = currentUserStatus.toLowerCase() === 'active' ? 'deactivate' : 'activate';
-            showAlert.confirm(
-                `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
-                `Are you sure you want to ${action} <strong>${username}</strong>?`,
-                `Yes, ${action.charAt(0).toUpperCase() + action.slice(1)}`,
-                'Cancel'
-            ).then((confirmed) => {
-                if (confirmed) {
-                    document.getElementById('toggleStatusForm').submit();
-                }
-            });
+
+            if (action === 'deactivate') {
+                Swal.fire({
+                    title: 'Deactivate User',
+                    html: `
+                        <p>Please select a reason for deactivating <strong>${username}</strong>:</p>
+                        <div class="form-check text-start">
+                            <input class="form-check-input" type="radio" name="deactivationReason" id="reasonLeaseExpired" value="Lease Expired" checked>
+                            <label class="form-check-label" for="reasonLeaseExpired">
+                                Lease Expired
+                            </label>
+                        </div>
+                        <div class="form-check text-start">
+                            <input class="form-check-input" type="radio" name="deactivationReason" id="reasonViolation" value="Violation of Rules">
+                            <label class="form-check-label" for="reasonViolation">
+                                Violation of Rules
+                            </label>
+                        </div>
+                        <div class="form-check text-start">
+                            <input class="form-check-input" type="radio" name="deactivationReason" id="reasonOther" value="Other">
+                            <label class="form-check-label" for="reasonOther">
+                                Other
+                            </label>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Deactivate',
+                    cancelButtonText: 'Cancel',
+                    preConfirm: () => {
+                        const reason = document.querySelector('input[name="deactivationReason"]:checked').value;
+                        return reason;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('deactivationReason').value = result.value;
+                        document.getElementById('toggleStatusForm').submit();
+                    }
+                });
+            } else {
+                showAlert.confirm(
+                    `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+                    `Are you sure you want to ${action} <strong>${username}</strong>?`,
+                    `Yes, ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+                    'Cancel'
+                ).then((confirmed) => {
+                    if (confirmed) {
+                        document.getElementById('toggleStatusForm').submit();
+                    }
+                });
+            }
         }
 
         // Delete user confirmation
@@ -755,3 +810,5 @@
         }
     </script>
 }
+
+@using System.Web

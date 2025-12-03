@@ -35,11 +35,11 @@
             }
 
             <!-- Table Panel -->
-            <div class="matcha-panel">
+            <div class="matcha-panel" style = "padding-left: 30px" >
                 <div class="table-responsive">
                     @if (Model.RequestList.Any())
                     {
-                        <table class="matcha-table">
+                        <table class="matcha-table data-table">
                             <colgroup>
                                 <col style="width: 40%;">
                                 <col style="width: 20%;">
@@ -48,22 +48,22 @@
                             </colgroup>
                             <thead>
                                 <tr>
-                                    <th>Title</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Date Submitted</th>
+                                    <th class="text-start">Title</th>
+                                    <th class="text-start">Type</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-end">Date Submitted</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var request in Model.RequestList)
                                 {
                                     <tr>
-                                        <td class="fw-medium">@request.Title</td>
-                                        <td>@request.RequestType</td>
-                                        <td>
+                                        <td class="fw-medium text-start">@request.Title</td>
+                                        <td class="text-start">@request.RequestType</td>
+                                        <td class="text-center">
                                             <span class="status-badge @GetStatusBadgeClass(request.Status)">@request.Status</span>
                                         </td>
-                                        <td>@request.DateSubmitted.ToString("MMMM dd, yyyy hh:mm tt")</td>
+                                        <td class="text-end">@request.DateSubmitted.ToString("MMMM dd, yyyy hh:mm tt")</td>
                                     </tr>
                                 }
                             </tbody>
@@ -191,7 +191,6 @@
 
     /* Table */
     .matcha-table {
-        width: 100%;
         border-collapse: separate;
         border-spacing: 0;
         table-layout: fixed;
@@ -200,9 +199,12 @@
     .matcha-table th, 
     .matcha-table td {
         padding: 20px;
-        text-align: left;
         font-size: 15px;
         border-bottom: 1px solid var(--tea-mist);
+        vertical-align: middle;
+    }
+    
+    .matcha-table td {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -221,6 +223,48 @@
         border-bottom-width: 2px;
     }
 
+    /* Alignment classes - must override any default styles */
+    .matcha-table thead th.text-start,
+    .matcha-table tbody td.text-start {
+        text-align: left !important;
+    }
+
+    .matcha-table thead th.text-center,
+    .matcha-table tbody td.text-center {
+        text-align: center !important;
+    }
+
+    .matcha-table thead th.text-end,
+    .matcha-table tbody td.text-end {
+        text-align: right !important;
+    }
+    
+    /* Ensure all headers respect their alignment classes */
+    .matcha-table thead th.text-start {
+        text-align: left !important;
+    }
+    
+    .matcha-table thead th.text-center {
+        text-align: center !important;
+    }
+    
+    .matcha-table thead th.text-end {
+        text-align: right !important;
+    }
+    
+    /* Ensure all cells respect their alignment classes */
+    .matcha-table tbody td.text-center {
+        text-align: center !important;
+    }
+    
+    .matcha-table tbody td.text-end {
+        text-align: right !important;
+    }
+    
+    .matcha-table tbody td.text-start {
+        text-align: left !important;
+    }
+
     .matcha-table tbody tr:hover {
         background-color: #F7F9F6;
     }
@@ -228,6 +272,27 @@
     .matcha-table .fw-medium {
          color: var(--ink-black);
          font-weight: 500 !important;
+    }
+
+    /* Column-specific alignment to ensure headers and cells align */
+    .matcha-table thead th:nth-child(1),
+    .matcha-table tbody td:nth-child(1) {
+        text-align: left !important;
+    }
+
+    .matcha-table thead th:nth-child(2),
+    .matcha-table tbody td:nth-child(2) {
+        text-align: left !important;
+    }
+
+    .matcha-table thead th:nth-child(3),
+    .matcha-table tbody td:nth-child(3) {
+        text-align: center !important;
+    }
+
+    .matcha-table thead th:nth-child(4),
+    .matcha-table tbody td:nth-child(4) {
+        text-align: right !important;
     }
 
     /* Status Badges */
@@ -239,7 +304,108 @@
         border-radius: 9999px;
         letter-spacing: 0.5px;
         text-transform: uppercase;
+        text-align: center;
     }
+    
+    .matcha-table tbody td:nth-child(3) {
+        text-align: center !important;
+    }
+    
+    .matcha-table tbody td:nth-child(3) .status-badge {
+        display: inline-block;
+        margin: 0;
+    }
+
+    /* DataTables-specific alignment rules - must override DataTables defaults */
+    table.dataTable.matcha-table thead th.text-start,
+    table.dataTable.matcha-table thead th.text-start.sorting,
+    table.dataTable.matcha-table thead th.text-start.sorting_asc,
+    table.dataTable.matcha-table thead th.text-start.sorting_desc,
+    table.dataTable.matcha-table tbody td.text-start {
+        text-align: left !important;
+    }
+
+    table.dataTable.matcha-table thead th.text-center,
+    table.dataTable.matcha-table thead th.text-center.sorting,
+    table.dataTable.matcha-table thead th.text-center.sorting_asc,
+    table.dataTable.matcha-table thead th.text-center.sorting_desc,
+    table.dataTable.matcha-table tbody td.text-center {
+        text-align: center !important;
+    }
+
+    table.dataTable.matcha-table thead th.text-end,
+    table.dataTable.matcha-table thead th.text-end.sorting,
+    table.dataTable.matcha-table thead th.text-end.sorting_asc,
+    table.dataTable.matcha-table thead th.text-end.sorting_desc,
+    table.dataTable.matcha-table tbody td.text-end {
+        text-align: right !important;
+    }
+
+    /* Column-specific alignment for DataTables - highest priority */
+    table.dataTable.matcha-table thead th:nth-child(1),
+    table.dataTable.matcha-table thead th:nth-child(1).sorting,
+    table.dataTable.matcha-table thead th:nth-child(1).sorting_asc,
+    table.dataTable.matcha-table thead th:nth-child(1).sorting_desc,
+    table.dataTable.matcha-table tbody td:nth-child(1) {
+        text-align: left !important;
+    }
+
+    table.dataTable.matcha-table thead th:nth-child(2),
+    table.dataTable.matcha-table thead th:nth-child(2).sorting,
+    table.dataTable.matcha-table thead th:nth-child(2).sorting_asc,
+    table.dataTable.matcha-table thead th:nth-child(2).sorting_desc,
+    table.dataTable.matcha-table tbody td:nth-child(2) {
+        text-align: left !important;
+    }
+
+    table.dataTable.matcha-table thead th:nth-child(3),
+    table.dataTable.matcha-table thead th:nth-child(3).sorting,
+    table.dataTable.matcha-table thead th:nth-child(3).sorting_asc,
+    table.dataTable.matcha-table thead th:nth-child(3).sorting_desc,
+    table.dataTable.matcha-table tbody td:nth-child(3) {
+        text-align: center !important;
+    }
+
+    table.dataTable.matcha-table thead th:nth-child(4),
+    table.dataTable.matcha-table thead th:nth-child(4).sorting,
+    table.dataTable.matcha-table thead th:nth-child(4).sorting_asc,
+    table.dataTable.matcha-table thead th:nth-child(4).sorting_desc,
+    table.dataTable.matcha-table tbody td:nth-child(4) {
+        text-align: right !important;
+    }
+
+    /* Ensure status badge stays centered in DataTables */
+    table.dataTable.matcha-table tbody td:nth-child(3) {
+        text-align: center !important;
+    }
+
+    table.dataTable.matcha-table tbody td:nth-child(3) .status-badge {
+        display: inline-block;
+        margin: 0;
+    }
+
+    /* Override any inline styles DataTables might add */
+    table.dataTable.matcha-table thead th[style*="width"],
+    table.dataTable.matcha-table tbody td[style*="width"] {
+        text-align: inherit !important;
+    }
+
+    /* Ensure alignment classes work even with DataTables inline styles */
+    table.dataTable.matcha-table thead th.text-start[style],
+    table.dataTable.matcha-table tbody td.text-start[style] {
+        text-align: left !important;
+    }
+
+    table.dataTable.matcha-table thead th.text-center[style],
+    table.dataTable.matcha-table tbody td.text-center[style] {
+        text-align: center !important;
+    }
+
+    table.dataTable.matcha-table thead th.text-end[style],
+    table.dataTable.matcha-table tbody td.text-end[style] {
+        text-align: right !important;
+    }
+
     .status-submitted {
         color: var(--leaf-gray);
         background-color: #F3F4F6; /* light gray */

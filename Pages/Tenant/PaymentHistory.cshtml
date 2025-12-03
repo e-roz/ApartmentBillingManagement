@@ -19,25 +19,25 @@
             <div class="matcha-card">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="matcha-table" id="paymentHistoryTable">
+                        <table class="matcha-table data-table" id="paymentHistoryTable">
                             <thead>
                                 <tr>
-                                    <th>Transaction ID</th>
-                                    <th>Date Fully Settled</th>
-                                    <th>Amount Paid</th>
-                                    <th>Payment Method</th>
-                                    <th>Invoice Reference</th>
+                                    <th class="text-center">Transaction ID</th>
+                                    <th class="text-center">Date Fully Settled</th>
+                                    <th class="text-center">Amount Paid</th>
+                                    <th class="text-center">Payment Method</th>
+                                    <th class="text-center">Invoice Reference</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var payment in Model.Payments)
                                 {
                                     <tr>
-                                        <td class="numeric-font">#@payment.TransactionId</td>
-                                        <td>@payment.DateFullySettled.ToString("MMMM dd, yyyy")</td>
-                                        <td class="amount-paid numeric-font">@payment.AmountPaid.ToString("C", pesoCulture)</td>
-                                        <td>@payment.PaymentMethod</td>
-                                        <td>@payment.InvoiceReference</td>
+                                        <td class="numeric-font text-center">#@payment.TransactionId</td>
+                                        <td class="text-center">@payment.DateFullySettled.ToString("MMMM dd, yyyy")</td>
+                                        <td class="amount-paid numeric-font text-center">@payment.AmountPaid.ToString("C", pesoCulture)</td>
+                                        <td class="text-center">@payment.PaymentMethod</td>
+                                        <td class="text-center">@payment.InvoiceReference</td>
                                     </tr>
                                 }
                             </tbody>
@@ -126,7 +126,7 @@
         border: 1px solid var(--tea-mist);
         border-radius: 16px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        padding: 24px;
+        padding: 28px;
         border-top: 4px solid var(--golden-whisk);
     }
     
@@ -135,17 +135,25 @@
     }
 
     /* Tables (Billing-Centric) */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
     .matcha-table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: auto;
+        min-width: 100%;
     }
 
     .matcha-table th, 
     .matcha-table td {
-        padding: 16px;
-        text-align: left;
+        padding: 14px 16px;
         border-bottom: 1px solid var(--tea-mist);
-        font-size: 16px;
+        font-size: 15px;
+        vertical-align: middle;
+        text-align: center !important;
     }
 
     .matcha-table thead tr {
@@ -155,7 +163,66 @@
     
     .matcha-table thead th {
         font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         border-bottom: none;
+        white-space: nowrap;
+        padding: 16px;
+        text-align: center !important;
+    }
+
+    .matcha-table tbody td {
+        text-align: center !important;
+    }
+
+    /* Column width distribution */
+    .matcha-table th:nth-child(1),
+    .matcha-table td:nth-child(1) {
+        width: 10%;
+        min-width: 110px;
+        text-align: center !important;
+    }
+
+    .matcha-table th:nth-child(2),
+    .matcha-table td:nth-child(2) {
+        width: 18%;
+        min-width: 170px;
+        text-align: center !important;
+    }
+
+    .matcha-table th:nth-child(3),
+    .matcha-table td:nth-child(3) {
+        width: 14%;
+        min-width: 130px;
+        text-align: center !important;
+    }
+
+    .matcha-table th:nth-child(4),
+    .matcha-table td:nth-child(4) {
+        width: 16%;
+        min-width: 140px;
+        text-align: center !important;
+    }
+
+    .matcha-table th:nth-child(5),
+    .matcha-table td:nth-child(5) {
+        width: 42%;
+        min-width: 220px;
+        text-align: center !important;
+    }
+
+    /* Text alignment classes */
+    .text-start {
+        text-align: left !important;
+    }
+
+    .text-end {
+        text-align: right !important;
+    }
+
+    .text-center {
+        text-align: center !important;
     }
 
     .matcha-table tbody tr:nth-child(even) {
@@ -170,16 +237,79 @@
     
     .matcha-table .amount-paid {
         font-weight: 600;
-        text-align: right;
         color: var(--matcha-deep-green);
+        text-align: center !important;
     }
     
     .matcha-table td {
         color: var(--ink-black);
+        text-align: center !important;
+    }
+
+    .matcha-table td.numeric-font {
+        text-align: center !important;
     }
     
-    .matcha-table tr:hover td, .matcha-table tr:hover .amount-paid, .matcha-table tr:hover .numeric-font {
+    .matcha-table tr:hover td, 
+    .matcha-table tr:hover .amount-paid, 
+    .matcha-table tr:hover .numeric-font {
         color: var(--fresh-cream-white);
+    }
+
+    /* Ensure DataTables headers maintain alignment */
+    table.dataTable thead th,
+    table.dataTable thead td {
+        background-color: var(--matcha-deep-green) !important;
+        color: var(--fresh-cream-white) !important;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: none;
+        padding: 16px !important;
+        text-align: center !important;
+    }
+
+    table.dataTable tbody td {
+        text-align: center !important;
+        padding: 14px 16px !important;
+        vertical-align: middle !important;
+    }
+
+    table.dataTable tbody td.numeric-font,
+    table.dataTable tbody td.amount-paid {
+        text-align: center !important;
+    }
+
+    table.dataTable thead th.text-center,
+    table.dataTable thead td.text-center {
+        text-align: center !important;
+    }
+
+    /* Force center alignment for all table cells */
+    #paymentHistoryTable th,
+    #paymentHistoryTable td {
+        text-align: center !important;
+    }
+
+    #paymentHistoryTable.dataTable th,
+    #paymentHistoryTable.dataTable td {
+        text-align: center !important;
+    }
+
+    /* DataTables wrapper spacing */
+    #paymentHistoryTable_wrapper {
+        width: 100%;
+    }
+
+    #paymentHistoryTable_wrapper .dataTables_length,
+    #paymentHistoryTable_wrapper .dataTables_filter {
+        margin-bottom: 16px;
+    }
+
+    #paymentHistoryTable_wrapper .dataTables_info,
+    #paymentHistoryTable_wrapper .dataTables_paginate {
+        margin-top: 16px;
     }
 
 

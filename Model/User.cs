@@ -39,6 +39,9 @@ namespace Apartment.Model
         public ICollection<Lease> Leases { get; set; } = new List<Lease>(); // Added for User-Leases relationship
 
         public bool MustChangePassword { get; set; } = false;
+
+        [StringLength(255)]
+        public string? DeactivationReason { get; set; }
     }
 
 }

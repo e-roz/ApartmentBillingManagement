@@ -25,6 +25,7 @@ namespace Apartment.Pages.Tenant
 
         public Model.User? UserInfo { get; set; }
         public Lease? ActiveLease { get; set; }
+        public string? ApartmentType { get; set; }
 
         public class PasswordChangeModel
         {
@@ -102,6 +103,10 @@ namespace Apartment.Pages.Tenant
                     UserInfo = user;
                     var now = DateTime.UtcNow;
                     ActiveLease = user.Leases?.FirstOrDefault(l => l.LeaseEnd >= now);
+                    if (ActiveLease?.Apartment != null)
+                    {
+                        ApartmentType = ActiveLease.Apartment.ApartmentType.ToString();
+                    }
                 }
             }
         }

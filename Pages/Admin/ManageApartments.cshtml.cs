@@ -38,9 +38,12 @@ namespace Apartment.Pages.Admin
         //holding the list of available apartments for the main table view
         public List<ViewModels.ApartmentList> Apartments { get; set; } = new List<ViewModels.ApartmentList>();
 
+        public SelectList ApartmentTypes { get; set; }
+
 
         [TempData]
         public string? SuccessMessage { get; set; }
+
 
         [TempData]
         public string? ErrorMessage { get; set; }
@@ -67,7 +70,7 @@ namespace Apartment.Pages.Admin
                 string term = SearchTerm.Trim();
                 apartmentQuery = apartmentQuery.Where(a =>
                     a.UnitNumber.Contains(term) ||
-                    a.Leases.Any(l => l.LeaseEnd >= DateTime.UtcNow && 
+                    a.Leases.Any(l => l.LeaseEnd >= DateTime.UtcNow &&
                                      (l.User.Username.Contains(term) || l.User.Email.Contains(term)))
                 );
             }
@@ -86,28 +89,31 @@ namespace Apartment.Pages.Admin
                 // Find active lease (lease end date is in the future)
                 var activeLease = a.Leases.FirstOrDefault(l => l.LeaseEnd >= now);
                 bool isOccupied = activeLease != null;
-                
+
                 // Sync IsOccupied flag with actual lease status
                 if (a.IsOccupied != isOccupied)
                 {
                     a.IsOccupied = isOccupied;
                     dbData.Apartments.Update(a);
                 }
-                
+
                 return new ViewModels.ApartmentList
                 {
                     Id = a.Id,
                     UnitNumber = a.UnitNumber,
                     StatusDisplay = isOccupied ? "Occupied" : "Vacant",
                     TenantName = activeLease?.User != null ? (activeLease.User.Username ?? activeLease.User.Email) : "N/A",
-                    TenantId = activeLease?.UserId
+                    TenantId = activeLease?.UserId,
+                    ApartmentType = a.ApartmentType
                 };
             }).ToList();
-            
+
             // Save any IsOccupied flag updates
             await dbData.SaveChangesAsync();
 
+            ApartmentTypes = new SelectList(Enum.GetValues(typeof(ApartmentType)));
         }
+
 
         
 

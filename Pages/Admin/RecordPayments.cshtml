@@ -277,12 +277,12 @@
                                     <thead class="billing-table-head">
                                         <tr>
                                             <th>Tenant Name</th>
-                                            <th>Unit</th>
+                                            <th>Tenant Unit</th>
                                             <th class="text-end">Monthly Rent</th>
-                                            <th class="text-end">Total Paid</th>
-                                            <th class="text-end">Remaining</th>
+                                            <th class="text-end">Total Payment</th>
+                                            <th class="text-end">Balance</th>
                                             <th>Status</th>
-                                            <th>Last Settled</th>
+                                            <th>Payment Date</th>
                                             <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
@@ -367,6 +367,19 @@
     .billing-table-head th a {
         color: #FFFFFF !important;
         text-decoration: none;
+    }
+
+    /* Ensure DataTables-generated header cells are visible */
+    table.dataTable thead th,
+    table.dataTable thead td {
+        background-color: #4A6F47 !important;
+        color: #FFFFFF !important;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        border-bottom: none;
+        padding: 12px 8px;
     }
 
     .billing-table tbody tr:nth-child(even) {

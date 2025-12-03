@@ -19,6 +19,9 @@ namespace Apartment.ViewModels
         [Display(Name = "Current Tenant")]
         public string? TenantName { get; set; } = "N/A";
         public int? TenantId { get; set; }
+
+        [Display(Name = "Apartment Type")]
+        public Enums.ApartmentType ApartmentType { get; set; }
     }
 }
 

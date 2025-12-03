@@ -313,7 +313,6 @@
 }
 
 .matcha-table {
-    display: flex;
     flex-direction: column;
     gap: 4px;
     font-family: "Inter", "Nunito", Arial, sans-serif;

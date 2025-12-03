@@ -55,21 +55,24 @@
                                         <label class="info-label">Email</label>
                                         <div class="info-value">@Model.UserInfo.Email</div>
                                     </div>
-                                    <div class="info-group">
-                                        <label class="info-label">Unit Number</label>
-                                        <div class="info-value">@(Model.ActiveLease?.UnitNumber ?? "Not Assigned")</div>
-                                    </div>
-                                    <div class="info-group">
-                                        <label class="info-label">Status</label>
-                                        <div class="info-value">
-                                             @{
-                                                var statusClass = (Model.UserInfo.Status?.ToLower() == "active" || Model.UserInfo.Status == null) ? "status-completed" : "status-cancelled";
-                                                var statusText = (Model.UserInfo.Status?.ToLower() == "active" || Model.UserInfo.Status == null) ? "Active" : "Inactive";
-                                            }
-                                            <span class="status-badge @statusClass">@statusText</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                                                         <div class="info-group">
+                                                                            <label class="info-label">Unit Number</label>
+                                                                            <div class="info-value">@(Model.ActiveLease?.UnitNumber ?? "Not Assigned")</div>
+                                                                        </div>
+                                                                        <div class="info-group">
+                                                                            <label class="info-label">Apartment Type</label>
+                                                                            <div class="info-value">@Model.ApartmentType</div>
+                                                                        </div>
+                                                                        <div class="info-group">
+                                                                            <label class="info-label">Status</label>
+                                                                            <div class="info-value">
+                                                                                 @{
+                                                                                    var statusClass = (Model.UserInfo.Status?.ToLower() == "active" || Model.UserInfo.Status == null) ? "status-completed" : "status-cancelled";
+                                                                                    var statusText = (Model.UserInfo.Status?.ToLower() == "active" || Model.UserInfo.Status == null) ? "Active" : "Inactive";
+                                                                                }
+                                                                                <span class="status-badge @statusClass">@statusText</span>
+                                                                            </div>
+                                                                        </div>                                </div>
                                 @if (Model.ActiveLease != null)
                                 {
                                     <hr class="panel-divider">
