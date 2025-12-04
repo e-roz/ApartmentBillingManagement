@@ -135,12 +135,23 @@
                                                     </td>
                                                     <td class="align-middle text-center pe-4">
                                                         <div class="btn-group" role="group">
-                                                            <button type="button" class="btn btn-outline-primary btn-sm" 
-                                                                    data-bs-toggle="modal" 
-                                                                    data-bs-target="#leaseModal"
-                                                                    onclick="loadLeaseForEdit(@lease.Id)">
-                                                                <i class="bi bi-pencil-square"></i>
-                                                            </button>
+                                                            @if (lease.LeaseStatus == "Expired")
+                                                            {
+                                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                                        data-bs-toggle="modal" 
+                                                                        data-bs-target="#leaseModal"
+                                                                        onclick="loadLeaseForEdit(@lease.Id)">
+                                                                    <i class="bi bi-pencil-square"></i>
+                                                                </button>
+                                                            }
+                                                            else
+                                                            {
+                                                                <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                                        disabled
+                                                                        title="Lease cannot be edited until it expires on @lease.LeaseEnd.ToString("MMM dd, yyyy")">
+                                                                    <i class="bi bi-pencil-square"></i>
+                                                                </button>
+                                                            }
                                                             <button type="button" class="btn btn-outline-danger btn-sm" 
                                                                     data-bs-toggle="modal" 
                                                                     data-bs-target="#deleteLeaseModal"
@@ -389,7 +400,7 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" asp-page-handler="DeleteLease">
+            <form method="post" asp-page-handler="DeleteLease" id="deleteLeaseForm">
                 <div class="modal-body p-4">
                     <input type="hidden" id="deleteLeaseId" name="id" />
                     <div class="text-center">
@@ -401,10 +412,24 @@
                             <strong>Unit:</strong> <span id="deleteUnitNumber"></span>
                         </div>
                     </div>
+                    <div class="mt-4">
+                        <label for="adminPassword" class="form-label fw-semibold">
+                            <i class="bi bi-shield-lock me-1"></i>Confirm Your Password
+                        </label>
+                        <p class="text-muted small mb-2">Please enter your admin password to confirm this deletion.</p>
+                        <input type="password" 
+                               class="form-control" 
+                               id="adminPassword" 
+                               name="adminPassword" 
+                               placeholder="Enter your password"
+                               required 
+                               autocomplete="current-password" />
+                        <div class="invalid-feedback" id="passwordError"></div>
+                    </div>
                 </div>
                 <div class="modal-footer matcha-modal-footer">
                     <button type="button" class="btn btn-matcha-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-matcha-danger">
+                    <button type="submit" class="btn btn-matcha-danger" id="confirmDeleteBtn">
                         <i class="bi bi-trash me-2"></i>Delete Lease
                     </button>
                 </div>
@@ -451,7 +476,29 @@
                 const data = await response.json();
                 
                 if (data.error) {
-                    alert(data.error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error,
+                        confirmButtonColor: '#4A6F47'
+                    });
+                    return;
+                }
+
+                // Check if lease has expired - prevent editing if not expired
+                if (!data.isExpired) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Cannot Edit Lease',
+                        html: `This lease cannot be edited until it expires.<br><strong>Expiration Date: ${data.expirationDate}</strong><br><br>Only expired leases can be modified.`,
+                        confirmButtonColor: '#4A6F47',
+                        confirmButtonText: 'OK'
+                    });
+                    // Close the modal if it's open
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('leaseModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
                     return;
                 }
 
@@ -466,6 +513,9 @@
                 document.getElementById('LeaseInput_LeaseEnd').value = data.leaseEnd;
                 document.getElementById('LeaseInput_MonthlyRent').value = data.monthlyRent;
                 document.getElementById('LeaseInput_SecurityDeposit').value = data.securityDeposit;
+                document.getElementById('LeaseInput_LateFeeAmount').value = data.lateFeeAmount || 0;
+                document.getElementById('LeaseInput_LateFeeDays').value = data.lateFeeDays || 0;
+                document.getElementById('LeaseInput_PetsAllowed').checked = data.petsAllowed || false;
                 document.getElementById('leaseStatusDisplay').value = data.status;
                 document.getElementById('saveLeaseBtn').innerHTML = '<i class="bi bi-check-circle me-2"></i>Update Lease';
 
@@ -483,7 +533,12 @@
                 updateApartmentStatus();
             } catch (error) {
                 console.error('Error loading lease:', error);
-                alert('Error loading lease details.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error loading lease details.',
+                    confirmButtonColor: '#4A6F47'
+                });
             }
         }
 
@@ -554,16 +609,65 @@
         }
 
         // Delete modal handler
-        document.getElementById('deleteLeaseModal')?.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const leaseId = button.getAttribute('data-lease-id');
-            const tenantName = button.getAttribute('data-tenant-name');
-            const unitNumber = button.getAttribute('data-unit-number');
+        const deleteLeaseModal = document.getElementById('deleteLeaseModal');
+        if (deleteLeaseModal) {
+            deleteLeaseModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const leaseId = button.getAttribute('data-lease-id');
+                const tenantName = button.getAttribute('data-tenant-name');
+                const unitNumber = button.getAttribute('data-unit-number');
 
-            document.getElementById('deleteLeaseId').value = leaseId;
-            document.getElementById('deleteTenantName').textContent = tenantName;
-            document.getElementById('deleteUnitNumber').textContent = unitNumber;
-        });
+                document.getElementById('deleteLeaseId').value = leaseId;
+                document.getElementById('deleteTenantName').textContent = tenantName;
+                document.getElementById('deleteUnitNumber').textContent = unitNumber;
+                
+                // Clear password field when modal opens
+                const passwordField = document.getElementById('adminPassword');
+                if (passwordField) {
+                    passwordField.value = '';
+                    passwordField.classList.remove('is-invalid');
+                }
+            });
+
+            // Clear password field when modal is hidden
+            deleteLeaseModal.addEventListener('hidden.bs.modal', function () {
+                const passwordField = document.getElementById('adminPassword');
+                if (passwordField) {
+                    passwordField.value = '';
+                    passwordField.classList.remove('is-invalid');
+                }
+                const passwordError = document.getElementById('passwordError');
+                if (passwordError) {
+                    passwordError.textContent = '';
+                }
+            });
+        }
+
+        // Form validation for delete lease
+        const deleteLeaseForm = document.getElementById('deleteLeaseForm');
+        if (deleteLeaseForm) {
+            deleteLeaseForm.addEventListener('submit', function(e) {
+                const passwordField = document.getElementById('adminPassword');
+                const passwordError = document.getElementById('passwordError');
+                
+                if (!passwordField || !passwordField.value.trim()) {
+                    e.preventDefault();
+                    passwordField.classList.add('is-invalid');
+                    passwordError.textContent = 'Password is required to confirm deletion.';
+                    passwordField.focus();
+                    return false;
+                }
+                
+                // Show loading state
+                const submitBtn = document.getElementById('confirmDeleteBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Deleting...';
+                }
+                
+                return true;
+            });
+        }
 
         // Set form action based on whether it's create or edit
         document.getElementById('leaseForm')?.addEventListener('submit', function(e) {

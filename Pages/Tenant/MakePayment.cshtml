@@ -160,12 +160,32 @@
                         <div class="dynamic-fields">
                             <div class="method-fields" data-field-type="wallet">
                                 <h6>Wallet Details</h6>
-                                <p class="text-muted mb-0">Wallet confirmation details can be provided after submission if needed.</p>
+                                <p class="text-muted mb-3">Enter your wallet mobile number for verification.</p>
+                                <div class="field-block">
+                                    <label asp-for="Input.WalletNumber">Mobile Number</label>
+                                    <div class="field-hint">Enter your 11-digit mobile number (e.g., 09171234567)</div>
+                                    <input asp-for="Input.WalletNumber" type="tel" class="fancy-select" placeholder="09171234567" maxlength="11" pattern="[0-9]{11}" />
+                                    <span asp-validation-for="Input.WalletNumber" class="text-danger"></span>
+                                </div>
                             </div>
 
                             <div class="method-fields" data-field-type="bank">
                                 <h6>Bank Transfer Details</h6>
-                                <p class="text-muted mb-0">Bank account information will be collected separately if required.</p>
+                                <p class="text-muted mb-3">Enter your bank account information for verification.</p>
+                                <div class="input-grid">
+                                    <div class="field-block">
+                                        <label asp-for="Input.AccountHolderName">Account Holder Name</label>
+                                        <div class="field-hint">Name as it appears on your bank account</div>
+                                        <input asp-for="Input.AccountHolderName" type="text" class="fancy-select" placeholder="Juan Dela Cruz" />
+                                        <span asp-validation-for="Input.AccountHolderName" class="text-danger"></span>
+                                    </div>
+                                    <div class="field-block">
+                                        <label asp-for="Input.BankAccountNumber">Bank Account Number</label>
+                                        <div class="field-hint">Your bank account number</div>
+                                        <input asp-for="Input.BankAccountNumber" type="text" class="fancy-select" placeholder="1234567890" />
+                                        <span asp-validation-for="Input.BankAccountNumber" class="text-danger"></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -572,7 +592,7 @@
     }
 
     .method-fields.active {
-        max-height: 320px;
+        max-height: 500px;
         opacity: 1;
         margin-top: var(--spacing-8);
     }
@@ -589,6 +609,18 @@
         color: var(--leaf-gray);
         font-size: 13px;
         line-height: 1.5;
+    }
+
+    .method-fields .field-block {
+        margin-bottom: var(--spacing-16);
+    }
+
+    .method-fields .field-block:last-child {
+        margin-bottom: 0;
+    }
+
+    .method-fields .fancy-select {
+        margin-top: var(--spacing-8);
     }
 
     .note-banner {
@@ -766,6 +798,9 @@
         }
         
         // --- Payment Method Selection ---
+        const walletFields = document.querySelector('.method-fields[data-field-type="wallet"]');
+        const bankFields = document.querySelector('.method-fields[data-field-type="bank"]');
+        
         methodCards.forEach(card => {
             card.addEventListener("click", function () {
                 // Update active visual state
@@ -774,8 +809,18 @@
 
                 // Set hidden input value
                 const methodName = this.dataset.label;
+                const methodType = this.dataset.type; // "wallet" or "bank"
                 hiddenMethodInput.value = methodName;
                 selectedMethodLabel.textContent = `${methodName} selected`;
+                
+                // Show/hide appropriate fields based on payment method type
+                if (methodType === "wallet") {
+                    walletFields.classList.add("active");
+                    bankFields.classList.remove("active");
+                } else if (methodType === "bank") {
+                    bankFields.classList.add("active");
+                    walletFields.classList.remove("active");
+                }
             });
         });
         
@@ -797,6 +842,8 @@
             // Client-side validation
             const amount = parseFloat(amountInput.value);
             const paymentMethod = hiddenMethodInput.value.trim();
+            const activeMethodCard = document.querySelector('.payment-method-card.active');
+            const methodType = activeMethodCard ? activeMethodCard.dataset.type : null;
 
             if (!paymentMethod) {
                 e.preventDefault();
@@ -807,6 +854,59 @@
                     confirmButtonColor: '#4A6F47'
                 });
                 return false;
+            }
+
+            // Validate wallet-specific fields
+            if (methodType === "wallet") {
+                const walletNumber = document.getElementById('Input_WalletNumber')?.value.trim();
+                if (!walletNumber) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Wallet Number Required',
+                        text: 'Please enter your mobile number for wallet payment.',
+                        confirmButtonColor: '#4A6F47'
+                    });
+                    return false;
+                }
+                if (!/^[0-9]{11}$/.test(walletNumber)) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Mobile Number',
+                        text: 'Please enter a valid 11-digit mobile number (e.g., 09171234567).',
+                        confirmButtonColor: '#4A6F47'
+                    });
+                    return false;
+                }
+            }
+
+            // Validate bank-specific fields
+            if (methodType === "bank") {
+                const accountHolderName = document.getElementById('Input_AccountHolderName')?.value.trim();
+                const bankAccountNumber = document.getElementById('Input_BankAccountNumber')?.value.trim();
+                
+                if (!accountHolderName) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Account Holder Name Required',
+                        text: 'Please enter the account holder name.',
+                        confirmButtonColor: '#4A6F47'
+                    });
+                    return false;
+                }
+                
+                if (!bankAccountNumber) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Bank Account Number Required',
+                        text: 'Please enter your bank account number.',
+                        confirmButtonColor: '#4A6F47'
+                    });
+                    return false;
+                }
             }
 
             if (isNaN(amount) || amount <= 0) {
@@ -861,6 +961,24 @@
                 submitButton.innerHTML = originalButtonText;
             }
         });
+
+        // --- Check for success message and show notification ---
+        @if (TempData["SuccessMessage"] != null)
+        {
+            var paymentAmount = TempData["PaymentAmount"]?.ToString() ?? "";
+            <text>
+            Swal.fire({
+                icon: 'success',
+                title: 'Payment Successful!',
+                html: '<p>Your payment is successful</p>@if (!string.IsNullOrEmpty(paymentAmount)) { <p class="mt-2"><strong>Amount: @paymentAmount</strong></p> }',
+                confirmButtonColor: '#4A6F47',
+                confirmButtonText: 'View Payment History'
+            }).then(() => {
+                // Redirect after user clicks OK
+                window.location.href = '@Url.Page("/Tenant/PaymentHistory")';
+            });
+            </text>
+        }
     });
 </script>
 

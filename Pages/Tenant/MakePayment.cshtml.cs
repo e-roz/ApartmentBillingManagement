@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Linq;
 using System.Security.Claims;
 
 namespace Apartment.Pages.Tenant
@@ -34,6 +35,9 @@ namespace Apartment.Pages.Tenant
             public decimal Amount { get; set; }
             public int? BillId { get; set; }
             public string PaymentMethod { get; set; } = string.Empty;
+            public string? WalletNumber { get; set; }
+            public string? AccountHolderName { get; set; }
+            public string? BankAccountNumber { get; set; }
         }
 
         private static readonly HashSet<string> KnownPaymentMethods = new(StringComparer.OrdinalIgnoreCase)
@@ -132,6 +136,39 @@ namespace Apartment.Pages.Tenant
                 return Page();
             }
 
+            // Validate payment method specific fields
+            var isWalletMethod = Input.PaymentMethod.Equals("GCash", StringComparison.OrdinalIgnoreCase) || 
+                                 Input.PaymentMethod.Equals("Maya", StringComparison.OrdinalIgnoreCase);
+            var isBankMethod = !isWalletMethod && KnownPaymentMethods.Contains(Input.PaymentMethod);
+
+            if (isWalletMethod && string.IsNullOrWhiteSpace(Input.WalletNumber))
+            {
+                ModelState.AddModelError(nameof(Input.WalletNumber), "Mobile number is required for wallet payments.");
+            }
+            else if (isWalletMethod && !string.IsNullOrWhiteSpace(Input.WalletNumber) && 
+                     (Input.WalletNumber.Length != 11 || !Input.WalletNumber.All(char.IsDigit)))
+            {
+                ModelState.AddModelError(nameof(Input.WalletNumber), "Please enter a valid 11-digit mobile number.");
+            }
+
+            if (isBankMethod)
+            {
+                if (string.IsNullOrWhiteSpace(Input.AccountHolderName))
+                {
+                    ModelState.AddModelError(nameof(Input.AccountHolderName), "Account holder name is required for bank transfers.");
+                }
+                if (string.IsNullOrWhiteSpace(Input.BankAccountNumber))
+                {
+                    ModelState.AddModelError(nameof(Input.BankAccountNumber), "Bank account number is required for bank transfers.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await LoadDataAsync(user.Id);
+                return Page();
+            }
+
             var (success, errorMessage) = await ExecutePaymentAsync(user.Id, paymentPlan, Input.Amount, Input.PaymentMethod);
 
             if (!success)
@@ -141,8 +178,10 @@ namespace Apartment.Pages.Tenant
                 return Page();
             }
 
-            TempData["SuccessMessage"] = $"Payment of {Input.Amount.ToString("C", PhpCulture)} was successfully recorded.";
-            return RedirectToPage("/Tenant/PaymentHistory");
+            TempData["SuccessMessage"] = "Your payment is successful";
+            TempData["PaymentAmount"] = Input.Amount.ToString("C", PhpCulture);
+            await LoadDataAsync(user.Id);
+            return Page();
         }
 
         private async Task LoadDataAsync(int? userId = null)

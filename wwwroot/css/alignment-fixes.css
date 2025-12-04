@@ -90,6 +90,7 @@ form.d-flex .btn {
     display: flex;
     align-items: center;
     padding-top: 0.75rem;
+    padding-left: 30px;
 }
 
 /* Fix row alignment in DataTables wrapper */
@@ -104,11 +105,7 @@ form.d-flex .btn {
     padding: 0.5rem;
 }
 
-/* Fix form row alignment */
-.row.g-3,
-.row.g-4 {
-    align-items: flex-end;
-}
+
 
 .row.g-3 > [class*="col-"],
 .row.g-4 > [class*="col-"] {

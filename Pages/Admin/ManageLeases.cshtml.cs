@@ -2,6 +2,7 @@ using Apartment.Data;
 using Apartment.Model;
 using Apartment.Enums;
 using Apartment.Services;
+using Apartment.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -286,6 +287,16 @@ namespace Apartment.Pages.Admin
                 return Page();
             }
 
+            // Check if lease has expired - leases cannot be edited until expiration
+            var now = DateTime.UtcNow;
+            if (lease.LeaseEnd >= now)
+            {
+                await LoadLeasesAsync();
+                await LoadDropdownsAsync();
+                ErrorMessage = $"This lease cannot be edited until it expires on {lease.LeaseEnd:MMM dd, yyyy}. Only expired leases can be modified.";
+                return Page();
+            }
+
             // Validate dates
             if (LeaseInput.LeaseStart >= LeaseInput.LeaseEnd)
             {
@@ -295,6 +306,7 @@ namespace Apartment.Pages.Admin
                 return Page();
             }
 
+            // Note: We don't need to check 'now' again here since we already validated expiration above
             // Check for overlapping leases (excluding current lease)
             var apartment = await _context.Apartments
                 .Include(a => a.Leases)
@@ -334,7 +346,7 @@ namespace Apartment.Pages.Admin
             lease.UnitNumber = apartment.UnitNumber;
 
             // Update apartment occupancy
-            var now = DateTime.UtcNow;
+            // Note: 'now' is already defined above, but we'll use it here for consistency
             if (LeaseInput.LeaseStart <= now && LeaseInput.LeaseEnd >= now)
             {
                 apartment.IsOccupied = true;
@@ -367,8 +379,45 @@ namespace Apartment.Pages.Admin
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostDeleteLeaseAsync(int id)
+        public async Task<IActionResult> OnPostDeleteLeaseAsync(int id, string adminPassword)
         {
+            // Validate password is provided
+            if (string.IsNullOrWhiteSpace(adminPassword))
+            {
+                ErrorMessage = "Password confirmation is required to delete a lease.";
+                await LoadLeasesAsync();
+                await LoadDropdownsAsync();
+                return Page();
+            }
+
+            // Get the current admin user
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int adminUserId))
+            {
+                ErrorMessage = "Unable to identify the administrator. Please log in again.";
+                await LoadLeasesAsync();
+                await LoadDropdownsAsync();
+                return Page();
+            }
+
+            var adminUser = await _context.Users.FindAsync(adminUserId);
+            if (adminUser == null)
+            {
+                ErrorMessage = "Admin user not found.";
+                await LoadLeasesAsync();
+                await LoadDropdownsAsync();
+                return Page();
+            }
+
+            // Verify admin password
+            if (!PasswordHasher.VerifyPassword(adminPassword, adminUser.HasedPassword))
+            {
+                ErrorMessage = "Invalid password. Please enter your correct admin password to confirm deletion.";
+                await LoadLeasesAsync();
+                await LoadDropdownsAsync();
+                return Page();
+            }
+
             var lease = await _context.Leases
                 .Include(l => l.Apartment)
                 .Include(l => l.User)
@@ -377,7 +426,9 @@ namespace Apartment.Pages.Admin
             if (lease == null)
             {
                 ErrorMessage = "Lease not found.";
-                return RedirectToPage();
+                await LoadLeasesAsync();
+                await LoadDropdownsAsync();
+                return Page();
             }
 
             var unitNumber = lease.UnitNumber;
@@ -407,12 +458,9 @@ namespace Apartment.Pages.Admin
                 }
             }
 
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(userIdStr, out var adminUserId))
-            {
-                var details = $"Deleted lease for {tenantName} in unit {unitNumber}.";
-                await _auditService.LogAsync(AuditActionType.DeleteTenant, adminUserId, details, id, nameof(Lease));
-            }
+            // Note: adminUserId is already defined above from password verification
+            var details = $"Deleted lease for {tenantName} in unit {unitNumber}.";
+            await _auditService.LogAsync(AuditActionType.DeleteTenant, adminUserId, details, id, nameof(Lease));
 
             await _context.SaveChangesAsync();
 
@@ -433,6 +481,7 @@ namespace Apartment.Pages.Admin
             }
 
             var now = DateTime.UtcNow;
+            var isExpired = lease.LeaseEnd < now;
             return new JsonResult(new
             {
                 id = lease.Id,
@@ -442,7 +491,12 @@ namespace Apartment.Pages.Admin
                 leaseEnd = lease.LeaseEnd.ToString("yyyy-MM-dd"),
                 monthlyRent = lease.MonthlyRent,
                 securityDeposit = lease.SecurityDeposit,
-                status = GetLeaseStatus(lease.LeaseStart, lease.LeaseEnd, now)
+                lateFeeAmount = lease.LateFeeAmount,
+                lateFeeDays = lease.LateFeeDays,
+                petsAllowed = lease.PetsAllowed,
+                status = GetLeaseStatus(lease.LeaseStart, lease.LeaseEnd, now),
+                isExpired = isExpired,
+                expirationDate = lease.LeaseEnd.ToString("MMM dd, yyyy")
             });
         }
     }

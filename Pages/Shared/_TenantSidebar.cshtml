@@ -1,6 +1,7 @@
+
 @using System.Security.Claims
 @{
-    var username = User.Identity?.Name ?? "Unknown User";
+    var username = Model.UserInfo?.Username ?? Model.Username;
     var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Resident";
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
     var isDashboard = currentPage.Contains("TenantDashboard");
